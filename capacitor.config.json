@@ -1,0 +1,15 @@
+{
+  "appId": "com.wifey.app",
+  "appName": "Wifey",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Geolocation": {
+      "permissions": [
+        "location"
+      ]
+    }
+  }
+}

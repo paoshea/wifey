@@ -1,0 +1,88 @@
+{
+  "navigation": {
+    "home": "Home",
+    "coverageFinder": "Coverage Finder",
+    "register": "Sign Up",
+    "login": "Sign In"
+  },
+  "home": {
+    "title": "Find Coverage",
+    "subtitle": "Anywhere",
+    "description": "Locate cellular coverage points and free WiFi hotspots near you. Never be out of touch again.",
+    "findCoverageButton": "Find Coverage Now",
+    "features": {
+      "cellular": {
+        "title": "Cellular Coverage",
+        "description": "Find the nearest coverage point when you're in a dead zone"
+      },
+      "wifi": {
+        "title": "Free WiFi",
+        "description": "Discover nearby free WiFi hotspots"
+      },
+      "navigation": {
+        "title": "Navigation",
+        "description": "Get turn-by-turn directions to the nearest connection point"
+      }
+    }
+  },
+  "coverage": {
+    "title": "Coverage Finder",
+    "tabs": {
+      "coverageRoute": "Find Coverage Route",
+      "freeWifi": "Free WiFi Hotspots"
+    },
+    "findRoute": {
+      "title": "Find Route to Coverage",
+      "button": "Find Route to Coverage",
+      "loading": "Finding Coverage...",
+      "gettingLocation": "Getting your location...",
+      "noLocation": "Location access is required to find coverage",
+      "error": "Error finding coverage. Please try again."
+    },
+    "wifi": {
+      "title": "Nearby Free WiFi Hotspots",
+      "refreshButton": "Refresh Nearby Hotspots",
+      "loading": "Finding WiFi hotspots...",
+      "noHotspots": "No WiFi hotspots found nearby",
+      "details": {
+        "provider": "Provider",
+        "speed": "Speed",
+        "distance": "Distance",
+        "reliability": "Reliability"
+      }
+    }
+  },
+  "auth": {
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Join Wifey and never lose connection again",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "Enter your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Create a password (min. 8 characters)",
+      "languageLabel": "Preferred Language",
+      "languagePlaceholder": "Select your language",
+      "submit": "Create Account",
+      "loading": "Creating account...",
+      "successTitle": "Registration successful!",
+      "successMessage": "Your account has been created. Welcome to Wifey!",
+      "errorTitle": "Registration failed",
+      "errorMessage": "There was a problem creating your account. Please try again.",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Sign in here"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try Again",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

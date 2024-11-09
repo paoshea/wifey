@@ -1,0 +1,22 @@
+export interface CarrierCoverage {
+  provider: string;
+  signalStrength: number;
+  technology: '2G' | '3G' | '4G' | '5G';
+  location: {
+    lat: number;
+    lng: number;
+  };
+  reliability: number;
+}
+
+export interface CarrierAPIConfig {
+  baseUrl: string;
+  apiKey: string;
+  country: string;
+}
+
+export type SupportedCarrier = 
+  | 'kolbi_cr'   // Kölbi (ICE) - Costa Rica
+  | 'movistar_cr' // Movistar - Costa Rica
+  | 'claro_cr'    // Claro - Costa Rica
+  | 'liberty_cr'; // Liberty - Costa Rica

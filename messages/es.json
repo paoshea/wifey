@@ -1,0 +1,88 @@
+{
+  "navigation": {
+    "home": "Inicio",
+    "coverageFinder": "Buscador de Cobertura",
+    "register": "Registrarse",
+    "login": "Iniciar Sesión"
+  },
+  "home": {
+    "title": "Encuentra Cobertura",
+    "subtitle": "En Cualquier Lugar",
+    "description": "Localiza puntos de cobertura celular y puntos de acceso WiFi gratuitos cerca de ti. Nunca pierdas la conexión.",
+    "findCoverageButton": "Encontrar Cobertura Ahora",
+    "features": {
+      "cellular": {
+        "title": "Cobertura Celular",
+        "description": "Encuentra el punto de cobertura más cercano cuando estés en una zona sin señal"
+      },
+      "wifi": {
+        "title": "WiFi Gratuito",
+        "description": "Descubre puntos de acceso WiFi gratuitos cercanos"
+      },
+      "navigation": {
+        "title": "Navegación",
+        "description": "Obtén direcciones paso a paso hasta el punto de conexión más cercano"
+      }
+    }
+  },
+  "coverage": {
+    "title": "Buscador de Cobertura",
+    "tabs": {
+      "coverageRoute": "Encontrar Ruta de Cobertura",
+      "freeWifi": "Puntos WiFi Gratuitos"
+    },
+    "findRoute": {
+      "title": "Encontrar Ruta a Cobertura",
+      "button": "Encontrar Ruta a Cobertura",
+      "loading": "Buscando Cobertura...",
+      "gettingLocation": "Obteniendo tu ubicación...",
+      "noLocation": "Se requiere acceso a la ubicación para encontrar cobertura",
+      "error": "Error al buscar cobertura. Por favor intenta de nuevo."
+    },
+    "wifi": {
+      "title": "Puntos WiFi Gratuitos Cercanos",
+      "refreshButton": "Actualizar Puntos Cercanos",
+      "loading": "Buscando puntos WiFi...",
+      "noHotspots": "No se encontraron puntos WiFi cercanos",
+      "details": {
+        "provider": "Proveedor",
+        "speed": "Velocidad",
+        "distance": "Distancia",
+        "reliability": "Confiabilidad"
+      }
+    }
+  },
+  "auth": {
+    "register": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Únete a Wifey y nunca pierdas la conexión",
+      "nameLabel": "Nombre Completo",
+      "namePlaceholder": "Ingresa tu nombre",
+      "emailLabel": "Correo Electrónico",
+      "emailPlaceholder": "Ingresa tu correo",
+      "passwordLabel": "Contraseña",
+      "passwordPlaceholder": "Crea una contraseña (mín. 8 caracteres)",
+      "languageLabel": "Idioma Preferido",
+      "languagePlaceholder": "Selecciona tu idioma",
+      "submit": "Crear Cuenta",
+      "loading": "Creando cuenta...",
+      "successTitle": "¡Registro exitoso!",
+      "successMessage": "Tu cuenta ha sido creada. ¡Bienvenido a Wifey!",
+      "errorTitle": "Error en el registro",
+      "errorMessage": "Hubo un problema al crear tu cuenta. Por favor intenta de nuevo.",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+      "loginLink": "Inicia sesión aquí"
+    }
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "retry": "Intentar de nuevo",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información"
+  }
+}

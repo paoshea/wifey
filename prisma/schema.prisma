@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CoveragePoint {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  location       Json
+  signalStrength Float
+  provider       String
+  type           String   // 'cellular' or 'wifi'
+  timestamp      DateTime @default(now())
+  userId         String?  @db.ObjectId
+  user           User?    @relation(fields: [userId], references: [id])
+}
+
+model WifiHotspot {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  location     Json
+  provider     String
+  speed        String?
+  isPublic     Boolean  @default(true)
+  lastVerified DateTime @default(now())
+}
+
+model Measurement {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  type      String   // 'speed', 'signal', or 'latency'
+  value     Float
+  unit      String
+  location  Json
+  timestamp DateTime @default(now())
+  device    Json
+  user      User     @relation(fields: [userId], references: [id])
+}
