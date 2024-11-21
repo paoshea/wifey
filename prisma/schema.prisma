@@ -8,22 +8,41 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  email         String         @unique
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  contributions CoveragePoint[]
+  measurements  Measurement[]
 }
 
 model CoveragePoint {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  location       Json
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  location       Json      // { lat: number, lng: number }
   signalStrength Float
   provider       String
-  type           String   // 'cellular' or 'wifi'
-  timestamp      DateTime @default(now())
-  userId         String?  @db.ObjectId
-  user           User?    @relation(fields: [userId], references: [id])
+  type           String    // 'cellular' or 'wifi'
+  technology     String    // '2G', '3G', '4G', '5G'
+  reliability    Float
+  timestamp      DateTime  @default(now())
+  userId         String?   @db.ObjectId
+  user           User?     @relation(fields: [userId], references: [id])
+  history        CoverageHistory[]
+  verifications  Int       @default(0)
+  lastVerified   DateTime  @default(now())
+  predictedArea  Json?     // Polygon of predicted coverage area
+  metadata       Json?     // Additional metadata for coverage point
+}
+
+model CoverageHistory {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  coveragePointId String        @db.ObjectId
+  coveragePoint   CoveragePoint @relation(fields: [coveragePointId], references: [id])
+  signalStrength  Float
+  timestamp       DateTime      @default(now())
+  userId          String?       @db.ObjectId
+  metadata        Json?         // Weather conditions, time of day, etc.
 }
 
 model WifiHotspot {
@@ -46,4 +65,12 @@ model Measurement {
   timestamp DateTime @default(now())
   device    Json
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model CoverageComparison {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  location    Json     // { lat: number, lng: number }
+  providers   Json[]   // Array of provider comparisons
+  timestamp   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -1,73 +1,256 @@
-import { MapPin, Wifi, Signal } from 'lucide-react';
-import Link from 'next/link';
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Signal, MapPin, Users, Send, ChevronRight, Star } from 'lucide-react';
+
+const testimonials = [
+  {
+    name: "Maria Rodriguez",
+    location: "San José, Costa Rica",
+    image: "/testimonials/maria.jpg",
+    text: "Thanks to the X marks feature, we found signal in a remote area where we were stuck. The community's contributions literally saved our day!",
+    rating: 5
+  },
+  {
+    name: "John Smith",
+    location: "Tamarindo, Costa Rica",
+    image: "/testimonials/john.jpg",
+    text: "Working remotely became possible in areas I never thought would have coverage. The coverage map is incredibly accurate!",
+    rating: 5
+  },
+  {
+    name: "Ana Chen",
+    location: "Monteverde, Costa Rica",
+    image: "/testimonials/ana.jpg",
+    text: "Found emergency signal during a hiking trip thanks to marked spots. This app is a game-changer for safety!",
+    rating: 5
+  }
+];
 
 export default function Home() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    interests: '',
+  });
+
+  const handleOnboarding = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(step + 1);
+    if (step === 3) {
+      router.push('/auth/signup');
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-            <span className="block">Find Coverage</span>
-            <span className="block text-blue-600 hover:text-blue-700 transition-colors duration-300">
-              Anywhere
-            </span>
-          </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-            Locate cellular coverage points and free WiFi hotspots near you. Never be out of touch again.
-          </p>
-          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-            <Link href="/coverage-finder">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                <Signal className="w-4 h-4 mr-2" />
-                Find Coverage Now
-              </Button>
-            </Link>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-b from-blue-50 to-white py-20">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+              Find Signal. Mark Spots. Help Others.
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Join our community in mapping cellular coverage across Costa Rica. Every mark helps someone stay connected.
+            </p>
+            <Button
+              size="lg"
+              onClick={() => setStep(1)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full text-lg"
+            >
+              Get Started
+              <ChevronRight className="ml-2" />
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* Floating Features */}
+        <div className="container mx-auto px-4 mt-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+                <CardContent>
+                  <Signal className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Find Coverage</h3>
+                  <p className="text-gray-600">
+                    Discover areas with strong signal strength for reliable connectivity.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+                <CardContent>
+                  <MapPin className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Mark Spots</h3>
+                  <p className="text-gray-600">
+                    Contribute to the community by marking areas with good coverage.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card className="text-center p-6 hover:shadow-lg transition-shadow">
+                <CardContent>
+                  <Users className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Help Others</h3>
+                  <p className="text-gray-600">
+                    Your contributions help travelers and locals stay connected.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
+      </section>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-6 cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-              <Signal className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-              Cellular Coverage
-            </h3>
-            <p className="mt-2 text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-              Find the nearest coverage point when you're in a dead zone
-            </p>
+      {/* Onboarding Dialog */}
+      {step < 4 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
+          <Card className="max-w-md w-full bg-white">
+            <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                key={step}
+              >
+                <h2 className="text-2xl font-bold mb-4">
+                  {step === 1 && "Tell us your name"}
+                  {step === 2 && "Where are you located?"}
+                  {step === 3 && "What interests you most?"}
+                </h2>
+                <form onSubmit={handleOnboarding} className="space-y-4">
+                  {step === 1 && (
+                    <Input
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  )}
+                  {step === 2 && (
+                    <Input
+                      placeholder="Your location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      required
+                    />
+                  )}
+                  {step === 3 && (
+                    <Input
+                      placeholder="What brings you here?"
+                      value={formData.interests}
+                      onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
+                      required
+                    />
+                  )}
+                  <Button type="submit" className="w-full">
+                    {step === 3 ? "Complete" : "Next"}
+                  </Button>
+                </form>
+              </motion.div>
+            </CardContent>
           </Card>
+        </motion.div>
+      )}
 
-          <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-6 cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-              <Wifi className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-              Free WiFi
-            </h3>
-            <p className="mt-2 text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-              Discover nearby free WiFi hotspots
-            </p>
-          </Card>
-
-          <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-6 cursor-pointer">
-            <div className="flex items-center justify-center w-12 h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-              <MapPin className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
-            </div>
-            <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-              Navigation
-            </h3>
-            <p className="mt-2 text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-              Get turn-by-turn directions to the nearest connection point
-            </p>
-          </Card>
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Success Stories from Our Community
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <Card className="h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
+                        <img
+                          src={testimonial.image}
+                          alt={testimonial.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{testimonial.name}</h3>
+                        <p className="text-sm text-gray-500">{testimonial.location}</p>
+                      </div>
+                    </div>
+                    <div className="flex mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" />
+                      ))}
+                    </div>
+                    <p className="text-gray-600">{testimonial.text}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
-    </main>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-8">Get in Touch</h2>
+            <Card>
+              <CardContent className="p-6">
+                <form className="space-y-4">
+                  <Input placeholder="Your Name" />
+                  <Input type="email" placeholder="Your Email" />
+                  <textarea
+                    className="w-full p-3 border rounded-lg resize-none h-32"
+                    placeholder="Your Message"
+                  />
+                  <Button className="w-full">
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Message
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

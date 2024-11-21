@@ -2,172 +2,227 @@
 
 ![Wifey Logo](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/signal.svg)
 
-A sophisticated mobile application that helps users find cellular coverage points and free WiFi hotspots. Perfect for travelers, remote workers, and anyone who needs to stay connected.
+A sophisticated web application that helps users find cellular coverage points and free WiFi hotspots. Perfect for travelers, remote workers, and anyone who needs to stay connected.
 
-## Overview
+## Documentation
 
-Wifey helps users in two primary scenarios:
-1. Finding the nearest cellular coverage point when in a dead zone
-2. Locating free WiFi hotspots in the vicinity
+- [API Documentation](docs/api/README.md)
+- [Component Documentation](docs/components/README.md)
+- [Deployment Guide](docs/deployment/README.md)
 
-## Current Features
+## Features
 
-- 🗺️ Interactive coverage maps
-- 📱 Real-time cellular coverage detection
-- 📍 Turn-by-turn navigation to coverage points
-- 🌐 Free WiFi hotspot locator
-- 📊 Signal strength visualization
-- 🔄 Multi-carrier support (Costa Rica)
-- 📡 Network technology detection (2G/3G/4G/5G)
-- 🌍 Internationalization (English & Spanish)
-- 👤 User registration with language preference
-- 🔄 Language switching on any page
-- 🎨 Modern, responsive UI with Tailwind CSS
-- 🔒 Form validation with Zod
-- 📱 Mobile-first design
+### Coverage Features
+- Interactive coverage map
+- Real-time location tracking
+- Turn-by-turn navigation
+- Multi-carrier support
+- Coverage strength visualization
+- Intelligent route optimization
+- X marks spot functionality
+- Offline support
+- Background sync
+
+### WiFi Features
+- WiFi hotspot mapping
+- Real-time availability
+- Detailed hotspot info
+- Distance estimation
+- Navigation support
+- Favorite locations
+- Community verification
+- Speed ratings
+
+### Gamification System
+- Points and rewards
+- Daily streaks
+- Achievement badges
+- Level progression
+- Leaderboards
+- Community challenges
+- Special events
+- Progress tracking
+
+### User Features
+- Authentication system
+- User profiles
+- Achievement tracking
+- Contribution history
+- Personal statistics
+- Community rankings
+- Social features
+- Notifications
+
+### Technical Features
+- Progressive Web App
+- Offline functionality
+- Push notifications
+- Performance monitoring
+- Error tracking
+- Analytics integration
+- API documentation
+- Mobile optimization
 
 ## Tech Stack
 
-- **Frontend**: Next.js 13, React, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui
-- **Maps**: Leaflet with React integration
-- **Database**: MongoDB Atlas
-- **API**: RESTful with Next.js API routes
-- **Authentication**: NextAuth.js
-- **Form Handling**: React Hook Form, Zod
-- **Internationalization**: next-intl
-- **Icons**: Lucide React
-- **Deployment**: Vercel
+### Frontend
+- Next.js 14.0.3
+- React 18.2.0
+- TypeScript 5.2.2
+- Tailwind CSS 3.3.5
+- Framer Motion 10.16.4
+- Leaflet Maps
+- PWA support
+
+### Backend
+- MongoDB
+- Prisma ORM
+- NextAuth.js
+- API routes
+- WebSocket support
+- Background jobs
+
+### Monitoring
+- Sentry error tracking
+- PostHog analytics
+- Performance monitoring
+- User behavior tracking
+- Error reporting
+- Usage statistics
+
+### Development Tools
+- ESLint
+- TypeScript
+- Jest testing
+- Playwright E2E
+- GitHub Actions
+- Docker support
 
 ## Getting Started
 
 ### Prerequisites
-
-- Node.js 16.x or higher
-- MongoDB Atlas account
-- Carrier API keys (for production)
+- Node.js 18+
+- MongoDB
+- npm or yarn
+- Git
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/wifey.git
-
-# Install dependencies
+1. Clone the repository:
+\`\`\`bash
+git clone https://github.com/your-username/wifey.git
 cd wifey
+\`\`\`
+
+2. Install dependencies:
+\`\`\`bash
 npm install
+\`\`\`
 
-# Set up environment variables
+3. Set up environment variables:
+\`\`\`env
+# Create .env.local from example
 cp .env.example .env.local
+\`\`\`
 
-# Start development server
+4. Initialize database:
+\`\`\`bash
+npx prisma db push
+\`\`\`
+
+5. Start development server:
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-### Environment Variables
+## Development
 
-```env
-MONGODB_URI=your_mongodb_uri
-NEXTAUTH_SECRET=your_secret
-NEXTAUTH_URL=http://localhost:3000
+### Code Structure
+\`\`\`
+wifey/
+├── app/                 # Next.js app directory
+├── components/         # React components
+├── lib/               # Utilities and services
+├── public/            # Static assets
+├── styles/           # Global styles
+├── docs/             # Documentation
+└── tests/            # Test files
+\`\`\`
 
-# Carrier API Keys (Costa Rica)
-KOLBI_API_KEY=your_kolbi_api_key
-MOVISTAR_API_KEY=your_movistar_api_key
-CLARO_API_KEY=your_claro_api_key
-LIBERTY_API_KEY=your_liberty_api_key
-```
+### Key Components
+- Coverage Map
+- Location Finder
+- Leaderboard
+- Achievement System
+- User Dashboard
+- Error Handling
 
-## Internationalization
+### Testing
 
-The app supports multiple languages:
-- English (default)
-- Spanish
+Run tests:
+\`\`\`bash
+# Unit tests
+npm test
 
-Language can be selected:
-1. During registration
-2. Via language switcher in navigation
-3. Through URL prefix (/en/, /es/)
+# E2E tests
+npm run test:e2e
 
-## Roadmap
+# Coverage report
+npm run test:coverage
+\`\`\`
 
-### Immediate Next Steps
+## Deployment
 
-1. **API Integration**
-   - Implement real carrier API connections
-   - Add error handling and rate limiting
-   - Cache frequent requests
+See [Deployment Guide](docs/deployment/README.md) for detailed instructions.
 
-2. **Authentication**
-   - Complete user registration flow
-   - Profile management
-   - Coverage history
+Quick deploy:
+\`\`\`bash
+# Build
+npm run build
 
-3. **Data Collection**
-   - Crowdsourced coverage data
-   - Signal strength reporting
-   - Coverage verification system
-
-### Future Enhancements
-
-1. **Coverage Features**
-   - Offline maps support
-   - Coverage prediction algorithms
-   - Historical coverage patterns
-   - Signal strength heatmaps
-
-2. **WiFi Features**
-   - Speed test integration
-   - Security ratings
-   - User reviews and ratings
-   - Password sharing for authorized spots
-
-3. **Community Features**
-   - User-contributed hotspots
-   - Coverage reports
-   - Reputation system
-   - Community verification
-
-4. **Premium Features**
-   - Advanced coverage analytics
-   - Priority hotspot access
-   - Coverage alerts
-   - Network speed predictions
+# Start production server
+npm start
+\`\`\`
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Open pull request
+
+See [Contributing Guide](CONTRIBUTING.md) for details.
+
+## Support
+
+- Documentation: [docs.wifey.app](https://docs.wifey.app)
+- Issues: [GitHub Issues](https://github.com/your-username/wifey/issues)
+- Email: support@wifey.app
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ## Team
 
 ### Leadership
-
 **Phil O'Shea FCA**
-- Entrepreneur & Software Architect
+- Project Lead & Software Architect
 - Vision and Strategy Lead
 - [LinkedIn](https://linkedin.com/in/philipaoshea)
 
+### Development Team
+- Frontend Engineers
+- Backend Developers
+- UX/UI Designers
+- QA Engineers
+
 ## Acknowledgments
-
-- OpenStreetMap for map data
-- Leaflet for mapping functionality
-- shadcn/ui for beautiful UI components
-- next-intl for internationalization support
-- All contributors and supporters
-
-## Support
-
-For support, please open an issue in the GitHub repository or contact the team at support@wifey.app
+- OpenStreetMap
+- Leaflet
+- Next.js team
+- Open source community
 
 ---
 
