@@ -28,7 +28,7 @@ export const ROLE_PERMISSIONS = {
     'create:coverage',
     'update:coverage',
     'delete:coverage',
-    'verify:coverage'
+    'verify:coverage',
   ],
   admin: [
     'read:coverage',
@@ -37,7 +37,7 @@ export const ROLE_PERMISSIONS = {
     'delete:coverage',
     'verify:coverage',
     'manage:users',
-    'manage:roles'
+    'manage:roles',
   ],
 } as const;
 

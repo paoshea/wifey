@@ -73,9 +73,7 @@ export const useCoverageStore = create<CoverageState & CoverageActions>()(
 
       addCoveragePoint: (point) =>
         set((state) => {
-          // Optimistically add the point
           state.coveragePoints.push(point);
-
           // Add to pending updates if offline
           if (state.isOffline) {
             state.pendingUpdates.push({
@@ -90,7 +88,10 @@ export const useCoverageStore = create<CoverageState & CoverageActions>()(
         set((state) => {
           const pointIndex = state.coveragePoints.findIndex((p) => p.id === pointId);
           if (pointIndex !== -1) {
-            Object.assign(state.coveragePoints[pointIndex], data);
+            state.coveragePoints[pointIndex] = {
+              ...state.coveragePoints[pointIndex],
+              ...data,
+            };
 
             // Add to pending updates if offline
             if (state.isOffline) {

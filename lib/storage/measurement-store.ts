@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { SignalMeasurement } from '@/lib/monitoring/signal-monitor';
+import type { SignalMeasurement } from '@/lib/monitoring/signal-monitor';
 
 interface WifeyDB extends DBSchema {
   measurements: {
@@ -17,7 +17,7 @@ interface WifeyDB extends DBSchema {
   };
 }
 
-class MeasurementStore {
+export class MeasurementStore {
   private db: IDBPDatabase<WifeyDB> | null = null;
   private readonly DB_NAME = 'wifey-measurements';
   private readonly STORE_NAME = 'measurements';

@@ -1,19 +1,20 @@
-import type { Icon, LatLng } from 'leaflet';
+import L from 'leaflet';
+import type { LatLng } from 'leaflet';
 import { CarrierCoverage } from '../carriers/types';
 
 // Custom marker icons for different signal strengths
-export const getSignalIcon = (signalStrength: number): Icon => {
+export const getSignalIcon = (signalStrength: number): L.Icon => {
   let color = 'red';
   if (signalStrength >= 80) color = 'green';
   else if (signalStrength >= 60) color = 'blue';
   else if (signalStrength >= 40) color = 'orange';
 
-  return {
+  return L.icon({
     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-  } as Icon;
+  });
 };
 
 // Convert coverage points to heatmap data format
