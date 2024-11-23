@@ -1,10 +1,10 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createIDBPersister } from '@tanstack/query-persist-client-core';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { get, set } from 'idb-keyval';
 
-const persister = createIDBPersister({
+const persister = createSyncStoragePersister({
   idb: {
     get,
     set,

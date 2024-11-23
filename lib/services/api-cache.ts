@@ -151,21 +151,39 @@ export class ApiCache<T> {
     if (this.cache.size >= this.config.maxEntries) {
       const lru = this.evictLRUEntries();
       if (expired > 0 || lru > 0) {
-        performanceMonitor.logEvent('cache-cleanup', {
+        this.logCacheCleanup({
           expired,
           lru,
-          remainingEntries: this.cache.size
+          remainingEntries: this.cache.size,
+          maxEntries: this.config.maxEntries
         });
       }
     }
   }
 
+  private logCacheCleanup(stats: {
+    expired: number;
+    lru: number;
+    remainingEntries: number;
+    maxEntries: number;
+  }): void {
+    console.log('Cache cleanup:', stats);
+  }
+
   private evictLRUEntries(): number {
+    if (!this.config.maxEntries) return 0;
+    
     const targetSize = Math.floor(this.config.maxEntries * 0.9); // Remove 10% to prevent frequent evictions
     if (this.cache.size <= targetSize) return 0;
 
+    type EvictionEntry = {
+      key: string;
+      entry: CacheEntry<unknown>;
+      score: number;
+    };
+
     const entries = Array.from(this.cache.entries())
-      .map(([key, entry]) => ({
+      .map(([key, entry]): EvictionEntry => ({
         key,
         entry,
         score: this.calculateEvictionScore(entry)
@@ -173,11 +191,14 @@ export class ApiCache<T> {
       .sort((a, b) => a.score - b.score);
 
     const toEvict = entries.slice(0, this.cache.size - targetSize);
+    let evicted = 0;
+    
     for (const { key } of toEvict) {
       this.cache.delete(key);
+      evicted++;
     }
 
-    return toEvict.length;
+    return evicted;
   }
 
   private calculateEvictionScore(entry: CacheEntry<unknown>): number {
@@ -196,10 +217,11 @@ export class ApiCache<T> {
     if (this.cache.size >= this.config.maxEntries) {
       const lru = this.evictLRUEntries();
       if (expired > 0 || lru > 0) {
-        performanceMonitor.logEvent('cache-cleanup', {
+        this.logCacheCleanup({
           expired,
           lru,
-          remainingEntries: this.cache.size
+          remainingEntries: this.cache.size,
+          maxEntries: this.config.maxEntries
         });
       }
     }
@@ -211,7 +233,8 @@ export class ApiCache<T> {
     
     const now = Date.now();
     const age = now - entry.timestamp;
-    return age < this.config.maxAge * 1000;
+    const maxAge = this.config.maxAge * 1000;
+    return age < maxAge;
   }
 
   isStale(key: string): boolean {
@@ -230,13 +253,16 @@ export class ApiCache<T> {
     const now = Date.now();
     let evicted = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
-      const expirationTime = entry.timestamp + (this.config.staleWhileRevalidate * 1000);
+    Array.from(this.cache.entries()).forEach(([key, entry]: [string, CacheEntry<unknown>]) => {
+      const maxAge = this.config.maxAge * 1000;
+      const staleWhileRevalidate = this.config.staleWhileRevalidate * 1000;
+      const expirationTime = entry.timestamp + maxAge + staleWhileRevalidate;
+      
       if (now > expirationTime) {
         this.cache.delete(key);
         evicted++;
       }
-    }
+    });
 
     return evicted;
   }
@@ -246,7 +272,7 @@ export class ApiCache<T> {
   }
 
   // Get cache statistics
-  getStats(): CacheStats {
+  getCacheStats(): CacheStats {
     const now = Date.now();
     const stats: CacheStats = {
       totalEntries: this.cache.size,
@@ -261,16 +287,19 @@ export class ApiCache<T> {
       }
     };
 
-    for (const entry of this.cache.values()) {
+    Array.from(this.cache.entries()).forEach(([_, entry]: [string, CacheEntry<unknown>]) => {
       stats.entriesByPriority[entry.priority]++;
       stats.totalAccessCount += entry.accessCount;
       
-      if (now - entry.timestamp < this.config.maxAge * 1000) {
+      const age = now - entry.timestamp;
+      const maxAge = this.config.maxAge * 1000;
+      
+      if (age < maxAge) {
         stats.freshEntries++;
       } else {
         stats.staleEntries++;
       }
-    }
+    });
 
     stats.averageAccessCount = stats.totalEntries > 0 
       ? stats.totalAccessCount / stats.totalEntries 

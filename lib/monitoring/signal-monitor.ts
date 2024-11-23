@@ -1,19 +1,6 @@
 import { CarrierCoverage } from '../carriers/types';
 import type { SignalMeasurement } from '../types/monitoring';
 
-interface SignalMeasurement {
-  timestamp: number;
-  signalStrength: number;
-  technology: '2G' | '3G' | '4G' | '5G';
-  location: {
-    lat: number;
-    lng: number;
-  };
-  provider: string;
-  connectionType?: string;
-  isRoaming?: boolean;
-}
-
 class SignalMonitor {
   private isMonitoring: boolean = false;
   private monitoringInterval: number | null = null;
@@ -59,33 +46,48 @@ class SignalMonitor {
 
   private async getCurrentLocation(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported'));
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
-        position => resolve(position),
-        error => reject(error),
+        (position) => resolve(position),
+        (error) => reject(error),
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
+          timeout: 5000,
+          maximumAge: 0,
         }
       );
     });
   }
 
   private async getConnectionInfo(): Promise<Partial<SignalMeasurement>> {
-    const connection = (navigator as any).connection;
-    
+    const connection = (navigator as any).connection || 
+                      (navigator as any).mozConnection || 
+                      (navigator as any).webkitConnection;
+
     if (!connection) {
-      return {};
+      return {
+        technology: '4G',
+        provider: 'unknown',
+      };
     }
 
     return {
       connectionType: connection.type,
       technology: this.detectNetworkTechnology(connection),
-      provider: await this.detectCarrier()
+      provider: await this.detectCarrier(),
+      isRoaming: connection.isRoaming,
     };
   }
 
   private detectNetworkTechnology(connection: any): '2G' | '3G' | '4G' | '5G' {
+    if (!connection || !connection.effectiveType) {
+      return '4G';
+    }
+
     const effectiveType = connection.effectiveType;
     switch (effectiveType) {
       case 'slow-2g':
@@ -96,56 +98,72 @@ class SignalMonitor {
       case '4g':
         return '4G';
       default:
-        // Use connection.type to detect 5G
         return connection.type === '5g' ? '5G' : '4G';
     }
   }
 
   private async detectCarrier(): Promise<string> {
-    // This is a placeholder - actual carrier detection would depend on
-    // platform-specific APIs or user input
-    return 'unknown';
+    try {
+      const mobileInfo = (navigator as any).mozMobileConnection || 
+                        (navigator as any).mobileConnection;
+      if (mobileInfo && mobileInfo.carrier) {
+        return mobileInfo.carrier;
+      }
+
+      const connection = (navigator as any).connection;
+      if (connection && connection.carrier) {
+        return connection.carrier;
+      }
+
+      return 'unknown';
+    } catch (error) {
+      console.warn('Error detecting carrier:', error);
+      return 'unknown';
+    }
   }
 
   private async measureSignalStrength(): Promise<number> {
-    const connection = (navigator as any).connection;
-    
-    if (!connection || typeof connection.signalStrength === 'undefined') {
-      // If we can't get actual signal strength, estimate based on connection quality
-      switch (connection?.effectiveType) {
-        case 'slow-2g':
-          return 1;
-        case '2g':
-          return 2;
-        case '3g':
-          return 3;
-        case '4g':
-        case '5g':
-          return 4;
-        default:
-          return 0;
+    try {
+      const mobileInfo = (navigator as any).mozMobileConnection || 
+                        (navigator as any).mobileConnection;
+      if (mobileInfo && typeof mobileInfo.signalStrength === 'number') {
+        return mobileInfo.signalStrength;
       }
-    }
 
-    return connection.signalStrength;
+      const connection = (navigator as any).connection;
+      if (connection && typeof connection.signalStrength === 'number') {
+        return connection.signalStrength;
+      }
+
+      return -1;
+    } catch (error) {
+      console.warn('Error measuring signal strength:', error);
+      return -1;
+    }
   }
 
-  private async takeMeasurement(): Promise<SignalMeasurement> {
+  async takeMeasurement(): Promise<SignalMeasurement> {
     try {
-      const position = await this.getCurrentLocation();
-      const connectionInfo = await this.getConnectionInfo();
-      const signalStrength = await this.measureSignalStrength();
+      const [position, connectionInfo, signalStrength] = await Promise.all([
+        this.getCurrentLocation(),
+        this.getConnectionInfo(),
+        this.measureSignalStrength(),
+      ]);
 
       const measurement: SignalMeasurement = {
         timestamp: Date.now(),
         signalStrength,
-        location: {
+        technology: this.detectNetworkTechnology(connectionInfo) || '4G',
+        geolocation: {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         },
-        ...connectionInfo,
-        technology: connectionInfo.technology || '4G',
-        provider: connectionInfo.provider || 'unknown'
+        provider: connectionInfo.provider || await this.detectCarrier() || 'unknown',
+        carrier: connectionInfo.provider || await this.detectCarrier() || 'unknown',
+        network: connectionInfo.connectionType || 'unknown',
+        networkType: connectionInfo.connectionType || 'unknown',
+        ...(connectionInfo.connectionType && { connectionType: connectionInfo.connectionType }),
+        ...(typeof connectionInfo.isRoaming === 'boolean' && { isRoaming: connectionInfo.isRoaming }),
       };
 
       this.measurements.push(measurement);

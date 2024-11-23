@@ -1,6 +1,7 @@
-// Temporarily removed external monitoring dependencies for benchmarking
-// import { trackPerformance as trackSentryPerformance } from './sentry';
-// import { trackPerformance as trackAnalyticsPerformance } from './analytics';
+// External monitoring dependencies for benchmarking
+import { trackPerformance as trackSentryPerformance } from './sentry';
+import { trackPerformance as trackAnalyticsPerformance } from './analytics';
+import type { Metric } from 'web-vitals';
 
 // Web Vitals metrics
 type WebVitalsMetric = {
@@ -62,14 +63,23 @@ class PerformanceMonitor {
             // Initialize Performance Observer for CLS
             new PerformanceObserver((entryList) => {
                 let clsValue = 0;
-                entryList.getEntries().forEach(entry => {
-                    if (!entry.hadRecentInput) {
-                        clsValue += (entry as any).value;
+                for (const entry of entryList.getEntries()) {
+                    const layoutShift = entry as PerformanceEntry & {
+                        value: number;
+                        hadRecentInput: boolean;
+                        sources: Array<{
+                            node?: Node;
+                            currentRect: DOMRectReadOnly;
+                            previousRect: DOMRectReadOnly;
+                        }>;
+                    };
+                    if (!layoutShift.hadRecentInput) {
+                        clsValue += layoutShift.value;
                     }
-                });
+                }
                 this.metrics.set('CLS', clsValue);
                 this.trackMetric('CumulativeLayoutShift', clsValue);
-            }).observe({ entryTypes: ['layout-shift'] });
+            }).observe({ type: 'layout-shift', buffered: true });
 
             // Track navigation timing metrics
             window.addEventListener('load', () => {
@@ -137,15 +147,23 @@ class PerformanceMonitor {
     }
 
     // Track resource timing
-    trackResourceTiming(resourceName: string) {
+    trackResourceTiming(resourceName: string): void {
+        if (!resourceName || typeof resourceName !== 'string') {
+            console.warn('Invalid resource name provided to trackResourceTiming');
+            return;
+        }
+
         const entries = performance.getEntriesByType('resource')
             .filter(entry => entry.name.includes(resourceName));
 
         entries.forEach(entry => {
-            this.trackMetric(`resource_${resourceName}`, entry.duration, {
-                transferSize: entry.transferSize,
-                encodedBodySize: entry.encodedBodySize,
-                decodedBodySize: entry.decodedBodySize
+            const resourceEntry = entry as PerformanceResourceTiming;
+            this.trackMetric(`resource_${resourceName}`, resourceEntry.duration, {
+                transferSize: resourceEntry.transferSize,
+                encodedBodySize: resourceEntry.encodedBodySize,
+                decodedBodySize: resourceEntry.decodedBodySize,
+                initiatorType: resourceEntry.initiatorType,
+                nextHopProtocol: resourceEntry.nextHopProtocol,
             });
         });
     }
