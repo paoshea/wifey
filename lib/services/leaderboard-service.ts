@@ -1,6 +1,8 @@
-import { prisma } from '@/lib/db';
-import { apiCache } from '@/lib/services/api-cache';
-import { createApiError } from '@/lib/api/error-handler';
+import { PrismaClient } from '@prisma/client';
+import { apiCache } from './api-cache';
+import { createApiError } from '../api/error-handler';
+
+const prisma = new PrismaClient();
 
 export interface LeaderboardEntry {
   userId: string;

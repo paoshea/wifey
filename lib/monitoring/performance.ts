@@ -1,5 +1,6 @@
-import { trackPerformance as trackSentryPerformance } from './sentry';
-import { trackPerformance as trackAnalyticsPerformance } from './analytics';
+// Temporarily removed external monitoring dependencies for benchmarking
+// import { trackPerformance as trackSentryPerformance } from './sentry';
+// import { trackPerformance as trackAnalyticsPerformance } from './analytics';
 
 // Web Vitals metrics
 type WebVitalsMetric = {
@@ -115,12 +116,10 @@ class PerformanceMonitor {
 
     // Track a performance metric
     private trackMetric(name: string, value: number, properties?: Record<string, any>) {
-        // Track in both monitoring systems
-        trackSentryPerformance(name, { value, ...properties });
-        trackAnalyticsPerformance(name, value, properties);
-
-        // Store metric
         this.metrics.set(name, value);
+        // Temporarily disabled external tracking for benchmarking
+        // trackSentryPerformance(name, value, properties);
+        // trackAnalyticsPerformance(name, value, properties);
     }
 
     // Get all collected metrics

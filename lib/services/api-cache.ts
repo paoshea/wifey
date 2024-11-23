@@ -1,4 +1,4 @@
-import { performanceMonitor } from '@/lib/monitoring/performance';
+import { performanceMonitor } from '../monitoring/performance';
 
 interface CacheConfig {
   maxAge: number;  // Time in seconds
