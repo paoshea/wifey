@@ -46,3 +46,37 @@ mockIntersectionObserver.mockReturnValue({
   disconnect: () => null,
 });
 window.IntersectionObserver = mockIntersectionObserver;
+
+// Mock ResizeObserver
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserver;
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock recharts
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => children,
+  AreaChart: ({ children }: { children: React.ReactNode }) => children,
+  Area: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+}));
