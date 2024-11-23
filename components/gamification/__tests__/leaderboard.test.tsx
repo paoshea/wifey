@@ -6,11 +6,11 @@ import { Leaderboard } from '../leaderboard';
 // Mock Framer Motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => (
-      <div className={className}>{children}</div>
+    div: ({ children, className, onClick, ...props }: any) => (
+      <div className={className} onClick={onClick}>{children}</div>
     ),
-    button: ({ children, className, ...props }: any) => (
-      <button className={className}>{children}</button>
+    button: ({ children, className, onClick, ...props }: any) => (
+      <button className={className} onClick={onClick}>{children}</button>
     ),
   },
   AnimatePresence: ({ children }: any) => children,
@@ -84,19 +84,22 @@ describe('Leaderboard', () => {
     expect(screen.getByText('No entries yet')).toBeInTheDocument();
   });
 
-  it('handles timeframe changes', async () => {
-    const onTimeframeChange = jest.fn();
-    render(
+  it('handles timeframe changes', () => {
+    const handleTimeframeChange = jest.fn();
+    
+    const { getByText } = render(
       <Leaderboard 
         entries={mockEntries} 
         timeframe="weekly" 
-        onTimeframeChange={onTimeframeChange} 
+        onTimeframeChange={handleTimeframeChange} 
       />
     );
-    
-    const monthlyTab = screen.getByRole('button', { name: /This Month/i });
-    fireEvent.click(monthlyTab);
-    expect(onTimeframeChange).toHaveBeenCalledWith('monthly');
+
+    const monthlyButton = getByText('This Month');
+    fireEvent.click(monthlyButton);
+
+    expect(handleTimeframeChange).toHaveBeenCalledTimes(1);
+    expect(handleTimeframeChange).toHaveBeenCalledWith('monthly');
   });
 
   it('displays avatar images when available', () => {

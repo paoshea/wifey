@@ -51,26 +51,35 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Timeframe tabs */}
-      <div className="flex space-x-2 overflow-x-auto pb-2">
-        {timeframes.map(({ key, label }) => (
-          <motion.button
-            key={key}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              timeframe === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-            onClick={() => onTimeframeChange?.(key)}
-            variants={{
-              hover: { scale: 1.05 },
-              tap: { scale: 0.95 }
-            }}
-            whileHover="hover"
-            whileTap="tap"
-            role="button"
-            aria-pressed={timeframe === key}
-          >
-            {label}
-          </motion.button>
-        ))}
+      <div className="flex space-x-2 mb-6 overflow-x-auto">
+        {timeframes.map(({ key, label }) => {
+          const handleClick = () => {
+            if (onTimeframeChange) {
+              onTimeframeChange(key);
+            }
+          };
+
+          return (
+            <motion.button
+              key={key}
+              type="button"
+              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                timeframe === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+              onClick={handleClick}
+              variants={{
+                hover: { scale: 1.05 },
+                tap: { scale: 0.95 }
+              }}
+              whileHover="hover"
+              whileTap="tap"
+              role="button"
+              aria-pressed={timeframe === key}
+            >
+              {label}
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Current user stats */}
