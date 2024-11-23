@@ -113,21 +113,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               </motion.div>
             </div>
           </div>
-          <motion.div
-            className={`overflow-hidden transition-all ${isStatsExpanded ? '' : 'hidden'}`}
-            initial={{ height: 0 }}
-            animate={{ height: isStatsExpanded ? 'auto' : 0 }}
-            data-testid="stats-panel"
+          <div
+            className={cn("overflow-hidden transition-all", !isStatsExpanded && "hidden")}
+            data-testid="stats-content"
           >
-            {isStatsExpanded && (
-              <div className="p-4 pt-0 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Points</span>
-                  <span className="font-medium">{currentUser.points.toLocaleString()}</span>
-                </div>
+            <div className="p-4 pt-0 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Points</span>
+                <span className="font-medium">{currentUser.points.toLocaleString()}</span>
               </div>
-            )}
-          </motion.div>
+            </div>
+          </div>
         </motion.div>
       )}
 

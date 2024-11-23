@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
 
@@ -184,16 +184,20 @@ describe('Leaderboard', () => {
       />
     );
 
-    // Initial state should be collapsed
-    const statsPanel = screen.getByTestId('stats-panel');
-    expect(statsPanel).toHaveClass('hidden');
+    // Initial state - stats panel should be hidden
+    const statsToggle = screen.getByTestId('stats-toggle');
+    const statsContent = screen.getByTestId('stats-content');
+    expect(statsContent).toHaveClass('hidden');
 
     // Click to expand
-    const statsToggle = screen.getByTestId('stats-toggle');
     await userEvent.click(statsToggle);
 
-    // Should now be expanded
-    expect(statsPanel).not.toHaveClass('hidden');
-    expect(screen.getByText('1,000')).toBeInTheDocument();
+    // Stats panel should now be visible and show points
+    expect(statsContent).not.toHaveClass('hidden');
+    
+    // Find points in the stats panel specifically
+    const pointsLabel = screen.getByText('Points');
+    const pointsValue = pointsLabel.nextElementSibling;
+    expect(pointsValue).toHaveTextContent('1,000');
   });
 });
