@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { detectCarrier } from '@/lib/carriers/detection';
+import { gamificationService } from '@/lib/services/gamification-service';
 
 // Validation schema for measurements
 const MeasurementSchema = z.object({
@@ -124,14 +125,23 @@ export async function POST(request: Request) {
           },
         });
 
+        // Process measurement for gamification
+        await gamificationService.processMeasurement(dbMeasurement, userId);
+
         return { measurement: dbMeasurement, coveragePoint };
       })
     );
+
+    // Get updated user progress for response
+    const userProgress = await gamificationService.getUserProgress(userId);
 
     return NextResponse.json({
       success: true,
       processed: processedMeasurements.length,
       measurements: processedMeasurements,
+      gamification: {
+        progress: userProgress,
+      },
     });
   } catch (error) {
     console.error('Error processing measurements:', error);

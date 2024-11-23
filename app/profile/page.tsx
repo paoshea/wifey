@@ -7,6 +7,8 @@ import { AchievementShowcase } from '@/components/gamification/achievement-showc
 import { Leaderboard } from '@/components/gamification/leaderboard';
 import { ProgressVisualization } from '@/components/gamification/progress-visualization';
 import { cn } from '@/lib/utils';
+import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
+import { useQuery } from '@tanstack/react-query';
 
 const tabs = [
   { id: 'progress', label: 'Progress', icon: '📈' },
@@ -15,16 +17,21 @@ const tabs = [
 ] as const;
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('progress');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'allTime'>('weekly');
 
-  if (status === 'loading') {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin text-2xl">🔄</div>
-      </div>
-    );
-  }
+  const { data: progress, isLoading: isLoadingProgress } = useQuery({
+    queryKey: ['userProgress', session?.user?.id],
+    queryFn: () => getCachedUserProgress(session?.user?.id!),
+    enabled: !!session?.user?.id,
+  });
+
+  const { data: leaderboard, isLoading: isLoadingLeaderboard } = useQuery({
+    queryKey: ['leaderboard', selectedTimeframe],
+    queryFn: () => getCachedLeaderboard(selectedTimeframe),
+    enabled: activeTab === 'leaderboard',
+  });
 
   if (!session) {
     return (
@@ -67,6 +74,11 @@ export default function ProfilePage() {
               <div>
                 <h1 className="text-2xl font-bold">{session.user?.name}</h1>
                 <p className="text-gray-600">{session.user?.email}</p>
+                {progress && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Level {progress.level} • {progress.currentXP} / {progress.totalXP} XP
+                  </p>
+                )}
               </div>
             </div>
 
@@ -113,9 +125,64 @@ export default function ProfilePage() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {activeTab === 'progress' && <ProgressVisualization />}
-            {activeTab === 'achievements' && <AchievementShowcase />}
-            {activeTab === 'leaderboard' && <Leaderboard />}
+            {activeTab === 'progress' && (
+              <div className="space-y-6">
+                {isLoadingProgress ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin text-2xl">🔄</div>
+                  </div>
+                ) : progress ? (
+                  <ProgressVisualization progress={progress} />
+                ) : (
+                  <div className="text-center text-gray-500">No progress data available</div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'achievements' && (
+              <div className="space-y-6">
+                {isLoadingProgress ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin text-2xl">🔄</div>
+                  </div>
+                ) : progress ? (
+                  <AchievementShowcase achievements={progress.achievements} />
+                ) : (
+                  <div className="text-center text-gray-500">No achievements data available</div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'leaderboard' && (
+              <div className="space-y-6">
+                <div className="flex justify-end space-x-2">
+                  {(['daily', 'weekly', 'monthly', 'allTime'] as const).map(timeframe => (
+                    <button
+                      key={timeframe}
+                      onClick={() => setSelectedTimeframe(timeframe)}
+                      className={cn(
+                        'px-3 py-1 rounded-md text-sm',
+                        selectedTimeframe === timeframe
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      )}
+                    >
+                      {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {isLoadingLeaderboard ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin text-2xl">🔄</div>
+                  </div>
+                ) : leaderboard ? (
+                  <Leaderboard entries={leaderboard} timeframe={selectedTimeframe} />
+                ) : (
+                  <div className="text-center text-gray-500">No leaderboard data available</div>
+                )}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
