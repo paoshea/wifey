@@ -52,20 +52,22 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     <div className="space-y-6">
       {/* Timeframe tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
-        {timeframes.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => onTimeframeChange?.(key)}
+        {timeframes.map(({ key: tf }) => (
+          <motion.button
+            key={tf}
             className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              timeframe === key
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
+              timeframe === tf ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            onClick={() => onTimeframeChange?.(tf)}
+            variants={{
+              hover: { scale: 1.05 },
+              tap: { scale: 0.95 }
+            }}
+            whileHover="hover"
+            whileTap="tap"
           >
-            {label}
-          </button>
+            {tf.charAt(0).toUpperCase() + tf.slice(1)}
+          </motion.button>
         ))}
       </div>
 
@@ -127,15 +129,16 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
             >
-              <motion.div
-                data-testid={`leaderboard-entry-${entry.id}`}
-                className={`flex items-center p-4 rounded-lg transition-colors ${
-                  entry.isCurrentUser
-                    ? 'bg-blue-50'
-                    : 'hover:bg-gray-50'
-                }`}
-                initial={{ scale: 1 }}
-                whileHover={{ scale: 1.01 }}
+              <motion.div 
+                className="flex items-center p-4 rounded-lg transition-colors hover:bg-gray-50"
+                data-testid={`leaderboard-entry-${entry.rank}`}
+                variants={{
+                  hover: { scale: 1.02 }
+                }}
+                whileHover="hover"
+                initial="initial"
+                animate="animate"
+                exit="exit"
               >
                 <div className="flex-none w-12 text-center font-bold">
                   {getRankEmoji(entry.rank)}

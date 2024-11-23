@@ -6,8 +6,12 @@ import { Leaderboard } from '../leaderboard';
 // Mock Framer Motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    div: ({ children, className, ...props }: any) => (
+      <div className={className}>{children}</div>
+    ),
+    button: ({ children, className, ...props }: any) => (
+      <button className={className}>{children}</button>
+    ),
   },
   AnimatePresence: ({ children }: any) => children,
 }));
@@ -53,9 +57,10 @@ describe('Leaderboard', () => {
   it('displays user stats correctly', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    expect(screen.getByText('Your Position')).toBeInTheDocument();
-    expect(screen.getByText(/Rank #1/)).toBeInTheDocument();
-    expect(screen.getByText(/Level 5/)).toBeInTheDocument();
+    const userStats = screen.getByText('Your Position').closest('div');
+    expect(userStats).toBeInTheDocument();
+    expect(userStats?.textContent).toContain('Rank #1');
+    expect(userStats?.textContent).toContain('Level 5');
   });
 
   it('renders leaderboard entries in correct order', () => {
