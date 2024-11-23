@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GamificationService } from '../../lib/gamification/gamification-service';
 import { LeaderboardEntry } from '../../lib/gamification/types';
-import { Avatar } from '../ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-import { Select } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Spinner } from '../ui/spinner';
 
 interface LeaderboardProps {
@@ -85,12 +85,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ refreshInterval = 3000
         <h2 className="text-2xl font-bold">Leaderboard</h2>
         <Select
           value={timeframe}
-          onChange={(e) => setTimeframe(e.target.value as typeof timeframe)}
+          onValueChange={(value) => setTimeframe(value as typeof timeframe)}
         >
-          <option value="daily">Today</option>
-          <option value="weekly">This Week</option>
-          <option value="monthly">This Month</option>
-          <option value="allTime">All Time</option>
+          <SelectTrigger>
+            <SelectValue placeholder="Select timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Today</SelectItem>
+            <SelectItem value="weekly">This Week</SelectItem>
+            <SelectItem value="monthly">This Month</SelectItem>
+            <SelectItem value="allTime">All Time</SelectItem>
+          </SelectContent>
         </Select>
       </div>
 
@@ -123,11 +128,15 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ refreshInterval = 3000
                 >
                   {entry.rank}
                 </div>
-                <Avatar
-                  src={entry.avatar}
-                  alt={entry.username}
-                  className="ml-4"
-                />
+                <Avatar className="ml-4">
+                  <AvatarImage 
+                    src={entry.avatar} 
+                    alt={entry.username} 
+                  />
+                  <AvatarFallback>
+                    {entry.username.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="ml-4 flex-grow">
                   <div className="font-medium">{entry.username}</div>
                   <div className="text-sm text-gray-500">{entry.points} points</div>
