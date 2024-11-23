@@ -27,6 +27,28 @@ interface OfflineDBSchema extends DBSchema {
   };
 }
 
+type BoundingBox = {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+};
+
+type PendingPoint = {
+  id: string;
+  data: Omit<CarrierCoverage, 'id'>;
+  timestamp: number;
+  retryCount: number;
+};
+
+interface SyncManager {
+  register(tag: string): Promise<void>;
+}
+
+interface SyncServiceWorkerRegistration extends ServiceWorkerRegistration {
+  sync: SyncManager;
+}
+
 export class OfflineStorage {
   private static instance: OfflineStorage;
   private db: IDBPDatabase<OfflineDBSchema> | null = null;
@@ -97,12 +119,7 @@ export class OfflineStorage {
   // Cache coverage data for offline use
   async cacheCoverageData(
     points: CarrierCoverage[],
-    bounds: {
-      minLat: number;
-      maxLat: number;
-      minLng: number;
-      maxLng: number;
-    }
+    bounds: BoundingBox
   ): Promise<void> {
     await this.initialize();
     await this.db!.put('coverageCache', {
@@ -113,14 +130,12 @@ export class OfflineStorage {
   }
 
   // Get cached coverage data
-  async getCachedCoverage(bounds: {
-    minLat: number;
-    maxLat: number;
-    minLng: number;
-    maxLng: number;
-  }): Promise<CarrierCoverage[] | null> {
+  async getCachedCoverage(bounds: BoundingBox): Promise<CarrierCoverage[] | null> {
     await this.initialize();
-    const cached = await this.db!.get('coverageCache', bounds);
+    if (!this.db) return null;
+    
+    const key = JSON.stringify(bounds);
+    const cached = await this.db.get('coverageCache', key);
     
     if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) { // 24 hours
       return cached.points;
@@ -130,7 +145,7 @@ export class OfflineStorage {
 
   // Sync pending points with server
   private async syncPendingPoints(): Promise<void> {
-    if (this.syncInProgress || !navigator.onLine) return;
+    if (this.syncInProgress || !navigator.onLine || !this.db) return;
 
     try {
       this.syncInProgress = true;
@@ -147,14 +162,16 @@ export class OfflineStorage {
           });
 
           if (response.ok) {
-            await this.db!.delete('pendingCoveragePoints', point.id);
+            await this.db.delete('pendingCoveragePoints', point.id);
           } else {
             // Update retry count and timestamp
-            await this.db!.put('pendingCoveragePoints', {
-              ...point,
-              retryCount: (point.retryCount || 0) + 1,
+            const updatedPoint = {
+              id: point.id,
+              data: point.data,
               timestamp: Date.now(),
-            });
+              retryCount: ((point as PendingPoint).retryCount || 0) + 1
+            };
+            await this.db.put('pendingCoveragePoints', updatedPoint);
           }
         } catch (error) {
           console.error('Failed to sync point:', error);
@@ -174,23 +191,26 @@ export class OfflineStorage {
   // Clear old cached data
   async clearOldCache(): Promise<void> {
     await this.initialize();
+    if (!this.db) return;
+    
     const now = Date.now();
     const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
     // Clear old coverage cache
-    const allCache = await this.db!.getAll('coverageCache');
+    const allCache = await this.db.getAll('coverageCache');
     for (const cache of allCache) {
       if (now - cache.timestamp > MAX_AGE) {
-        await this.db!.delete('coverageCache', cache.bounds);
+        await this.db.delete('coverageCache', JSON.stringify(cache.bounds));
       }
     }
 
     // Clear failed pending points
     const MAX_RETRIES = 5;
-    const pending = await this.getPendingPoints();
+    const pending = await this.db.getAll('pendingCoveragePoints');
     for (const point of pending) {
-      if (point.retryCount >= MAX_RETRIES) {
-        await this.db!.delete('pendingCoveragePoints', point.id);
+      const retryCount = (point as PendingPoint).retryCount || 0;
+      if (retryCount >= MAX_RETRIES) {
+        await this.db.delete('pendingCoveragePoints', point.id);
       }
     }
   }
@@ -203,24 +223,39 @@ export class OfflineStorage {
     newestPending: number;
   }> {
     await this.initialize();
+    if (!this.db) return {
+      pendingPoints: 0,
+      cacheSize: 0,
+      oldestPending: 0,
+      newestPending: 0
+    };
+    
     const pending = await this.getPendingPoints();
-    const cache = await this.db!.getAll('coverageCache');
+    const cache = await this.db.getAll('coverageCache');
 
+    const timestamps = pending.map(p => p.timestamp);
     return {
       pendingPoints: pending.length,
       cacheSize: cache.length,
-      oldestPending: Math.min(...pending.map(p => p.timestamp)),
-      newestPending: Math.max(...pending.map(p => p.timestamp)),
+      oldestPending: timestamps.length ? Math.min(...timestamps) : 0,
+      newestPending: timestamps.length ? Math.max(...timestamps) : 0
     };
   }
 
   // Register for background sync (if supported)
   async registerBackgroundSync(): Promise<void> {
-    if ('serviceWorker' in navigator && 'sync' in window.registration) {
+    if (!('serviceWorker' in navigator)) return;
+    
+    const registration = await navigator.serviceWorker.ready as SyncServiceWorkerRegistration;
+    if ('sync' in registration) {
       try {
-        await window.registration.sync.register('sync-coverage-points');
-      } catch (error) {
-        console.error('Background sync registration failed:', error);
+        await registration.sync.register('sync-coverage-points');
+      } catch (err) {
+        if (err instanceof Error) {
+          console.error('Background sync registration failed:', err.message);
+        } else {
+          console.error('Background sync registration failed with unknown error');
+        }
       }
     }
   }

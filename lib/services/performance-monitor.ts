@@ -12,6 +12,18 @@ interface PerformanceThresholds {
   warning: number;
 }
 
+interface LayoutShift extends PerformanceEntry {
+  value: number;
+  hadRecentInput: boolean;
+  sources: ReadonlyArray<LayoutShiftAttribution>;
+}
+
+interface LayoutShiftAttribution {
+  node?: Node;
+  previousRect: DOMRectReadOnly;
+  currentRect: DOMRectReadOnly;
+}
+
 const DEFAULT_THRESHOLDS: Record<string, PerformanceThresholds> = {
   'time-to-interactive': { critical: 3500, warning: 2000 },
   'first-contentful-paint': { critical: 2000, warning: 1000 },
@@ -65,9 +77,10 @@ export class PerformanceMonitor {
     // Observe Layout Shifts
     new PerformanceObserver((entryList) => {
       let clsValue = 0;
-      entryList.getEntries().forEach(entry => {
-        if (!entry.hadRecentInput) {
-          clsValue += (entry as any).value;
+      entryList.getEntries().forEach((entry) => {
+        const layoutShift = entry as LayoutShift;
+        if (!layoutShift.hadRecentInput) {
+          clsValue += layoutShift.value;
         }
       });
       this.recordMetric('cumulative-layout-shift', clsValue);

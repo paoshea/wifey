@@ -7,26 +7,36 @@ interface CacheConfig {
   priority?: 'low' | 'medium' | 'high';  // Cache eviction priority
 }
 
-interface CacheEntry {
-  data: any;
+interface CacheEntry<T> {
+  data: T;
   timestamp: number;
   lastAccessed: number;
   accessCount: number;  // Track how often this entry is accessed
   priority: 'low' | 'medium' | 'high';
 }
 
-export class ApiCache {
-  private static instance: ApiCache;
-  private cache: Map<string, CacheEntry>;
-  private config: CacheConfig;
+interface CacheStats {
+  totalEntries: number;
+  freshEntries: number;
+  staleEntries: number;
+  averageAccessCount: number;
+  totalAccessCount: number;
+  entriesByPriority: Record<'low' | 'medium' | 'high', number>;
+}
+
+export class ApiCache<T> {
+  private static instance: ApiCache<any>;
+  private cache: Map<string, CacheEntry<any>>;
+  private config: Required<CacheConfig>;
   private prefetchQueue: Set<string> = new Set();
 
-  private constructor(config: CacheConfig) {
+  private constructor(config: Partial<CacheConfig>) {
     this.cache = new Map();
     this.config = {
-      maxAge: config.maxAge || 300, // 5 minutes default
-      staleWhileRevalidate: config.staleWhileRevalidate || 600, // 10 minutes default
-      maxEntries: config.maxEntries || 1000, // Increased default size
+      maxAge: config.maxAge ?? 300, // 5 minutes default
+      staleWhileRevalidate: config.staleWhileRevalidate ?? 600, // 10 minutes default
+      maxEntries: config.maxEntries ?? 1000, // Increased default size
+      priority: config.priority ?? 'medium'
     };
 
     // Periodic cleanup and prefetch
@@ -36,15 +46,11 @@ export class ApiCache {
     }
   }
 
-  static getInstance(config?: CacheConfig): ApiCache {
+  static getInstance<T>(config?: Partial<CacheConfig>): ApiCache<T> {
     if (!ApiCache.instance) {
-      ApiCache.instance = new ApiCache(config || {
-        maxAge: 300,
-        staleWhileRevalidate: 600,
-        maxEntries: 1000,
-      });
+      ApiCache.instance = new ApiCache(config || {});
     }
-    return ApiCache.instance;
+    return ApiCache.instance as ApiCache<T>;
   }
 
   async fetch<T>(
@@ -52,152 +58,172 @@ export class ApiCache {
     fetcher: () => Promise<T>,
     config?: Partial<CacheConfig>
   ): Promise<T> {
-    const mergedConfig = { ...this.config, ...config };
     const cacheKey = this.generateCacheKey(key);
-    
-    performanceMonitor.startMark(`api_fetch_${cacheKey}`);
+    const entry = this.cache.get(cacheKey) as CacheEntry<T> | undefined;
 
-    try {
-      const cached = this.cache.get(cacheKey);
-      const now = Date.now();
+    if (entry) {
+      entry.lastAccessed = Date.now();
+      entry.accessCount++;
 
-      if (cached) {
-        // Update access statistics
-        cached.lastAccessed = now;
-        cached.accessCount++;
-
-        // Check if cache is fresh
-        if (now - cached.timestamp < mergedConfig.maxAge * 1000) {
-          performanceMonitor.endMark(`api_fetch_${cacheKey}`, {
-            source: 'cache',
-            age: now - cached.timestamp,
-          });
-          return cached.data;
-        }
-
-        // Check if we can use stale data while revalidating
-        if (now - cached.timestamp < mergedConfig.staleWhileRevalidate * 1000) {
-          // Revalidate in background
-          this.revalidate(cacheKey, fetcher, mergedConfig);
-          
-          performanceMonitor.endMark(`api_fetch_${cacheKey}`, {
-            source: 'stale',
-            age: now - cached.timestamp,
-          });
-          return cached.data;
-        }
+      if (this.isFresh(cacheKey)) {
+        return entry.data;
       }
 
-      // Fetch fresh data
-      const data = await this.fetchAndCache(cacheKey, fetcher, mergedConfig);
-      
-      performanceMonitor.endMark(`api_fetch_${cacheKey}`, {
-        source: 'network',
-      });
-      
-      return data;
-    } catch (error) {
-      performanceMonitor.endMark(`api_fetch_${cacheKey}`, {
-        source: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
+      if (this.isStale(cacheKey)) {
+        this.revalidate(cacheKey, fetcher, { ...this.config, ...config });
+        return entry.data;
+      }
     }
+
+    return this.fetchAndCache(cacheKey, fetcher, { ...this.config, ...config });
   }
 
-  // Add to prefetch queue
   prefetch(key: string): void {
     this.prefetchQueue.add(this.generateCacheKey(key));
   }
 
-  // Process prefetch queue
   private async processPrefetchQueue(): Promise<void> {
     const keys = Array.from(this.prefetchQueue);
     this.prefetchQueue.clear();
 
     for (const key of keys) {
-      const cached = this.cache.get(key);
-      if (cached && this.shouldPrefetch(cached)) {
-        try {
-          await this.revalidate(key, cached.data.fetcher, {
-            ...this.config,
-            priority: cached.priority,
-          });
-        } catch (error) {
-          console.error('Prefetch failed:', error);
-        }
+      const entry = this.cache.get(key);
+      if (entry && this.shouldPrefetch(entry)) {
+        // Prefetch logic here
       }
     }
   }
 
-  // Determine if an entry should be prefetched based on access patterns
-  private shouldPrefetch(entry: CacheEntry): boolean {
+  private shouldPrefetch(entry: CacheEntry<any>): boolean {
     const now = Date.now();
     const age = now - entry.timestamp;
-    
-    // Prefetch if:
-    // 1. Entry is accessed frequently (more than 5 times)
-    // 2. Entry is about to expire (within 20% of maxAge)
-    // 3. Entry has high priority
-    return (
-      entry.accessCount > 5 ||
-      age > (this.config.maxAge * 0.8 * 1000) ||
-      entry.priority === 'high'
-    );
+    const accessRate = entry.accessCount / (age / 1000); // accesses per second
+
+    return accessRate > 0.1 && age > (this.config.maxAge * 1000 * 0.8);
   }
 
   private async revalidate<T>(
     key: string,
     fetcher: () => Promise<T>,
-    config: CacheConfig
+    config: Required<CacheConfig>
   ): Promise<void> {
     try {
       const data = await fetcher();
-      this.set(key, data, config);
+      this.set<T>(key, data, config);
     } catch (error) {
-      console.error('Revalidation failed:', error);
+      console.error('Cache revalidation failed:', error);
     }
   }
 
   private async fetchAndCache<T>(
     key: string,
     fetcher: () => Promise<T>,
-    config: CacheConfig
+    config: Required<CacheConfig>
   ): Promise<T> {
-    const data = await fetcher();
-    this.set(key, data, config);
-    return data;
+    try {
+      const data = await fetcher();
+      this.set<T>(key, data, config);
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch and cache:', error);
+      throw error;
+    }
   }
 
-  private set(key: string, data: any, config: CacheConfig): void {
-    // Ensure we don't exceed max entries
-    if (config.maxEntries && this.cache.size >= config.maxEntries) {
+  private set<T>(key: string, data: T, config: Required<CacheConfig>): void {
+    if (this.cache.size >= config.maxEntries) {
       this.evictEntries();
     }
 
-    this.cache.set(key, {
+    const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
       lastAccessed: Date.now(),
-      accessCount: 0,
-      priority: config.priority || 'low',
-    });
+      accessCount: 1,
+      priority: config.priority
+    };
+
+    this.cache.set(key, entry);
   }
 
-  // Improved cache eviction strategy
   private evictEntries(): void {
-    // First try to evict expired entries
-    let evicted = this.evictExpiredEntries();
-    
-    // If we still need to evict more, use LRU + priority + access count
-    if (this.cache.size >= (this.config.maxEntries || 1000)) {
-      evicted = this.evictLRUEntries();
+    const expired = this.evictExpiredEntries();
+    if (this.cache.size >= this.config.maxEntries) {
+      const lru = this.evictLRUEntries();
+      if (expired > 0 || lru > 0) {
+        performanceMonitor.logEvent('cache-cleanup', {
+          expired,
+          lru,
+          remainingEntries: this.cache.size
+        });
+      }
+    }
+  }
+
+  private evictLRUEntries(): number {
+    const targetSize = Math.floor(this.config.maxEntries * 0.9); // Remove 10% to prevent frequent evictions
+    if (this.cache.size <= targetSize) return 0;
+
+    const entries = Array.from(this.cache.entries())
+      .map(([key, entry]) => ({
+        key,
+        entry,
+        score: this.calculateEvictionScore(entry)
+      }))
+      .sort((a, b) => a.score - b.score);
+
+    const toEvict = entries.slice(0, this.cache.size - targetSize);
+    for (const { key } of toEvict) {
+      this.cache.delete(key);
     }
 
-    // Log eviction statistics
-    if (evicted > 0) {
-      console.debug(`Cache evicted ${evicted} entries`);
+    return toEvict.length;
+  }
+
+  private calculateEvictionScore(entry: CacheEntry<unknown>): number {
+    const now = Date.now();
+    const age = now - entry.timestamp;
+    const priorityOrder: Record<'low' | 'medium' | 'high', number> = { 
+      low: 0, 
+      medium: 1, 
+      high: 2 
+    };
+    return age + (priorityOrder[entry.priority] * 1000) + (entry.accessCount * 100);
+  }
+
+  private cleanup(): void {
+    const expired = this.evictExpiredEntries();
+    if (this.cache.size >= this.config.maxEntries) {
+      const lru = this.evictLRUEntries();
+      if (expired > 0 || lru > 0) {
+        performanceMonitor.logEvent('cache-cleanup', {
+          expired,
+          lru,
+          remainingEntries: this.cache.size
+        });
+      }
     }
+  }
+
+  isFresh(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) return false;
+    
+    const now = Date.now();
+    const age = now - entry.timestamp;
+    return age < this.config.maxAge * 1000;
+  }
+
+  isStale(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) return false;
+    
+    const now = Date.now();
+    const age = now - entry.timestamp;
+    const maxAge = this.config.maxAge * 1000;
+    const staleWhileRevalidate = this.config.staleWhileRevalidate * 1000;
+    
+    return age >= maxAge && age < (maxAge + staleWhileRevalidate);
   }
 
   private evictExpiredEntries(): number {
@@ -205,40 +231,11 @@ export class ApiCache {
     let evicted = 0;
 
     for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > this.config.staleWhileRevalidate * 1000) {
+      const expirationTime = entry.timestamp + (this.config.staleWhileRevalidate * 1000);
+      if (now > expirationTime) {
         this.cache.delete(key);
         evicted++;
       }
-    }
-
-    return evicted;
-  }
-
-  private evictLRUEntries(): number {
-    // Sort entries by priority and last accessed time
-    const entries = Array.from(this.cache.entries())
-      .sort((a, b) => {
-        // First sort by priority
-        const priorityOrder = { low: 0, medium: 1, high: 2 };
-        const priorityDiff = priorityOrder[a[1].priority] - priorityOrder[b[1].priority];
-        
-        if (priorityDiff !== 0) return priorityDiff;
-        
-        // Then by access count
-        const accessDiff = b[1].accessCount - a[1].accessCount;
-        if (accessDiff !== 0) return accessDiff;
-        
-        // Finally by last accessed time
-        return b[1].lastAccessed - a[1].lastAccessed;
-      });
-
-    // Remove 25% of entries
-    const removeCount = Math.ceil(this.cache.size * 0.25);
-    let evicted = 0;
-
-    for (let i = 0; i < removeCount && i < entries.length; i++) {
-      this.cache.delete(entries[i][0]);
-      evicted++;
     }
 
     return evicted;
@@ -249,20 +246,19 @@ export class ApiCache {
   }
 
   // Get cache statistics
-  getStats() {
+  getStats(): CacheStats {
     const now = Date.now();
-    const stats = {
-      size: this.cache.size,
-      maxEntries: this.config.maxEntries,
-      entriesByPriority: {
-        low: 0,
-        medium: 0,
-        high: 0,
-      },
+    const stats: CacheStats = {
+      totalEntries: this.cache.size,
       freshEntries: 0,
       staleEntries: 0,
       averageAccessCount: 0,
       totalAccessCount: 0,
+      entriesByPriority: {
+        low: 0,
+        medium: 0,
+        high: 0
+      }
     };
 
     for (const entry of this.cache.values()) {
@@ -276,7 +272,10 @@ export class ApiCache {
       }
     }
 
-    stats.averageAccessCount = stats.totalAccessCount / this.cache.size;
+    stats.averageAccessCount = stats.totalEntries > 0 
+      ? stats.totalAccessCount / stats.totalEntries 
+      : 0;
+
     return stats;
   }
 
@@ -287,19 +286,6 @@ export class ApiCache {
 
   remove(key: string): void {
     this.cache.delete(this.generateCacheKey(key));
-  }
-
-  isFresh(key: string): boolean {
-    const entry = this.cache.get(this.generateCacheKey(key));
-    if (!entry) return false;
-    return Date.now() - entry.timestamp < this.config.maxAge * 1000;
-  }
-
-  isStale(key: string): boolean {
-    const entry = this.cache.get(this.generateCacheKey(key));
-    if (!entry) return false;
-    const age = Date.now() - entry.timestamp;
-    return age > this.config.maxAge * 1000 && age < this.config.staleWhileRevalidate * 1000;
   }
 }
 

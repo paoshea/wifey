@@ -1,6 +1,19 @@
 import { GamificationDB } from './db/gamification-db';
-import type { Measurement } from '@prisma/client';
+import type { Measurement, UserProgress } from '@prisma/client';
 import { cache } from 'react';
+
+interface UserStats {
+  totalMeasurements: number;
+  ruralMeasurements: number;
+  uniqueLocations: number;
+  totalDistance: number;
+  contributionScore: number;
+  lastUpdated: Date;
+}
+
+interface UserProgressWithStats extends UserProgress {
+  stats: UserStats;
+}
 
 class GamificationService {
   private db: GamificationDB;
@@ -17,21 +30,29 @@ class GamificationService {
     await this.updateLeaderboards(userId, score);
   }
 
-  async getUserProgress(userId: string) {
-    return this.db.getUserProgress(userId);
+  async getUserProgress(userId: string): Promise<UserProgressWithStats | null> {
+    return this.db.getUserProgress(userId) as Promise<UserProgressWithStats | null>;
   }
 
   private async calculateScore(userId: string): Promise<number> {
-    const stats = (await this.getUserProgress(userId))?.stats;
-    if (!stats) return 0;
+    const progress = await this.getUserProgress(userId);
+    if (!progress?.stats) return 0;
+
+    const {
+      totalMeasurements,
+      ruralMeasurements,
+      uniqueLocations,
+      totalDistance,
+      contributionScore
+    } = progress.stats;
 
     // Score calculation formula
     return (
-      stats.totalMeasurements * 10 +
-      stats.ruralMeasurements * 20 +
-      stats.uniqueLocations * 30 +
-      Math.floor(stats.totalDistance / 1000) * 50 +
-      stats.contributionScore * 2
+      totalMeasurements * 10 +
+      ruralMeasurements * 20 +
+      uniqueLocations * 30 +
+      Math.floor(totalDistance / 1000) * 50 +
+      contributionScore * 2
     );
   }
 

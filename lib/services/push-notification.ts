@@ -120,7 +120,8 @@ export class PushNotificationService {
       body: 'This is a test notification',
       icon: '/logo.svg',
       badge: '/logo.svg',
-      vibrate: [100, 50, 100],
+      silent: false,
+      requireInteraction: true,
       data: {
         dateOfArrival: Date.now(),
         primaryKey: 'test',
@@ -129,14 +130,14 @@ export class PushNotificationService {
       actions: [
         {
           action: 'explore',
-          title: 'View App',
+          title: 'View Details'
         },
         {
           action: 'close',
-          title: 'Close',
-        },
-      ],
-    });
+          title: 'Close'
+        }
+      ]
+    } as NotificationOptions);
   }
 
   // Check if push notifications are supported

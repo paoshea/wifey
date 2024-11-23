@@ -1,22 +1,29 @@
-import { PrismaClient, User, UserProgress, UserStreak, UserBadge, LeaderboardEntry } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { apiCache } from './api-cache';
 import { createApiError } from '../api/error-handler';
 
 const prisma = new PrismaClient();
 
-export interface LeaderboardEntry {
+export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
+
+export interface LeaderboardUser {
   userId: string;
   username: string;
-  avatar?: string;
-  rank: number;
+  avatar?: string | null;
   points: number;
   contributions: number;
   badges: number;
+  currentStreak: number;
+  longestStreak: number;
+  level: number;
+}
+
+export interface LeaderboardEntry extends Omit<LeaderboardUser, 'currentStreak' | 'longestStreak'> {
+  rank: number;
   streak: {
     current: number;
     longest: number;
   };
-  level: number;
 }
 
 export interface LeaderboardStats {
@@ -38,8 +45,6 @@ export interface LeaderboardResponse {
   };
   stats?: LeaderboardStats;
 }
-
-type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
 interface DateFilter {
   createdAt?: {
@@ -109,7 +114,8 @@ export class LeaderboardService {
               user: {
                 select: {
                   name: true,
-                  email: true
+                  email: true,
+                  image: true
                 }
               },
               streaks: {
@@ -140,19 +146,19 @@ export class LeaderboardService {
             skip: offset
           });
 
-          const entries = users.map((user, index) => ({
+          const entries: LeaderboardEntry[] = users.map((user, index) => ({
             userId: user.userId,
             username: user.user.name ?? user.user.email.split('@')[0],
-            avatar: undefined, // Add avatar support if needed
+            avatar: user.user.image ?? undefined,
             rank: offset + index + 1,
             points: user.totalPoints,
             contributions: user.stats?.totalMeasurements ?? 0,
             badges: user.badges.length,
+            level: user.level,
             streak: {
               current: user.streaks?.currentStreak ?? 0,
               longest: user.streaks?.longestStreak ?? 0
-            },
-            level: user.level
+            }
           }));
 
           const stats = includeStats ? await this.getLeaderboardStats(tx, dateFilter) : undefined;
