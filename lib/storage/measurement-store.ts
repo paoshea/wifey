@@ -1,15 +1,17 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { SignalMeasurement } from '@/lib/monitoring/signal-monitor';
+import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
+
+export interface MeasurementRecord extends SignalMeasurement {
+  id: string;  // Required for stored measurements
+  syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
+  errorMessage?: string;
+  retryCount: number;
+}
 
 interface WifeyDB extends DBSchema {
   measurements: {
     key: string;
-    value: SignalMeasurement & {
-      id: string;
-      syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
-      errorMessage?: string;
-      retryCount: number;
-    };
+    value: MeasurementRecord;
     indexes: {
       'by-timestamp': number;
       'by-sync-status': string;
@@ -27,11 +29,11 @@ export class MeasurementStore {
     if (this.db) return;
 
     this.db = await openDB<WifeyDB>(this.DB_NAME, 1, {
-      upgrade(db) {
+      upgrade(db: IDBPDatabase<WifeyDB>) {
         const store = db.createObjectStore('measurements', {
           keyPath: 'id',
         });
-        
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         store.createIndex('by-timestamp', 'timestamp');
         store.createIndex('by-sync-status', 'syncStatus');
       },
@@ -39,82 +41,69 @@ export class MeasurementStore {
   }
 
   async storeMeasurement(measurement: SignalMeasurement): Promise<string> {
-    await this.initialize();
-    
+    if (!this.db) await this.initialize();
+    if (!this.db) throw new Error('Failed to initialize database');
+
     const id = crypto.randomUUID();
-    const record = {
+    const measurementWithMeta = {
       ...measurement,
       id,
       syncStatus: 'pending' as const,
       retryCount: 0,
     };
 
-    await this.db!.add('measurements', record);
+    await this.db.add('measurements', measurementWithMeta);
     return id;
   }
 
-  async getPendingMeasurements(): Promise<Array<WifeyDB['measurements']['value']>> {
-    await this.initialize();
-    return this.db!.getAllFromIndex(
-      'measurements',
-      'by-sync-status',
-      'pending'
-    );
+  async getMeasurements(limit = 100): Promise<Array<SignalMeasurement & { id: string }>> {
+    if (!this.db) await this.initialize();
+    if (!this.db) throw new Error('Failed to initialize database');
+
+    return this.db.getAllFromIndex('measurements', 'by-timestamp', null, limit);
   }
 
-  async updateSyncStatus(
+  async getPendingMeasurements(): Promise<Array<SignalMeasurement & { id: string }>> {
+    if (!this.db) await this.initialize();
+    if (!this.db) throw new Error('Failed to initialize database');
+
+    return this.db.getAllFromIndex('measurements', 'by-sync-status', 'pending');
+  }
+
+  async updateMeasurementStatus(
     id: string,
     status: 'syncing' | 'synced' | 'error',
     errorMessage?: string
   ): Promise<void> {
-    await this.initialize();
-    
-    const record = await this.db!.get('measurements', id);
-    if (!record) return;
+    if (!this.db) await this.initialize();
+    if (!this.db) throw new Error('Failed to initialize database');
 
-    const updatedRecord = {
-      ...record,
-      syncStatus: status,
-      errorMessage,
-      retryCount: status === 'error' ? record.retryCount + 1 : record.retryCount,
-    };
+    const measurement = await this.db.get('measurements', id);
+    if (!measurement) return;
 
-    await this.db!.put('measurements', updatedRecord);
+    measurement.syncStatus = status;
+    if (errorMessage) measurement.errorMessage = errorMessage;
+    if (status === 'error') measurement.retryCount++;
+
+    await this.db.put('measurements', measurement);
   }
 
-  async getMeasurementsByTimeRange(
-    startTime: number,
-    endTime: number
-  ): Promise<Array<WifeyDB['measurements']['value']>> {
-    await this.initialize();
-    
-    const range = IDBKeyRange.bound(startTime, endTime);
-    return this.db!.getAllFromIndex('measurements', 'by-timestamp', range);
-  }
+  async clearOldMeasurements(olderThanDays = 30): Promise<void> {
+    if (!this.db) await this.initialize();
+    if (!this.db) throw new Error('Failed to initialize database');
 
-  async cleanupOldMeasurements(maxAgeMs: number): Promise<void> {
-    await this.initialize();
-    
-    const cutoffTime = Date.now() - maxAgeMs;
-    const oldMeasurements = await this.getMeasurementsByTimeRange(0, cutoffTime);
-    
-    const tx = this.db!.transaction('measurements', 'readwrite');
-    await Promise.all([
-      ...oldMeasurements
-        .filter(m => m.syncStatus === 'synced')
-        .map(m => tx.store.delete(m.id)),
-      tx.done,
-    ]);
-  }
+    const cutoff = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
+    const tx = this.db.transaction('measurements', 'readwrite');
+    const store = tx.objectStore('measurements');
+    const index = store.index('by-timestamp');
 
-  async getFailedMeasurements(): Promise<Array<WifeyDB['measurements']['value']>> {
-    await this.initialize();
-    const records = await this.db!.getAllFromIndex(
-      'measurements',
-      'by-sync-status',
-      'error'
-    );
-    return records.filter(r => r.retryCount < this.MAX_RETRY_COUNT);
+    let cursor = await index.openCursor(IDBKeyRange.upperBound(cutoff));
+    while (cursor) {
+      await cursor.delete();
+      cursor = await cursor.continue();
+    }
+
+    await tx.done;
   }
 }
 

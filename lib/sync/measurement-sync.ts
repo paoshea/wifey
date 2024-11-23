@@ -1,5 +1,6 @@
-import { measurementStore } from '../storage/measurement-store';
-import { SignalMeasurement } from '../monitoring/signal-monitor';
+import { measurementStore } from '@/lib/storage/measurement-store';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
+import type { MeasurementRecord } from '@/lib/storage/measurement-store';
 
 interface SyncStats {
   pending: number;
@@ -27,47 +28,55 @@ export class MeasurementSync {
   }
 
   private async validateMeasurement(measurement: SignalMeasurement): Promise<boolean> {
-    // Basic validation rules
+    // Check required fields
     if (!measurement.timestamp || 
-        !measurement.location?.lat || 
-        !measurement.location?.lng ||
-        typeof measurement.signalStrength !== 'number') {
+        !measurement.carrier || 
+        !measurement.network ||
+        !measurement.networkType ||
+        !measurement.geolocation ||
+        !measurement.geolocation.lat ||
+        !measurement.geolocation.lng ||
+        !measurement.signalStrength ||
+        !measurement.technology ||
+        !measurement.provider) {
       return false;
     }
 
-    // Validate location bounds (rough worldwide bounds)
-    if (measurement.location.lat < -90 || measurement.location.lat > 90 ||
-        measurement.location.lng < -180 || measurement.location.lng > 180) {
+    // Validate latitude and longitude
+    const { lat, lng } = measurement.geolocation;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       return false;
     }
 
-    // Validate timestamp (not in future, not too old)
-    const now = Date.now();
-    const oneMonthAgo = now - (30 * 24 * 60 * 60 * 1000);
-    if (measurement.timestamp > now || measurement.timestamp < oneMonthAgo) {
-      return false;
-    }
-
-    // Validate signal strength (normalized between 0 and 4)
-    if (measurement.signalStrength < 0 || measurement.signalStrength > 4) {
+    // Validate signal strength (assuming dBm values between -120 and 0)
+    if (measurement.signalStrength < -120 || measurement.signalStrength > 0) {
       return false;
     }
 
     return true;
   }
 
-  private async syncBatch(measurements: SignalMeasurement[]): Promise<void> {
-    const validMeasurements = measurements.filter(m => this.validateMeasurement(m));
-    
-    if (validMeasurements.length === 0) return;
+  private async syncBatch(measurements: MeasurementRecord[]): Promise<void> {
+    // Validate measurements before syncing
+    const validMeasurements = await Promise.all(
+      measurements.map(async m => {
+        const isValid = await this.validateMeasurement(m);
+        return isValid ? m : null;
+      })
+    );
+
+    // Filter out invalid measurements
+    const filteredMeasurements = validMeasurements.filter((m): m is MeasurementRecord => m !== null);
+    if (filteredMeasurements.length === 0) return;
 
     try {
+      // Attempt to sync with server
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(validMeasurements),
+        body: JSON.stringify(filteredMeasurements),
       });
 
       if (!response.ok) {
@@ -76,16 +85,19 @@ export class MeasurementSync {
 
       // Mark measurements as synced
       await Promise.all(
-        validMeasurements.map(m => 
-          measurementStore.updateSyncStatus((m as any).id, 'synced')
+        filteredMeasurements.map(m => 
+          measurementStore.updateMeasurementStatus(
+            m.id,
+            'synced'
+          )
         )
       );
     } catch (error) {
       // Mark measurements as failed
       await Promise.all(
-        validMeasurements.map(m =>
-          measurementStore.updateSyncStatus(
-            (m as any).id,
+        filteredMeasurements.map(m =>
+          measurementStore.updateMeasurementStatus(
+            m.id,
             'error',
             error instanceof Error ? error.message : 'Unknown error'
           )
@@ -96,16 +108,16 @@ export class MeasurementSync {
   }
 
   private async getSyncStats(): Promise<SyncStats> {
-    const [pending, failed] = await Promise.all([
-      measurementStore.getPendingMeasurements(),
-      measurementStore.getFailedMeasurements(),
-    ]);
-
+    const [allMeasurements, pendingMeasurements] = await Promise.all([
+      measurementStore.getMeasurements(),
+      measurementStore.getPendingMeasurements()
+    ]) as [MeasurementRecord[], MeasurementRecord[]];
+    
     return {
-      pending: pending.length,
-      syncing: pending.filter(m => m.syncStatus === 'syncing').length,
-      synced: 0, // We don't keep synced measurements in memory
-      failed: failed.length,
+      pending: pendingMeasurements.length,
+      syncing: allMeasurements.filter(m => m.syncStatus === 'syncing').length,
+      synced: allMeasurements.filter(m => m.syncStatus === 'synced').length,
+      failed: allMeasurements.filter(m => m.syncStatus === 'error').length,
     };
   }
 
@@ -115,7 +127,7 @@ export class MeasurementSync {
     this.isSyncing = true;
     try {
       // Get pending measurements
-      const pendingMeasurements = await measurementStore.getPendingMeasurements();
+      const pendingMeasurements = await measurementStore.getPendingMeasurements() as MeasurementRecord[];
       
       // Process in batches of 50
       const batchSize = 50;
@@ -125,7 +137,7 @@ export class MeasurementSync {
       }
 
       // Clean up old measurements
-      await measurementStore.cleanupOldMeasurements(30 * 24 * 60 * 60 * 1000); // 30 days
+      await measurementStore.clearOldMeasurements(30); // 30 days
 
       // Get and report sync stats
       const stats = await this.getSyncStats();

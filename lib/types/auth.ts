@@ -22,14 +22,14 @@ export interface AuthError {
 }
 
 export const ROLE_PERMISSIONS = {
-  user: ['read:coverage', 'create:coverage', 'update:own-coverage'],
+  user: ['read:coverage', 'create:coverage', 'update:own-coverage'] as const,
   moderator: [
     'read:coverage',
     'create:coverage',
     'update:coverage',
     'delete:coverage',
     'verify:coverage',
-  ],
+  ] as const,
   admin: [
     'read:coverage',
     'create:coverage',
@@ -38,12 +38,11 @@ export const ROLE_PERMISSIONS = {
     'verify:coverage',
     'manage:users',
     'manage:roles',
-  ],
+  ] as const,
 } as const;
 
-export type Permission = typeof ROLE_PERMISSIONS[UserRole][number];
+export type Permission = (typeof ROLE_PERMISSIONS)[keyof typeof ROLE_PERMISSIONS][number];
 
 export function hasPermission(user: User, permission: Permission): boolean {
-  const userPermissions = ROLE_PERMISSIONS[user.role];
-  return userPermissions.includes(permission);
+  return ROLE_PERMISSIONS[user.role].includes(permission as any);
 }

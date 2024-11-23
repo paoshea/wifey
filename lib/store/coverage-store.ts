@@ -1,16 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
+import { produce } from 'immer';
 import { get, set } from 'idb-keyval';
-import { CarrierCoverage } from '@/lib/carriers/types';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
 
 interface CoverageState {
-  coveragePoints: CarrierCoverage[];
-  pendingUpdates: Array<{
-    type: 'add' | 'update';
-    data: Partial<CarrierCoverage>;
-    timestamp: number;
-  }>;
+  coveragePoints: SignalMeasurement[];
+  pendingUpdates: { type: 'add' | 'update'; data: Partial<SignalMeasurement>; timestamp: number }[];
   selectedLocation: { lat: number; lng: number } | null;
   selectedProvider: string | null;
   lastFetched: Record<string, number>;
@@ -18,9 +14,9 @@ interface CoverageState {
 }
 
 interface CoverageActions {
-  setCoveragePoints: (points: CarrierCoverage[]) => void;
-  addCoveragePoint: (point: CarrierCoverage) => void;
-  updateCoveragePoint: (pointId: string, data: Partial<CarrierCoverage>) => void;
+  setCoveragePoints: (points: SignalMeasurement[]) => void;
+  addCoveragePoint: (point: SignalMeasurement) => void;
+  updateCoveragePoint: (pointId: string, data: Partial<SignalMeasurement>) => void;
   setSelectedLocation: (location: { lat: number; lng: number } | null) => void;
   setSelectedProvider: (provider: string | null) => void;
   setIsOffline: (offline: boolean) => void;
@@ -33,7 +29,8 @@ const customStorage = {
     try {
       const value = await get(name);
       return value ? JSON.stringify(value) : null;
-    } catch {
+    } catch (error) {
+      console.error('Error getting item from storage:', error);
       return null;
     }
   },
@@ -41,12 +38,16 @@ const customStorage = {
     try {
       const parsed = JSON.parse(value);
       await set(name, parsed);
-    } catch {}
+    } catch (error) {
+      console.error('Error setting item in storage:', error);
+    }
   },
   removeItem: async (name: string): Promise<void> => {
     try {
       await set(name, undefined);
-    } catch {}
+    } catch (error) {
+      console.error('Error removing item from storage:', error);
+    }
   },
 };
 
@@ -57,7 +58,7 @@ const isStale = (timestamp: number) => {
 
 export const useCoverageStore = create<CoverageState & CoverageActions>()(
   persist(
-    immer((set, get) => ({
+    (set, get) => ({
       coveragePoints: [],
       pendingUpdates: [],
       selectedLocation: null,
@@ -66,58 +67,64 @@ export const useCoverageStore = create<CoverageState & CoverageActions>()(
       isOffline: false,
 
       setCoveragePoints: (points) =>
-        set((state) => {
-          state.coveragePoints = points;
-          state.lastFetched[`coverage-${state.selectedProvider || 'all'}`] = Date.now();
-        }),
+        set(
+          produce((state: CoverageState) => {
+            state.coveragePoints = points;
+            state.lastFetched[`coverage-${state.selectedProvider || 'all'}`] = Date.now();
+          })
+        ),
 
       addCoveragePoint: (point) =>
-        set((state) => {
-          state.coveragePoints.push(point);
-          // Add to pending updates if offline
-          if (state.isOffline) {
-            state.pendingUpdates.push({
-              type: 'add',
-              data: point,
-              timestamp: Date.now(),
-            });
-          }
-        }),
-
-      updateCoveragePoint: (pointId, data) =>
-        set((state) => {
-          const pointIndex = state.coveragePoints.findIndex((p) => p.id === pointId);
-          if (pointIndex !== -1) {
-            state.coveragePoints[pointIndex] = {
-              ...state.coveragePoints[pointIndex],
-              ...data,
-            };
-
-            // Add to pending updates if offline
+        set(
+          produce((state: CoverageState) => {
+            state.coveragePoints.push(point);
             if (state.isOffline) {
               state.pendingUpdates.push({
-                type: 'update',
-                data: { id: pointId, ...data },
+                type: 'add',
+                data: point,
                 timestamp: Date.now(),
               });
             }
-          }
-        }),
+          })
+        ),
+
+      updateCoveragePoint: (pointId: string, data: Partial<SignalMeasurement>) =>
+        set(
+          produce((state: CoverageState) => {
+            const point = state.coveragePoints.find((p: SignalMeasurement) => p.id && p.id === pointId);
+            if (point) {
+              Object.assign(point, data);
+              if (state.isOffline) {
+                state.pendingUpdates.push({
+                  type: 'update',
+                  data: { id: pointId, ...data },
+                  timestamp: Date.now(),
+                });
+              }
+            }
+          })
+        ),
 
       setSelectedLocation: (location) =>
-        set((state) => {
-          state.selectedLocation = location;
-        }),
+        set(
+          produce((state: CoverageState) => {
+            state.selectedLocation = location;
+          })
+        ),
 
       setSelectedProvider: (provider) =>
-        set((state) => {
-          state.selectedProvider = provider;
-        }),
+        set(
+          produce((state: CoverageState) => {
+            state.selectedProvider = provider;
+          })
+        ),
 
       setIsOffline: (offline) =>
-        set((state) => {
-          state.isOffline = offline;
-        }),
+        set(
+          produce((state: CoverageState) => {
+            state.isOffline = offline;
+          })
+        ),
 
       syncPendingUpdates: async () => {
         const state = get();
@@ -143,16 +150,18 @@ export const useCoverageStore = create<CoverageState & CoverageActions>()(
           }
 
           // Clear synced updates
-          set((state) => {
-            state.pendingUpdates = state.pendingUpdates.filter(
-              (update) => !updates.includes(update)
-            );
-          });
+          set(
+            produce((state: CoverageState) => {
+              state.pendingUpdates = state.pendingUpdates.filter(
+                (update) => !updates.includes(update)
+              );
+            })
+          );
         } catch (error) {
           console.error('Failed to sync updates:', error);
         }
       },
-    })),
+    }),
     {
       name: 'coverage-store',
       storage: createJSONStorage(() => customStorage),

@@ -1,4 +1,5 @@
 import { CarrierCoverage } from '../carriers/types';
+import type { SignalMeasurement } from '../types/monitoring';
 
 interface SignalMeasurement {
   timestamp: number;

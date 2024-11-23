@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import type { LatLng } from 'leaflet';
-import { CarrierCoverage } from '../carriers/types';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
 
 // Custom marker icons for different signal strengths
 export const getSignalIcon = (signalStrength: number): L.Icon => {
@@ -18,20 +18,19 @@ export const getSignalIcon = (signalStrength: number): L.Icon => {
 };
 
 // Convert coverage points to heatmap data format
-export const coverageToHeatmapData = (coverage: CarrierCoverage[]): Array<[number, number, number]> => {
-  return coverage.map(point => [
-    point.location.lat,
-    point.location.lng,
-    point.signalStrength / 100, // Normalize to 0-1 range for intensity
-  ] as [number, number, number]);
+export const coverageToHeatmapData = (measurements: SignalMeasurement[]): Array<[number, number, number]> => {
+  return measurements.map(measurement => {
+    const { lat, lng } = measurement.geolocation;
+    return [lat, lng, measurement.signalStrength];
+  });
 };
 
 // Calculate route optimization between two points considering coverage
-export const optimizeRoute = async (
+export const optimizeRoute = (
   start: [number, number],
   end: [number, number],
-  coverage: CarrierCoverage[]
-): Promise<Array<[number, number]>> => {
+  measurements: SignalMeasurement[]
+): Array<[number, number]> => {
   // Create a grid of points between start and end
   const points: Array<[number, number]> = [];
   const steps = 10;
@@ -43,41 +42,48 @@ export const optimizeRoute = async (
   }
 
   // Find nearest coverage points and adjust route
-  const optimizedRoute = points.map(point => {
-    const nearest = findNearestCoveragePoint(point, coverage);
-    return nearest ? [nearest.location.lat, nearest.location.lng] as [number, number] : point;
+  const optimizedRoute = points.map((point: [number, number]): [number, number] => {
+    const nearest = findNearestCoveragePoint(point, measurements);
+    return nearest ? [nearest.geolocation.lat, nearest.geolocation.lng] : point;
   });
-
+  
   return optimizedRoute;
 };
 
 // Helper function to find nearest coverage point
-const findNearestCoveragePoint = (
+export const findNearestCoveragePoint = (
   point: [number, number],
-  coverage: CarrierCoverage[]
-): CarrierCoverage | null => {
-  let nearest: CarrierCoverage | null = null;
-  let minDistance = Infinity;
+  measurements: SignalMeasurement[]
+): SignalMeasurement | null => {
+  if (!measurements.length) return null;
 
-  coverage.forEach(coveragePoint => {
+  let nearest = measurements[0];
+  let minDistance = calculateDistance(
+    point[0],
+    point[1],
+    nearest.geolocation.lat,
+    nearest.geolocation.lng
+  );
+
+  for (const measurement of measurements) {
     const distance = calculateDistance(
       point[0],
       point[1],
-      coveragePoint.location.lat,
-      coveragePoint.location.lng
+      measurement.geolocation.lat,
+      measurement.geolocation.lng
     );
 
-    if (distance < minDistance && coveragePoint.signalStrength >= 40) {
+    if (distance < minDistance) {
       minDistance = distance;
-      nearest = coveragePoint;
+      nearest = measurement;
     }
-  });
+  }
 
   return nearest;
 };
 
 // Calculate distance between two points using Haversine formula
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
