@@ -135,8 +135,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 className={`flex items-center p-4 rounded-lg transition-colors ${
                   entry.isCurrentUser ? 'bg-blue-50' : 'hover:bg-gray-50'
                 }`}
-                role="button"
-                tabIndex={0}
                 data-testid={`leaderboard-entry-${entry.rank}`}
                 variants={{
                   hover: { scale: 1.02 }

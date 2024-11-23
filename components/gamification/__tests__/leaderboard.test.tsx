@@ -73,12 +73,10 @@ describe('Leaderboard', () => {
   it('highlights current user\'s entry', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    // Find all leaderboard entries
-    const entries = screen.getAllByRole('button', { hidden: true }).filter(el => 
-      el.className.includes('flex items-center p-4 rounded-lg')
-    );
-    const currentUserEntry = entries.find(entry => entry.className.includes('bg-blue-50'));
-    expect(currentUserEntry).toBeInTheDocument();
+    // Find the current user's entry by username
+    const currentUserEntry = screen.getByText('Test User')
+      .closest('.flex.items-center.p-4');
+    expect(currentUserEntry).toHaveClass('bg-blue-50');
   });
 
   it('displays empty state when no entries exist', () => {
@@ -96,8 +94,8 @@ describe('Leaderboard', () => {
       />
     );
     
-    const monthlyTab = screen.getByRole('button', { name: 'This Month' });
-    await userEvent.click(monthlyTab);
+    const monthlyTab = screen.getByRole('button', { name: /This Month/i });
+    fireEvent.click(monthlyTab);
     expect(onTimeframeChange).toHaveBeenCalledWith('monthly');
   });
 
