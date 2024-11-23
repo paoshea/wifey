@@ -15,6 +15,8 @@ model User {
   updatedAt     DateTime       @updatedAt
   contributions CoveragePoint[]
   measurements  Measurement[]
+  progress      UserProgress?
+  leaderboard   LeaderboardEntry[]
 }
 
 model CoveragePoint {
@@ -77,8 +79,8 @@ model CoverageComparison {
 
 // Gamification Models
 model UserProgress {
-  id              String    @id @default(cuid())
-  userId          String    @unique
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String    @unique @db.ObjectId
   user            User      @relation(fields: [userId], references: [id])
   totalPoints     Int       @default(0)
   level           Int       @default(1)
@@ -90,13 +92,11 @@ model UserProgress {
   badges         UserBadge[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-
-  @@index([userId])
 }
 
 model UserStats {
-  id                String    @id @default(cuid())
-  userProgressId    String    @unique
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  userProgressId    String    @unique @db.ObjectId
   userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
   totalMeasurements Int       @default(0)
   ruralMeasurements Int       @default(0)
@@ -108,12 +108,10 @@ model UserStats {
   accuracyRate     Float     @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-
-  @@index([userProgressId])
 }
 
 model Achievement {
-  id          String    @id @default(cuid())
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   category    String
   title       String    @unique
   description String
@@ -131,11 +129,11 @@ model Achievement {
 }
 
 model UserAchievement {
-  id            String    @id @default(cuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String
+  userProgressId String   @db.ObjectId
   achievement   Achievement @relation(fields: [achievementId], references: [id])
-  achievementId String
+  achievementId String    @db.ObjectId
   progress      Int       @default(0)
   completed     Boolean   @default(false)
   completedAt   DateTime?
@@ -148,27 +146,23 @@ model UserAchievement {
 }
 
 model UserStreak {
-  id            String    @id @default(cuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String   @unique
+  userProgressId String   @unique @db.ObjectId
   currentStreak Int       @default(0)
-  longestStreak Int       @default(0)
-  lastActiveDate DateTime?
-  streakHistory Json[]    // Array of daily streak records
+  lastUpdated   DateTime  @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  @@index([userProgressId])
 }
 
 model UserBadge {
-  id            String    @id @default(cuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String
-  badgeType     String    // CONTRIBUTOR, EXPLORER, VERIFIER, etc.
+  userProgressId String   @db.ObjectId
+  badgeType     String
   level         Int       @default(1)
   progress      Int       @default(0)
-  nextLevel     Int       @default(100)
+  unlockedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -178,17 +172,17 @@ model UserBadge {
 }
 
 model LeaderboardEntry {
-  id          String    @id @default(cuid())
-  userId      String
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
   user        User      @relation(fields: [userId], references: [id])
-  points      Int
-  timeframe   String    // daily, weekly, monthly, allTime
-  date        DateTime  // The date this entry is for
+  points      Int       @default(0)
   rank        Int
-  metadata    Json?     // Additional stats for the leaderboard period
+  timeframe   String    // daily, weekly, monthly, allTime
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  @@unique([userId, timeframe, date])
-  @@index([timeframe, date])
+  @@unique([userId, timeframe])
   @@index([userId])
+  @@index([timeframe])
+  @@index([points])
 }

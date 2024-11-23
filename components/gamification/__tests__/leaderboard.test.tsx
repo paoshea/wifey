@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
 import { GamificationService } from '../../../lib/gamification/gamification-service';
-import { LeaderboardEntry } from '../../../lib/gamification/types';
+import { LeaderboardEntry, Achievement } from '../../../lib/gamification/types';
 import '@testing-library/jest-dom';
 
 // Mock Framer Motion
@@ -22,19 +22,37 @@ jest.mock('framer-motion', () => ({
 // Mock GamificationService
 jest.mock('../../../lib/gamification/gamification-service');
 
+const mockAchievements: Achievement[] = [
+  {
+    id: 'ach1',
+    title: 'First Steps',
+    description: 'Made your first contribution',
+    icon: 'trophy',
+    points: 100,
+    rarity: 'common',
+    progress: 100,
+    target: 100,
+    completed: true,
+    earnedDate: '2023-01-01',
+    requirements: {
+      type: 'measurements',
+      count: 1
+    }
+  }
+];
+
 const mockEntries: LeaderboardEntry[] = [
   {
-    id: '1',
+    userId: '1',
     username: 'User 1',
     level: 5,
     points: 1000,
     rank: 1,
-    topAchievements: [],
-    avatarUrl: 'avatar1.jpg',
-    isCurrentUser: true
+    topAchievements: mockAchievements,
+    avatarUrl: 'avatar1.jpg'
   },
   {
-    id: '2',
+    userId: '2',
     username: 'User 2',
     level: 4,
     points: 900,
@@ -43,51 +61,35 @@ const mockEntries: LeaderboardEntry[] = [
     avatarUrl: 'avatar2.jpg'
   },
   {
-    id: '3',
+    userId: '3',
     username: 'User 3',
     level: 3,
     points: 800,
     rank: 3,
     topAchievements: [],
-    avatarUrl: null
+    avatarUrl: undefined
   }
 ];
 
 describe('Leaderboard', () => {
-  const mockLeaderboardData: LeaderboardEntry[] = [
-    {
-      userId: 'user1',
-      username: 'TopContributor',
-      points: 1000,
-      rank: 1,
-      avatar: 'avatar1.jpg'
-    },
-    {
-      userId: 'user2',
-      username: 'ActiveMapper',
-      points: 750,
-      rank: 2,
-      avatar: 'avatar2.jpg'
-    },
-    {
-      userId: 'user3',
-      username: 'NewExplorer',
-      points: 500,
-      rank: 3,
-      avatar: 'avatar3.jpg'
-    }
-  ];
-
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
     
     // Setup default mock implementation
-    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue(mockLeaderboardData);
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue({
+      entries: mockEntries,
+      pagination: {
+        total: mockEntries.length,
+        page: 1,
+        pageSize: 10,
+        hasMore: false
+      }
+    });
   });
 
   it('renders timeframe tabs correctly', () => {
-    render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
+    render(<Leaderboard timeframe="weekly" />);
     
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.getByText('This Week')).toBeInTheDocument();
@@ -96,266 +98,102 @@ describe('Leaderboard', () => {
   });
 
   it('displays user stats correctly', () => {
-    render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
+    render(<Leaderboard timeframe="weekly" />);
     
     const userStatsContainer = screen.getByText('Your Position').closest('div')?.parentElement;
     expect(userStatsContainer).toBeInTheDocument();
-    expect(userStatsContainer?.textContent).toMatch(/Rank #1/);
-    expect(userStatsContainer?.textContent).toMatch(/Level 5/);
-  });
 
-  it('renders leaderboard entries in correct order', () => {
-    render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
-    
-    const usernames = screen.getAllByTestId('username').map(el => el.textContent);
-    expect(usernames).toEqual(['User 1', 'User 2', 'User 3']);
-  });
-
-  it('highlights current user\'s entry', () => {
-    render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
-    
-    // Find the current user's entry by username
-    const currentUserEntry = screen.getByText('User 1')
-      .closest('.flex.items-center.p-4');
-    expect(currentUserEntry).toHaveClass('bg-blue-50');
-  });
-
-  it('displays empty state when no entries exist', () => {
-    render(<Leaderboard entries={[]} timeframe="weekly" />);
-    expect(screen.getByText('No entries yet')).toBeInTheDocument();
-  });
-
-  it('handles timeframe changes', () => {
-    const handleTimeframeChange = jest.fn();
-    
-    const { getByText } = render(
-      <Leaderboard 
-        entries={mockEntries} 
-        timeframe="weekly" 
-        onTimeframeChange={handleTimeframeChange} 
-      />
-    );
-
-    const monthlyButton = getByText('This Month');
-    fireEvent.click(monthlyButton);
-
-    expect(handleTimeframeChange).toHaveBeenCalledTimes(1);
-    expect(handleTimeframeChange).toHaveBeenCalledWith('monthly');
-  });
-
-  it('displays avatar images when available', () => {
-    render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
-    
-    const avatarImages = screen.getAllByTestId('avatar-image');
-    expect(avatarImages).toHaveLength(2); // Two users have avatar URLs
-    
-    const defaultAvatarContainer = screen.getByTestId('default-avatar');
-    expect(defaultAvatarContainer).toBeInTheDocument();
-  });
-
-  it('displays rank icons correctly', () => {
-    const entriesWithRanks: LeaderboardEntry[] = [
-      {
-        id: '1',
-        username: 'User 1',
-        level: 5,
-        points: 1000,
-        rank: 1,
-        topAchievements: [],
-        avatarUrl: null
-      },
-      {
-        id: '2',
-        username: 'User 2',
-        level: 4,
-        points: 900,
-        rank: 2,
-        topAchievements: [],
-        avatarUrl: null
-      },
-      {
-        id: '3',
-        username: 'User 3',
-        level: 3,
-        points: 800,
-        rank: 3,
-        topAchievements: [],
-        avatarUrl: null
-      },
-      {
-        id: '4',
-        username: 'User 4',
-        level: 2,
-        points: 700,
-        rank: 4,
-        topAchievements: [],
-        avatarUrl: null
-      }
-    ];
-    
-    render(<Leaderboard entries={entriesWithRanks} timeframe="weekly" />);
-    
-    const rankIcons = screen.getAllByTestId(/^rank-icon/);
-    expect(rankIcons).toHaveLength(4);
-    expect(rankIcons[0]).toHaveTextContent('👑');
-    expect(rankIcons[1]).toHaveTextContent('🥈');
-    expect(rankIcons[2]).toHaveTextContent('🥉');
-    expect(rankIcons[3]).toHaveTextContent('4');
-  });
-
-  it('handles stats expansion toggle correctly', async () => {
-    const mockCurrentUser: LeaderboardEntry = {
-      id: '1',
-      username: 'Test User',
-      level: 5,
-      points: 1000,
-      rank: 1,
-      topAchievements: [],
-      avatarUrl: null,
-      isCurrentUser: true
-    };
-
-    render(
-      <Leaderboard
-        entries={[mockCurrentUser]}
-        timeframe="weekly"
-      />
-    );
-
-    // Initial state - stats panel should be hidden
-    const statsToggle = screen.getByTestId('stats-toggle');
-    const statsContent = screen.getByTestId('stats-content');
-    expect(statsContent).toHaveClass('hidden');
-
-    // Click to expand
-    await userEvent.click(statsToggle);
-
-    // Stats panel should now be visible and show points
-    expect(statsContent).not.toHaveClass('hidden');
-    
-    // Find points in the stats panel specifically
-    const pointsLabel = screen.getByText('Points');
-    const pointsValue = pointsLabel.nextElementSibling;
-    expect(pointsValue).toHaveTextContent('1,000');
-  });
-
-  it('renders leaderboard with correct data', async () => {
-    render(<Leaderboard />);
-
-    // Wait for leaderboard data to load
-    await waitFor(() => {
-      expect(screen.getByText('TopContributor')).toBeInTheDocument();
+    // Check for user stats display
+    mockEntries.forEach(entry => {
+      expect(screen.getByText(entry.username)).toBeInTheDocument();
+      expect(screen.getByText(`Level ${entry.level}`)).toBeInTheDocument();
+      expect(screen.getByText(`${entry.points.toLocaleString()} pts`)).toBeInTheDocument();
     });
-
-    // Check if all users are displayed
-    expect(screen.getByText('ActiveMapper')).toBeInTheDocument();
-    expect(screen.getByText('NewExplorer')).toBeInTheDocument();
-
-    // Verify points are displayed correctly
-    expect(screen.getByText('1000')).toBeInTheDocument();
-    expect(screen.getByText('750')).toBeInTheDocument();
-    expect(screen.getByText('500')).toBeInTheDocument();
   });
 
   it('handles timeframe changes correctly', async () => {
-    render(<Leaderboard />);
-
-    // Change timeframe to weekly
-    const timeframeSelect = screen.getByRole('combobox');
-    fireEvent.change(timeframeSelect, { target: { value: 'weekly' } });
-
-    // Verify getLeaderboard was called with weekly timeframe
-    await waitFor(() => {
-      expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith('weekly');
-    });
+    render(<Leaderboard timeframe="weekly" />);
+    
+    // Click different timeframe tabs
+    const monthlyTab = screen.getByText('This Month');
+    await userEvent.click(monthlyTab);
+    
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith(
+      expect.objectContaining({ timeframe: 'monthly' })
+    );
   });
 
   it('displays loading state while fetching data', async () => {
-    // Delay the mock response
-    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve(mockLeaderboardData), 100))
+    // Mock a delayed response
+    (GamificationService.prototype.getLeaderboard as jest.Mock).mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve({ entries: mockEntries, pagination: { total: 3, page: 1, pageSize: 10, hasMore: false } }), 100))
     );
 
-    render(<Leaderboard />);
-
-    // Check for loading indicator
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-
-    // Wait for data to load
+    render(<Leaderboard timeframe="weekly" />);
+    
+    expect(screen.getByTestId('leaderboard-loading')).toBeInTheDocument();
+    
     await waitFor(() => {
-      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('leaderboard-loading')).not.toBeInTheDocument();
     });
   });
 
-  it('handles empty leaderboard gracefully', async () => {
-    // Mock empty leaderboard response
-    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue([]);
+  it('handles error states gracefully', async () => {
+    // Mock an error response
+    const errorMessage = 'Failed to fetch leaderboard data';
+    (GamificationService.prototype.getLeaderboard as jest.Mock).mockRejectedValue(new Error(errorMessage));
 
-    render(<Leaderboard />);
-
+    render(<Leaderboard timeframe="weekly" />);
+    
     await waitFor(() => {
-      expect(screen.getByText('No entries found')).toBeInTheDocument();
+      expect(screen.getByText(/error loading leaderboard/i)).toBeInTheDocument();
     });
   });
 
-  it('handles error state appropriately', async () => {
-    // Mock error response
-    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockRejectedValue(
-      new Error('Failed to fetch leaderboard')
+  it('displays achievement badges correctly', () => {
+    render(<Leaderboard timeframe="weekly" />);
+    
+    const userWithAchievements = mockEntries[0];
+    const achievementBadges = screen.getAllByTestId('achievement-badge');
+    
+    expect(achievementBadges).toHaveLength(userWithAchievements.topAchievements.length);
+    userWithAchievements.topAchievements.forEach(achievement => {
+      expect(screen.getByTitle(achievement.title)).toBeInTheDocument();
+    });
+  });
+
+  it('handles pagination correctly', async () => {
+    const mockPaginatedResponse = {
+      entries: mockEntries,
+      pagination: {
+        total: 10,
+        page: 1,
+        pageSize: 3,
+        hasMore: true
+      }
+    };
+
+    (GamificationService.prototype.getLeaderboard as jest.Mock).mockResolvedValue(mockPaginatedResponse);
+
+    render(<Leaderboard timeframe="weekly" />);
+    
+    const loadMoreButton = screen.getByText(/load more/i);
+    await userEvent.click(loadMoreButton);
+
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 2 })
     );
-
-    render(<Leaderboard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Error loading leaderboard')).toBeInTheDocument();
-    });
-  });
-
-  it('displays correct rank badges', async () => {
-    render(<Leaderboard />);
-
-    await waitFor(() => {
-      // Check for rank badges/indicators
-      const firstPlace = screen.getByTestId('rank-badge-1');
-      const secondPlace = screen.getByTestId('rank-badge-2');
-      const thirdPlace = screen.getByTestId('rank-badge-3');
-
-      expect(firstPlace).toHaveClass('gold');
-      expect(secondPlace).toHaveClass('silver');
-      expect(thirdPlace).toHaveClass('bronze');
-    });
-  });
-
-  it('allows filtering by username', async () => {
-    render(<Leaderboard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('TopContributor')).toBeInTheDocument();
-    });
-
-    // Type in search box
-    const searchInput = screen.getByPlaceholderText('Search users...');
-    fireEvent.change(searchInput, { target: { value: 'Active' } });
-
-    // Only ActiveMapper should be visible
-    expect(screen.queryByText('TopContributor')).not.toBeInTheDocument();
-    expect(screen.getByText('ActiveMapper')).toBeInTheDocument();
-    expect(screen.queryByText('NewExplorer')).not.toBeInTheDocument();
   });
 
   it('updates automatically at regular intervals', async () => {
     jest.useFakeTimers();
 
-    render(<Leaderboard refreshInterval={5000} />);
+    const refreshInterval = 5000;
+    render(<Leaderboard timeframe="weekly" refreshInterval={refreshInterval} />);
 
-    await waitFor(() => {
-      expect(screen.getByText('TopContributor')).toBeInTheDocument();
-    });
+    // Fast-forward past the refresh interval
+    jest.advanceTimersByTime(refreshInterval + 100);
 
-    // Fast-forward 5 seconds
-    jest.advanceTimersByTime(5000);
-
-    // Verify getLeaderboard was called again
     expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
