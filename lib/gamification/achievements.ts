@@ -80,11 +80,47 @@ export const ACHIEVEMENTS: Achievement[] = [
   }
 ];
 
-// Helper functions for achievement calculations
+// Constants for point calculations
+export const RURAL_BONUS_MULTIPLIER = 1.5;
+export const FIRST_IN_AREA_BONUS = 20;
+export const QUALITY_BONUS_MAX = 10;
+
+// Level thresholds (exponential growth)
+const LEVEL_THRESHOLDS = [
+  0,      // Level 1
+  100,    // Level 2
+  250,    // Level 3
+  500,    // Level 4
+  1000,   // Level 5
+  2000,   // Level 6
+  4000,   // Level 7
+  8000,   // Level 8
+  16000,  // Level 9
+  32000   // Level 10
+];
+
+export function calculateLevel(points: number): number {
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (points >= LEVEL_THRESHOLDS[i]) {
+      return i + 1;
+    }
+  }
+  return 1;
+}
+
+export function getNextLevelThreshold(currentLevel: number): number {
+  if (currentLevel >= LEVEL_THRESHOLDS.length) {
+    return LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] * 2;
+  }
+  return LEVEL_THRESHOLDS[currentLevel];
+}
+
 export function calculateAchievementProgress(achievement: Achievement): number {
-  const progress = Math.max(0, achievement.progress); // Handle negative progress
-  const target = Math.max(1, achievement.target); // Prevent division by zero
-  return Math.min(progress / target, 1);
+  if (!achievement.target || achievement.target <= 0) {
+    return 0;
+  }
+  const progress = Math.max(0, achievement.progress);
+  return Math.min(1, progress / achievement.target);
 }
 
 export function isAchievementCompleted(achievement: Achievement): boolean {

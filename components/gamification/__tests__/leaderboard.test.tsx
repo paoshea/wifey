@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
+import { GamificationService } from '../../../lib/gamification/gamification-service';
+import { LeaderboardEntry } from '../../../lib/gamification/types';
+import '@testing-library/jest-dom';
 
 // Mock Framer Motion
 jest.mock('framer-motion', () => ({
@@ -15,6 +18,9 @@ jest.mock('framer-motion', () => ({
   },
   AnimatePresence: ({ children }: any) => children,
 }));
+
+// Mock GamificationService
+jest.mock('../../../lib/gamification/gamification-service');
 
 const mockEntries: LeaderboardEntry[] = [
   {
@@ -48,6 +54,38 @@ const mockEntries: LeaderboardEntry[] = [
 ];
 
 describe('Leaderboard', () => {
+  const mockLeaderboardData: LeaderboardEntry[] = [
+    {
+      userId: 'user1',
+      username: 'TopContributor',
+      points: 1000,
+      rank: 1,
+      avatar: 'avatar1.jpg'
+    },
+    {
+      userId: 'user2',
+      username: 'ActiveMapper',
+      points: 750,
+      rank: 2,
+      avatar: 'avatar2.jpg'
+    },
+    {
+      userId: 'user3',
+      username: 'NewExplorer',
+      points: 500,
+      rank: 3,
+      avatar: 'avatar3.jpg'
+    }
+  ];
+
+  beforeEach(() => {
+    // Reset all mocks before each test
+    jest.clearAllMocks();
+    
+    // Setup default mock implementation
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue(mockLeaderboardData);
+  });
+
   it('renders timeframe tabs correctly', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
@@ -199,5 +237,127 @@ describe('Leaderboard', () => {
     const pointsLabel = screen.getByText('Points');
     const pointsValue = pointsLabel.nextElementSibling;
     expect(pointsValue).toHaveTextContent('1,000');
+  });
+
+  it('renders leaderboard with correct data', async () => {
+    render(<Leaderboard />);
+
+    // Wait for leaderboard data to load
+    await waitFor(() => {
+      expect(screen.getByText('TopContributor')).toBeInTheDocument();
+    });
+
+    // Check if all users are displayed
+    expect(screen.getByText('ActiveMapper')).toBeInTheDocument();
+    expect(screen.getByText('NewExplorer')).toBeInTheDocument();
+
+    // Verify points are displayed correctly
+    expect(screen.getByText('1000')).toBeInTheDocument();
+    expect(screen.getByText('750')).toBeInTheDocument();
+    expect(screen.getByText('500')).toBeInTheDocument();
+  });
+
+  it('handles timeframe changes correctly', async () => {
+    render(<Leaderboard />);
+
+    // Change timeframe to weekly
+    const timeframeSelect = screen.getByRole('combobox');
+    fireEvent.change(timeframeSelect, { target: { value: 'weekly' } });
+
+    // Verify getLeaderboard was called with weekly timeframe
+    await waitFor(() => {
+      expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith('weekly');
+    });
+  });
+
+  it('displays loading state while fetching data', async () => {
+    // Delay the mock response
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve(mockLeaderboardData), 100))
+    );
+
+    render(<Leaderboard />);
+
+    // Check for loading indicator
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+    // Wait for data to load
+    await waitFor(() => {
+      expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+    });
+  });
+
+  it('handles empty leaderboard gracefully', async () => {
+    // Mock empty leaderboard response
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue([]);
+
+    render(<Leaderboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('No entries found')).toBeInTheDocument();
+    });
+  });
+
+  it('handles error state appropriately', async () => {
+    // Mock error response
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockRejectedValue(
+      new Error('Failed to fetch leaderboard')
+    );
+
+    render(<Leaderboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Error loading leaderboard')).toBeInTheDocument();
+    });
+  });
+
+  it('displays correct rank badges', async () => {
+    render(<Leaderboard />);
+
+    await waitFor(() => {
+      // Check for rank badges/indicators
+      const firstPlace = screen.getByTestId('rank-badge-1');
+      const secondPlace = screen.getByTestId('rank-badge-2');
+      const thirdPlace = screen.getByTestId('rank-badge-3');
+
+      expect(firstPlace).toHaveClass('gold');
+      expect(secondPlace).toHaveClass('silver');
+      expect(thirdPlace).toHaveClass('bronze');
+    });
+  });
+
+  it('allows filtering by username', async () => {
+    render(<Leaderboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TopContributor')).toBeInTheDocument();
+    });
+
+    // Type in search box
+    const searchInput = screen.getByPlaceholderText('Search users...');
+    fireEvent.change(searchInput, { target: { value: 'Active' } });
+
+    // Only ActiveMapper should be visible
+    expect(screen.queryByText('TopContributor')).not.toBeInTheDocument();
+    expect(screen.getByText('ActiveMapper')).toBeInTheDocument();
+    expect(screen.queryByText('NewExplorer')).not.toBeInTheDocument();
+  });
+
+  it('updates automatically at regular intervals', async () => {
+    jest.useFakeTimers();
+
+    render(<Leaderboard refreshInterval={5000} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TopContributor')).toBeInTheDocument();
+    });
+
+    // Fast-forward 5 seconds
+    jest.advanceTimersByTime(5000);
+
+    // Verify getLeaderboard was called again
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
   });
 });
