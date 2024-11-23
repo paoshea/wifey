@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts"
   },
   "scripts": {
     "dev": "next dev",
@@ -15,7 +15,7 @@
     "bench:run": "vitest bench --run",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:seed": "ts-node prisma/seed",
+    "db:seed": "ts-node --project prisma/tsconfig.json prisma/seed",
     "db:studio": "prisma studio"
   },
   "dependencies": {

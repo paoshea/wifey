@@ -1,24 +1,34 @@
 import { PrismaClient } from '@prisma/client';
 import { seedAchievements } from './seed/achievements';
+import { WifiHotspotInput, UserInput, UserProgressInput } from './types';
 
 const prisma = new PrismaClient();
 
 async function main() {
   // Clear existing data
+  console.log('Clearing existing data...');
+  await prisma.userAchievement.deleteMany();
+  await prisma.userBadge.deleteMany();
   await prisma.userStreak.deleteMany();
   await prisma.userStats.deleteMany();
   await prisma.userProgress.deleteMany();
+  await prisma.leaderboardEntry.deleteMany();
+  await prisma.measurement.deleteMany();
+  await prisma.coverageHistory.deleteMany();
+  await prisma.coveragePoint.deleteMany();
   await prisma.user.deleteMany();
   await prisma.wifiHotspot.deleteMany();
   await prisma.achievement.deleteMany();
+  console.log('Data cleared successfully');
 
   // Seed WiFi Hotspots
-  const wifiHotspots = [
+  console.log('Seeding WiFi hotspots...');
+  const wifiHotspots: WifiHotspotInput[] = [
     {
       name: 'Central Library',
       location: {
         type: 'Point',
-        coordinates: [-73.935242, 40.730610], // Example coordinates
+        coordinates: [-73.935242, 40.730610],
       },
       provider: 'Public Library',
       speed: '50 Mbps',
@@ -28,7 +38,7 @@ async function main() {
       name: 'Community Center',
       location: {
         type: 'Point',
-        coordinates: [-73.935242, 40.730610], // Example coordinates
+        coordinates: [-73.935242, 40.730610],
       },
       provider: 'City WiFi',
       speed: '40 Mbps',
@@ -41,9 +51,11 @@ async function main() {
       data: hotspot,
     });
   }
+  console.log('WiFi hotspots seeded successfully');
 
   // Seed Test Users with related data
-  const users = [
+  console.log('Seeding users...');
+  const users: UserInput[] = [
     {
       name: 'Test User 1',
       email: 'test1@example.com',
@@ -59,41 +71,48 @@ async function main() {
   ];
 
   for (const userData of users) {
-    // Create user with nested relations
-    await prisma.user.create({
-      data: {
-        ...userData,
-        progress: {
-          create: {
-            level: Math.floor(Math.random() * 10) + 1,
-            currentExp: Math.floor(Math.random() * 1000),
-            totalPoints: Math.floor(Math.random() * 5000),
-            nextLevelExp: Math.floor(Math.random() * 1000) + 1000,
-            stats: {
-              create: {
-                totalMeasurements: Math.floor(Math.random() * 100),
-                ruralMeasurements: Math.floor(Math.random() * 50),
-                verifiedSpots: Math.floor(Math.random() * 30),
-                helpfulActions: Math.floor(Math.random() * 20),
-                consecutiveDays: Math.floor(Math.random() * 7),
-                qualityScore: Math.random() * 100,
-                accuracyRate: Math.random() * 100,
-              },
-            },
-            streaks: {
-              create: {
-                currentStreak: Math.floor(Math.random() * 7),
-              },
-            },
-          },
+    // Create user first
+    const user = await prisma.user.create({
+      data: userData,
+    });
+
+    // Create UserProgress with nested relations
+    const userProgress: UserProgressInput = {
+      user: {
+        connect: {
+          id: user.id
+        }
+      },
+      level: Math.floor(Math.random() * 10) + 1,
+      currentExp: Math.floor(Math.random() * 1000),
+      totalPoints: Math.floor(Math.random() * 5000),
+      nextLevelExp: Math.floor(Math.random() * 1000) + 1000,
+      stats: {
+        create: {
+          totalMeasurements: Math.floor(Math.random() * 100),
+          ruralMeasurements: Math.floor(Math.random() * 50),
+          verifiedSpots: Math.floor(Math.random() * 30),
+          helpfulActions: Math.floor(Math.random() * 20),
+          consecutiveDays: Math.floor(Math.random() * 7),
+          qualityScore: Math.random() * 100,
+          accuracyRate: Math.random() * 100,
         },
       },
+      streaks: {
+        create: {
+          currentStreak: Math.floor(Math.random() * 7),
+        },
+      },
+    };
+
+    await prisma.userProgress.create({
+      data: userProgress,
     });
   }
+  console.log('Users seeded successfully');
 
   // Seed achievements
   await seedAchievements(prisma);
-
   console.log('Seed data inserted successfully');
 }
 
