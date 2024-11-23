@@ -10,16 +10,15 @@ export type AchievementCategory =
 
 export interface Achievement {
   id: string;
-  category: AchievementCategory;
   title: string;
   description: string;
-  points: number;
   icon: string;
-  requirements: {
-    type: 'measurements' | 'rural_measurements' | 'verified_spots' | 'helping_others' | 'consistency';
-    count: number;
-  };
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum';
+  points: number;
+  rarity: 'common' | 'rare' | 'epic';
+  progress: number;
+  target: number;
+  completed: boolean;
+  earnedDate?: string;
 }
 
 export interface UserProgress {
