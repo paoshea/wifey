@@ -1,4 +1,57 @@
-// ... [Previous code remains the same until line 246]
+import { openDB, IDBPDatabase } from 'idb';
+import { logError } from '@/lib/monitoring/sentry';
+import { CarrierCoverage } from '@/lib/types/coverage';
+
+class EnhancedOfflineStorage {
+  private static instance: EnhancedOfflineStorage;
+  private db: IDBPDatabase | null = null;
+  private initialized = false;
+  private metadata: any;
+
+  private constructor() {}
+
+  static getInstance(): EnhancedOfflineStorage {
+    if (!EnhancedOfflineStorage.instance) {
+      EnhancedOfflineStorage.instance = new EnhancedOfflineStorage();
+    }
+    return EnhancedOfflineStorage.instance;
+  }
+
+  private async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    try {
+      this.db = await openDB('enhanced-offline-storage', 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('pendingPoints')) {
+            const store = db.createObjectStore('pendingPoints', { keyPath: 'id' });
+            store.createIndex('by-status', 'status');
+            store.createIndex('by-timestamp', 'timestamp');
+          }
+          if (!db.objectStoreNames.contains('coverageCache')) {
+            db.createObjectStore('coverageCache', { keyPath: 'bounds' });
+          }
+          if (!db.objectStoreNames.contains('metadata')) {
+            db.createObjectStore('metadata', { keyPath: 'version' });
+          }
+        },
+      });
+      this.initialized = true;
+      this.metadata = await this.db.get('metadata', 'version');
+      if (!this.metadata) {
+        await this.db.put('metadata', {
+          version: 1,
+          lastCleanup: Date.now(),
+          totalSize: 0,
+          quotaUsage: 0,
+        });
+        this.metadata = await this.db.get('metadata', 'version');
+      }
+    } catch (error) {
+      logError(error as Error, { context: 'initialize-offline-storage' });
+      throw new Error('Failed to initialize offline storage');
+    }
+  }
 
   // Public methods for enhanced offline storage
   async storePendingPoint(
@@ -188,20 +241,35 @@
     }
   }
 
+  private async compressData(data: any): Promise<any> {
+    // Implement compression logic here
+    return data;
+  }
+
+  private async decompressData(data: any): Promise<any> {
+    // Implement decompression logic here
+    return data;
+  }
+
+  private async updateStorageUsage(): Promise<void> {
+    // Implement storage usage tracking
+    return;
+  }
+
+  private async performCleanup(): Promise<void> {
+    // Implement cleanup logic here
+    return;
+  }
+
   // Utility method to check if storage is available
   async isStorageAvailable(): Promise<boolean> {
     try {
       await this.initialize();
       const testKey = 'storage-test';
-      await this.db!.put('metadata', {
-        version: STORAGE_VERSION,
-        lastCleanup: Date.now(),
-        totalSize: 0,
-        quotaUsage: 0
-      });
-      await this.db!.get('metadata', testKey);
+      await this.db!.put('pendingPoints', { id: testKey, data: 'test' });
+      await this.db!.delete('pendingPoints', testKey);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

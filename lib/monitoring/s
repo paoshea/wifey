@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/nextjs';
+import * as SentryReact from '@sentry/react';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { Replay } from '@sentry/replay';
+import { Component, ComponentType } from 'react';
 
 export function initializeSentry() {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -30,30 +32,34 @@ export function initializeSentry() {
   }
 }
 
+interface DefaultErrorFallbackProps {
+  error: Error;
+  resetError: () => void;
+}
+
+const DefaultErrorFallback: React.FC<DefaultErrorFallbackProps> = ({
+  error,
+  resetError,
+}) => (
+  <div className="error-boundary-fallback">
+    <h2>Something went wrong</h2>
+    <pre>{error.message}</pre>
+    <button onClick={resetError}>Try again</button>
+  </div>
+);
+
 // Custom error boundary component
 export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   fallback?: React.ReactNode
 ) {
   return function WithErrorBoundary(props: P) {
     return (
-      <Sentry.ErrorBoundary fallback={fallback || <DefaultErrorFallback />}>
+      <SentryReact.ErrorBoundary fallback={fallback || <DefaultErrorFallback />}>
         <Component {...props} />
-      </Sentry.ErrorBoundary>
+      </SentryReact.ErrorBoundary>
     );
   };
-}
-
-// Default error fallback component
-function DefaultErrorFallback() {
-  return (
-    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-      <h2 className="text-lg font-semibold text-red-700">Something went wrong</h2>
-      <p className="text-red-600">
-        We've been notified and are working to fix the issue.
-      </p>
-    </div>
-  );
 }
 
 // Custom error logger

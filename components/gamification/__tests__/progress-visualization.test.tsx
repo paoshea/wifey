@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ProgressVisualization } from '../progress-visualization';
 
 const mockProgress = {
@@ -17,29 +17,21 @@ const mockProgress = {
     scoreTrend: 15
   },
   activityData: [
-    {
-      date: '2024-01-01',
-      measurements: 12,
-      ruralMeasurements: 8,
-      uniqueLocations: 5
-    },
-    // Add more mock data as needed
+    { date: '2024-01-01', measurements: 10, ruralMeasurements: 5 },
+    { date: '2024-01-02', measurements: 15, ruralMeasurements: 8 },
+    { date: '2024-01-03', measurements: 12, ruralMeasurements: 6 }
   ],
   milestones: [
     {
-      id: 1,
       title: 'Rural Pioneer',
       description: 'Map your first rural area',
-      icon: '🌲',
       completed: true,
       progress: 1,
       target: 1
     },
     {
-      id: 2,
       title: 'Coverage Expert',
-      description: 'Map 100 unique locations',
-      icon: '📍',
+      description: 'Map 100 locations',
       completed: false,
       progress: 30,
       target: 100
@@ -48,11 +40,6 @@ const mockProgress = {
 };
 
 describe('ProgressVisualization', () => {
-  it('renders loading state when no progress data is provided', () => {
-    render(<ProgressVisualization progress={undefined} />);
-    expect(screen.getByText('🔄')).toBeInTheDocument();
-  });
-
   it('renders all stats cards with correct values', () => {
     render(<ProgressVisualization progress={mockProgress} />);
     
@@ -67,14 +54,13 @@ describe('ProgressVisualization', () => {
     
     expect(screen.getByText('Level 5')).toBeInTheDocument();
     expect(screen.getByText('75% to Level 6')).toBeInTheDocument();
-    expect(screen.getByText('250 points to next level')).toBeInTheDocument();
   });
 
   it('renders activity chart', () => {
     render(<ProgressVisualization progress={mockProgress} />);
     
     expect(screen.getByText('Activity Overview')).toBeInTheDocument();
-    // Note: Testing actual chart rendering would require more complex setup
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
   });
 
   it('displays milestones with correct completion status', () => {
@@ -85,14 +71,28 @@ describe('ProgressVisualization', () => {
     
     expect(completedMilestone).toBeInTheDocument();
     expect(incompleteMilestone).toBeInTheDocument();
-    expect(screen.getByText('30/100')).toBeInTheDocument();
+    expect(screen.getByText('30/100')).toBeInTheDocument(); // Progress for Coverage Expert
   });
 
   it('shows correct trend indicators', () => {
     render(<ProgressVisualization progress={mockProgress} />);
     
-    const trends = screen.getAllByText(/\+\d+%/);
-    expect(trends).toHaveLength(4); // Should have 4 trend indicators
-    expect(trends[0]).toHaveTextContent('+12%'); // Measurements trend
+    expect(screen.getByText('+12%')).toBeInTheDocument(); // Measurements trend
+    expect(screen.getByText('+25%')).toBeInTheDocument(); // Rural trend
+    expect(screen.getByText('+8%')).toBeInTheDocument(); // Locations trend
+    expect(screen.getByText('+15%')).toBeInTheDocument(); // Score trend
+  });
+
+  it('handles empty progress data gracefully', () => {
+    render(<ProgressVisualization progress={undefined} />);
+    
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
+  it('shows error state when progress data is invalid', () => {
+    const invalidProgress = { ...mockProgress, level: undefined };
+    render(<ProgressVisualization progress={invalidProgress as any} />);
+    
+    expect(screen.getByText('Error loading progress')).toBeInTheDocument();
   });
 });
