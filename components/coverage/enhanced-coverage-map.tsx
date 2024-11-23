@@ -14,6 +14,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import { useSignalMonitor } from '@/hooks/useSignalMonitor';
+import { measurementStore } from '@/lib/storage/measurement-store';
+import { measurementSync } from '@/lib/sync/measurement-sync';
+import { SignalInfoPanel } from './signal-info-panel';
 
 interface EnhancedCoverageMapProps {
   onLocationSelect?: (location: { lat: number; lng: number }) => void;
@@ -85,6 +89,9 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
   const [newlyMarkedSpot, setNewlyMarkedSpot] = useState<[number, number] | null>(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [markedLocation, setMarkedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<SignalMeasurement | null>(null);
+  const [syncStats, setSyncStats] = useState<{ pending: number; failed: number }>({ pending: 0, failed: 0 });
   
   // Default bounds for Costa Rica
   const bounds = {
@@ -93,6 +100,47 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
     minLng: -85.9,
     maxLng: -82.6
   };
+
+  const { 
+    isMonitoring, 
+    measurements, 
+    error: monitoringError,
+    startMonitoring, 
+    stopMonitoring 
+  } = useSignalMonitor({
+    onMeasurement: async (measurement) => {
+      // Store measurement locally
+      const id = await measurementStore.storeMeasurement(measurement);
+      
+      // Add to map
+      onAddCoveragePoint({
+        provider: measurement.provider,
+        signalStrength: measurement.signalStrength,
+        technology: measurement.technology,
+        location: measurement.location,
+        reliability: 1,
+      });
+    },
+    interval: 60000, // Check signal every minute
+  });
+
+  // Start sync when monitoring starts
+  useEffect(() => {
+    if (isMonitoring) {
+      measurementSync.startAutoSync((stats) => {
+        setSyncStats({
+          pending: stats.pending,
+          failed: stats.failed,
+        });
+      });
+    } else {
+      measurementSync.stopAutoSync();
+    }
+
+    return () => {
+      measurementSync.stopAutoSync();
+    };
+  }, [isMonitoring]);
 
   const handleMarkSpot = useCallback(async (location: { lat: number; lng: number }) => {
     try {
@@ -140,30 +188,59 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-4 mb-4">
+    <div className="relative w-full h-full">
+      {monitoringError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            Failed to monitor signal: {monitoringError.message}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="absolute top-4 right-4 z-[1000] space-y-2">
         <Button
-          variant={showHeatmap ? "secondary" : "outline"}
-          onClick={() => setShowHeatmap(!showHeatmap)}
-          className="flex items-center"
+          variant={isMonitoring ? "destructive" : "default"}
+          onClick={() => isMonitoring ? stopMonitoring() : startMonitoring()}
+          className="w-full"
         >
-          <Map className="w-4 h-4 mr-2" />
-          {showHeatmap ? 'Show Markers' : 'Show Heatmap'}
+          {isMonitoring ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Stop Monitoring
+            </>
+          ) : (
+            <>
+              <Signal className="mr-2 h-4 w-4" />
+              Start Monitoring
+            </>
+          )}
         </Button>
+
+        {isMonitoring && (syncStats.pending > 0 || syncStats.failed > 0) && (
+          <div className="text-sm text-gray-500 bg-white/90 rounded-md p-2">
+            {syncStats.pending > 0 && (
+              <div>Pending sync: {syncStats.pending}</div>
+            )}
+            {syncStats.failed > 0 && (
+              <div className="text-red-500">Failed sync: {syncStats.failed}</div>
+            )}
+          </div>
+        )}
         
-        <select
-          className="px-4 py-2 border rounded-md"
-          value={selectedProvider || ''}
-          onChange={(e) => setSelectedProvider(e.target.value || null)}
-        >
-          <option value="">All Providers</option>
-          {Array.from(new Set(coveragePoints.map(point => point.provider))).map((provider: string) => (
-            <option key={provider} value={provider}>
-              {provider}
-            </option>
-          ))}
-        </select>
+        <XMarksSpotButton
+          disabled={!selectedLocation}
+          onClick={handleMarkSpot}
+        />
       </div>
+
+      {selectedMeasurement && (
+        <div className="absolute bottom-4 left-4 z-[1000] w-80">
+          <SignalInfoPanel
+            measurement={selectedMeasurement}
+            className="bg-white/95 shadow-lg"
+          />
+        </div>
+      )}
 
       <div className="h-[600px] relative rounded-lg overflow-hidden shadow-lg">
         <MapContainer
@@ -235,30 +312,25 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
         </MapContainer>
 
         {/* Floating X Marks Spot Button */}
-        <div className="absolute bottom-6 right-6 z-[1000]">
-          <XMarksSpotButton
-            onMarkSpot={handleMarkSpot}
-            className="shadow-xl"
-          />
+        <div className="absolute bottom-6 right-6 z-[1000] space-y-2">
+          <Alert>
+            <AlertDescription>
+              {isOffline 
+                ? 'Working offline. Your marked spots will be synced when connection is restored.'
+                : 'Click the X button to mark spots with coverage. Your contributions help others find better signal!'}
+            </AlertDescription>
+          </Alert>
+
+          {/* Success Popup */}
+          {markedLocation && (
+            <SuccessPopup
+              show={showSuccessPopup}
+              onClose={handleCloseSuccessPopup}
+              location={markedLocation}
+            />
+          )}
         </div>
       </div>
-
-      <Alert>
-        <AlertDescription>
-          {isOffline 
-            ? 'Working offline. Your marked spots will be synced when connection is restored.'
-            : 'Click the X button to mark spots with coverage. Your contributions help others find better signal!'}
-        </AlertDescription>
-      </Alert>
-
-      {/* Success Popup */}
-      {markedLocation && (
-        <SuccessPopup
-          show={showSuccessPopup}
-          onClose={handleCloseSuccessPopup}
-          location={markedLocation}
-        />
-      )}
     </div>
   );
 };

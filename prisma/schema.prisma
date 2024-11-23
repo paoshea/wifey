@@ -74,3 +74,64 @@ model CoverageComparison {
   timestamp   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Gamification Models
+model UserProgress {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  totalPoints     Int       @default(0)
+  level           Int       @default(1)
+  achievements    Achievement[]
+  stats          UserStats?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model UserStats {
+  id                String    @id @default(cuid())
+  userProgressId    String    @unique
+  userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
+  totalMeasurements Int       @default(0)
+  ruralMeasurements Int       @default(0)
+  verifiedSpots     Int       @default(0)
+  helpfulActions    Int       @default(0)
+  consecutiveDays   Int       @default(0)
+  lastMeasurementDate DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userProgressId])
+}
+
+model Achievement {
+  id          String    @id @default(cuid())
+  category    String
+  title       String
+  description String
+  points      Int
+  icon        String
+  tier        String
+  users       UserProgress[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([category])
+}
+
+model LeaderboardEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  points      Int
+  timeframe   String    // daily, weekly, monthly, allTime
+  date        DateTime  // The date this entry is for
+  rank        Int
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, timeframe, date])
+  @@index([timeframe, date])
+  @@index([userId])
+}
