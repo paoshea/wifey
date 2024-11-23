@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User, UserProgress, UserStreak, UserBadge, LeaderboardEntry } from '@prisma/client';
 import { apiCache } from './api-cache';
 import { createApiError } from '../api/error-handler';
 
@@ -28,9 +28,29 @@ export interface LeaderboardStats {
   highestLevel: number;
 }
 
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  };
+  stats?: LeaderboardStats;
+}
+
+type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
+
+interface DateFilter {
+  createdAt?: {
+    gte?: Date;
+  };
+}
+
 export class LeaderboardService {
   private static instance: LeaderboardService;
   private readonly CACHE_TTL = 300; // 5 minutes
+  private readonly MAX_PAGE_SIZE = 100;
 
   private constructor() {}
 
@@ -41,257 +61,281 @@ export class LeaderboardService {
     return LeaderboardService.instance;
   }
 
-  // Get global leaderboard
   async getLeaderboard(
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime' = 'allTime',
-    limit: number = 10,
-    offset: number = 0
-  ): Promise<LeaderboardEntry[]> {
-    const cacheKey = `leaderboard_${timeframe}_${limit}_${offset}`;
+    timeframe: TimeFrame = 'allTime',
+    page = 1,
+    pageSize = 10,
+    includeStats = false
+  ): Promise<LeaderboardResponse> {
+    const validatedPage = Math.max(1, page);
+    const validatedPageSize = Math.min(Math.max(1, pageSize), this.MAX_PAGE_SIZE);
+    const offset = (validatedPage - 1) * validatedPageSize;
 
-    return apiCache.fetch(cacheKey, async () => {
-      let dateFilter = {};
-      const now = new Date();
+    const cacheKey = `leaderboard_${timeframe}_${validatedPage}_${validatedPageSize}_${includeStats}`;
+    
+    return apiCache.fetch(
+      cacheKey,
+      async () => {
+        const result = await prisma.$transaction(async (tx) => {
+          const dateFilter = this.getDateFilter(timeframe);
+          
+          const totalCountKey = `leaderboard_count_${timeframe}`;
+          const totalCount = await apiCache.fetch(
+            totalCountKey,
+            () => tx.userProgress.count({
+              where: {
+                user: {
+                  measurements: {
+                    some: dateFilter
+                  }
+                }
+              }
+            }),
+            { priority: 'high', maxAge: 600 }
+          );
 
-      switch (timeframe) {
-        case 'daily':
-          dateFilter = {
-            gte: new Date(now.setHours(0, 0, 0, 0))
-          };
-          break;
-        case 'weekly':
-          dateFilter = {
-            gte: new Date(now.setDate(now.getDate() - 7))
-          };
-          break;
-        case 'monthly':
-          dateFilter = {
-            gte: new Date(now.setMonth(now.getMonth() - 1))
-          };
-          break;
-      }
-
-      const users = await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          achievements: true,
-          contributions: {
+          const users = await tx.userProgress.findMany({
             where: {
-              createdAt: dateFilter
+              user: {
+                measurements: {
+                  some: dateFilter
+                }
+              }
             },
             select: {
-              points: true
-            }
-          },
-          badges: {
-            select: {
-              id: true
-            }
-          },
-          streak: true
-        },
-        orderBy: {
-          contributions: {
-            _count: 'desc'
-          }
-        },
-        take: limit,
-        skip: offset
-      });
-
-      return users.map((user, index) => ({
-        userId: user.id,
-        username: user.name || 'Anonymous User',
-        avatar: user.image || undefined,
-        rank: offset + index + 1,
-        points: user.contributions.reduce((sum, c) => sum + c.points, 0),
-        contributions: user.contributions.length,
-        badges: user.badges.length,
-        streak: {
-          current: user.streak?.current || 0,
-          longest: user.streak?.longest || 0
-        },
-        level: this.calculateLevel(
-          user.contributions.reduce((sum, c) => sum + c.points, 0)
-        )
-      }));
-    }, { maxAge: this.CACHE_TTL });
-  }
-
-  // Get user's rank and nearby users
-  async getUserRankAndNeighbors(
-    userId: string,
-    neighborCount: number = 3
-  ): Promise<{
-    userRank: LeaderboardEntry;
-    above: LeaderboardEntry[];
-    below: LeaderboardEntry[];
-  }> {
-    const cacheKey = `user_rank_${userId}_${neighborCount}`;
-
-    return apiCache.fetch(cacheKey, async () => {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          contributions: true,
-          badges: true,
-          streak: true
-        }
-      });
-
-      if (!user) {
-        throw createApiError(404, 'User not found');
-      }
-
-      const userPoints = user.contributions.reduce((sum, c) => sum + c.points, 0);
-
-      // Get users with more points
-      const above = await prisma.user.findMany({
-        where: {
-          contributions: {
-            every: {
-              points: {
-                gt: userPoints
+              userId: true,
+              totalPoints: true,
+              level: true,
+              user: {
+                select: {
+                  name: true,
+                  email: true
+                }
+              },
+              streaks: {
+                select: {
+                  currentStreak: true,
+                  longestStreak: true
+                }
+              },
+              badges: {
+                select: {
+                  id: true,
+                  badgeType: true,
+                  level: true
+                }
+              },
+              stats: {
+                select: {
+                  totalMeasurements: true,
+                  qualityScore: true
+                }
               }
-            }
-          }
-        },
-        take: neighborCount,
-        orderBy: {
-          contributions: {
-            _count: 'asc'
-          }
+            },
+            orderBy: [
+              { totalPoints: 'desc' },
+              { level: 'desc' }
+            ],
+            take: validatedPageSize,
+            skip: offset
+          });
+
+          const entries = users.map((user, index) => ({
+            userId: user.userId,
+            username: user.user.name ?? user.user.email.split('@')[0],
+            avatar: undefined, // Add avatar support if needed
+            rank: offset + index + 1,
+            points: user.totalPoints,
+            contributions: user.stats?.totalMeasurements ?? 0,
+            badges: user.badges.length,
+            streak: {
+              current: user.streaks?.currentStreak ?? 0,
+              longest: user.streaks?.longestStreak ?? 0
+            },
+            level: user.level
+          }));
+
+          const stats = includeStats ? await this.getLeaderboardStats(tx, dateFilter) : undefined;
+
+          return {
+            entries,
+            pagination: {
+              total: totalCount,
+              page: validatedPage,
+              pageSize: validatedPageSize,
+              hasMore: offset + entries.length < totalCount
+            },
+            stats
+          };
+        });
+
+        if (result.pagination.hasMore) {
+          const nextPageKey = `leaderboard_${timeframe}_${validatedPage + 1}_${validatedPageSize}_${includeStats}`;
+          apiCache.prefetch(nextPageKey);
         }
-      });
 
-      // Get users with fewer points
-      const below = await prisma.user.findMany({
-        where: {
-          contributions: {
-            every: {
-              points: {
-                lt: userPoints
-              }
-            }
-          }
-        },
-        take: neighborCount,
-        orderBy: {
-          contributions: {
-            _count: 'desc'
-          }
-        }
-      });
-
-      const userRank = {
-        userId: user.id,
-        username: user.name || 'Anonymous User',
-        avatar: user.image || undefined,
-        rank: above.length + 1,
-        points: userPoints,
-        contributions: user.contributions.length,
-        badges: user.badges.length,
-        streak: {
-          current: user.streak?.current || 0,
-          longest: user.streak?.longest || 0
-        },
-        level: this.calculateLevel(userPoints)
-      };
-
-      return {
-        userRank,
-        above: above.map(this.mapUserToLeaderboardEntry),
-        below: below.map(this.mapUserToLeaderboardEntry)
-      };
-    }, { maxAge: this.CACHE_TTL });
-  }
-
-  // Get leaderboard statistics
-  async getLeaderboardStats(): Promise<LeaderboardStats> {
-    const cacheKey = 'leaderboard_stats';
-
-    return apiCache.fetch(cacheKey, async () => {
-      const [
-        totalUsers,
-        totalContributions,
-        topContributor,
-        badgeLeader,
-        streakLeader,
-        levelLeader
-      ] = await Promise.all([
-        prisma.user.count(),
-        prisma.contribution.count(),
-        prisma.user.findFirst({
-          orderBy: {
-            contributions: {
-              _count: 'desc'
-            }
-          },
-          select: { name: true }
-        }),
-        prisma.user.findFirst({
-          orderBy: {
-            badges: {
-              _count: 'desc'
-            }
-          },
-          select: { name: true }
-        }),
-        prisma.streak.findFirst({
-          orderBy: {
-            longest: 'desc'
-          },
-          select: { longest: true }
-        }),
-        prisma.user.findFirst({
-          orderBy: {
-            contributions: {
-              _count: 'desc'
-            }
-          },
-          include: {
-            contributions: true
-          }
-        })
-      ]);
-
-      return {
-        totalUsers,
-        totalContributions,
-        topContributor: topContributor?.name || 'Anonymous User',
-        mostBadges: badgeLeader?.name || 'Anonymous User',
-        longestStreak: streakLeader?.longest || 0,
-        highestLevel: levelLeader 
-          ? this.calculateLevel(
-              levelLeader.contributions.reduce((sum, c) => sum + c.points, 0)
-            )
-          : 0
-      };
-    }, { maxAge: this.CACHE_TTL });
-  }
-
-  private calculateLevel(points: number): number {
-    return Math.floor(Math.sqrt(points / 100)) + 1;
-  }
-
-  private mapUserToLeaderboardEntry(user: any, index: number): LeaderboardEntry {
-    const points = user.contributions.reduce((sum: number, c: any) => sum + c.points, 0);
-    return {
-      userId: user.id,
-      username: user.name || 'Anonymous User',
-      avatar: user.image || undefined,
-      rank: index + 1,
-      points,
-      contributions: user.contributions.length,
-      badges: user.badges.length,
-      streak: {
-        current: user.streak?.current || 0,
-        longest: user.streak?.longest || 0
+        return result;
       },
-      level: this.calculateLevel(points)
-    };
+      {
+        maxAge: this.CACHE_TTL,
+        priority: validatedPage === 1 ? 'high' : 'medium'
+      }
+    );
+  }
+
+  async getUserRankContext(
+    userId: string,
+    timeframe: TimeFrame = 'allTime',
+    context = 5
+  ): Promise<{
+    userRank: number;
+    surroundingEntries: LeaderboardEntry[];
+  }> {
+    if (!userId) throw createApiError(400, 'User ID is required');
+    
+    const cacheKey = `user_rank_${userId}_${timeframe}_${context}`;
+    
+    return apiCache.fetch(
+      cacheKey,
+      async () => {
+        const dateFilter = this.getDateFilter(timeframe);
+        
+        const userProgress = await prisma.userProgress.findUnique({
+          where: { userId },
+          select: { totalPoints: true }
+        });
+
+        if (!userProgress) {
+          throw createApiError(404, 'User progress not found');
+        }
+
+        const userRank = await prisma.userProgress.count({
+          where: {
+            totalPoints: {
+              gt: userProgress.totalPoints
+            },
+            user: {
+              measurements: {
+                some: dateFilter
+              }
+            }
+          }
+        }) + 1;
+
+        const page = Math.max(1, Math.ceil(userRank / 10));
+        const surroundingEntries = await this.getLeaderboard(
+          timeframe,
+          page,
+          context * 2 + 1
+        );
+
+        return {
+          userRank,
+          surroundingEntries: surroundingEntries.entries
+        };
+      },
+      {
+        maxAge: this.CACHE_TTL,
+        priority: 'medium'
+      }
+    );
+  }
+
+  private async getLeaderboardStats(
+    tx: PrismaClient,
+    dateFilter: DateFilter
+  ): Promise<LeaderboardStats> {
+    const statsKey = `leaderboard_stats_${JSON.stringify(dateFilter)}`;
+    
+    return apiCache.fetch(
+      statsKey,
+      async () => {
+        const [
+          totalUsers,
+          totalContributions,
+          topContributor,
+          mostBadges,
+          longestStreak,
+          highestLevel
+        ] = await Promise.all([
+          tx.userProgress.count({
+            where: {
+              user: {
+                measurements: { some: dateFilter }
+              }
+            }
+          }),
+          tx.measurement.count({ where: dateFilter }),
+          tx.userProgress.findFirst({
+            where: {
+              user: {
+                measurements: { some: dateFilter }
+              }
+            },
+            orderBy: { totalPoints: 'desc' },
+            select: {
+              user: { select: { name: true, email: true } }
+            }
+          }),
+          tx.userProgress.findFirst({
+            orderBy: {
+              badges: { _count: 'desc' }
+            },
+            select: {
+              user: { select: { name: true, email: true } }
+            }
+          }),
+          tx.userStreak.findFirst({
+            orderBy: { longestStreak: 'desc' },
+            select: { longestStreak: true }
+          }),
+          tx.userProgress.findFirst({
+            orderBy: { level: 'desc' },
+            select: { level: true }
+          })
+        ]);
+
+        return {
+          totalUsers,
+          totalContributions,
+          topContributor: topContributor?.user.name ?? topContributor?.user.email?.split('@')[0] ?? 'N/A',
+          mostBadges: mostBadges?.user.name ?? mostBadges?.user.email?.split('@')[0] ?? 'N/A',
+          longestStreak: longestStreak?.longestStreak ?? 0,
+          highestLevel: highestLevel?.level ?? 1
+        };
+      },
+      {
+        maxAge: this.CACHE_TTL * 2,
+        priority: 'high'
+      }
+    );
+  }
+
+  private getDateFilter(timeframe: TimeFrame): DateFilter {
+    const now = new Date();
+    
+    switch (timeframe) {
+      case 'daily':
+        return {
+          createdAt: {
+            gte: new Date(now.setHours(0, 0, 0, 0))
+          }
+        };
+      case 'weekly':
+        return {
+          createdAt: {
+            gte: new Date(now.setDate(now.getDate() - 7))
+          }
+        };
+      case 'monthly':
+        return {
+          createdAt: {
+            gte: new Date(now.setMonth(now.getMonth() - 1))
+          }
+        };
+      default:
+        return {};
+    }
   }
 }
 

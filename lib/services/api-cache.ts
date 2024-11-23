@@ -4,30 +4,35 @@ interface CacheConfig {
   maxAge: number;  // Time in seconds
   staleWhileRevalidate: number;  // Time in seconds
   maxEntries?: number;  // Maximum number of entries to store
+  priority?: 'low' | 'medium' | 'high';  // Cache eviction priority
 }
 
 interface CacheEntry {
   data: any;
   timestamp: number;
   lastAccessed: number;
+  accessCount: number;  // Track how often this entry is accessed
+  priority: 'low' | 'medium' | 'high';
 }
 
 export class ApiCache {
   private static instance: ApiCache;
   private cache: Map<string, CacheEntry>;
   private config: CacheConfig;
+  private prefetchQueue: Set<string> = new Set();
 
   private constructor(config: CacheConfig) {
     this.cache = new Map();
     this.config = {
       maxAge: config.maxAge || 300, // 5 minutes default
       staleWhileRevalidate: config.staleWhileRevalidate || 600, // 10 minutes default
-      maxEntries: config.maxEntries || 100,
+      maxEntries: config.maxEntries || 1000, // Increased default size
     };
 
-    // Periodic cleanup
+    // Periodic cleanup and prefetch
     if (typeof window !== 'undefined') {
       setInterval(() => this.cleanup(), 60000); // Cleanup every minute
+      setInterval(() => this.processPrefetchQueue(), 5000); // Process prefetch queue every 5 seconds
     }
   }
 
@@ -36,7 +41,7 @@ export class ApiCache {
       ApiCache.instance = new ApiCache(config || {
         maxAge: 300,
         staleWhileRevalidate: 600,
-        maxEntries: 100,
+        maxEntries: 1000,
       });
     }
     return ApiCache.instance;
@@ -50,17 +55,16 @@ export class ApiCache {
     const mergedConfig = { ...this.config, ...config };
     const cacheKey = this.generateCacheKey(key);
     
-    // Start performance monitoring
     performanceMonitor.startMark(`api_fetch_${cacheKey}`);
 
     try {
-      // Check cache
       const cached = this.cache.get(cacheKey);
       const now = Date.now();
 
       if (cached) {
-        // Update last accessed time
+        // Update access statistics
         cached.lastAccessed = now;
+        cached.accessCount++;
 
         // Check if cache is fresh
         if (now - cached.timestamp < mergedConfig.maxAge * 1000) {
@@ -101,6 +105,47 @@ export class ApiCache {
     }
   }
 
+  // Add to prefetch queue
+  prefetch(key: string): void {
+    this.prefetchQueue.add(this.generateCacheKey(key));
+  }
+
+  // Process prefetch queue
+  private async processPrefetchQueue(): Promise<void> {
+    const keys = Array.from(this.prefetchQueue);
+    this.prefetchQueue.clear();
+
+    for (const key of keys) {
+      const cached = this.cache.get(key);
+      if (cached && this.shouldPrefetch(cached)) {
+        try {
+          await this.revalidate(key, cached.data.fetcher, {
+            ...this.config,
+            priority: cached.priority,
+          });
+        } catch (error) {
+          console.error('Prefetch failed:', error);
+        }
+      }
+    }
+  }
+
+  // Determine if an entry should be prefetched based on access patterns
+  private shouldPrefetch(entry: CacheEntry): boolean {
+    const now = Date.now();
+    const age = now - entry.timestamp;
+    
+    // Prefetch if:
+    // 1. Entry is accessed frequently (more than 5 times)
+    // 2. Entry is about to expire (within 20% of maxAge)
+    // 3. Entry has high priority
+    return (
+      entry.accessCount > 5 ||
+      age > (this.config.maxAge * 0.8 * 1000) ||
+      entry.priority === 'high'
+    );
+  }
+
   private async revalidate<T>(
     key: string,
     fetcher: () => Promise<T>,
@@ -127,96 +172,134 @@ export class ApiCache {
   private set(key: string, data: any, config: CacheConfig): void {
     // Ensure we don't exceed max entries
     if (config.maxEntries && this.cache.size >= config.maxEntries) {
-      this.evictOldest();
+      this.evictEntries();
     }
 
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
       lastAccessed: Date.now(),
+      accessCount: 0,
+      priority: config.priority || 'low',
     });
   }
 
-  private evictOldest(): void {
-    let oldest: [string, CacheEntry] | null = null;
+  // Improved cache eviction strategy
+  private evictEntries(): void {
+    // First try to evict expired entries
+    let evicted = this.evictExpiredEntries();
     
-    for (const entry of this.cache.entries()) {
-      if (!oldest || entry[1].lastAccessed < oldest[1].lastAccessed) {
-        oldest = entry;
-      }
+    // If we still need to evict more, use LRU + priority + access count
+    if (this.cache.size >= (this.config.maxEntries || 1000)) {
+      evicted = this.evictLRUEntries();
     }
 
-    if (oldest) {
-      this.cache.delete(oldest[0]);
+    // Log eviction statistics
+    if (evicted > 0) {
+      console.debug(`Cache evicted ${evicted} entries`);
     }
   }
 
-  private cleanup(): void {
+  private evictExpiredEntries(): number {
     const now = Date.now();
-    
+    let evicted = 0;
+
     for (const [key, entry] of this.cache.entries()) {
       if (now - entry.timestamp > this.config.staleWhileRevalidate * 1000) {
         this.cache.delete(key);
+        evicted++;
       }
     }
+
+    return evicted;
+  }
+
+  private evictLRUEntries(): number {
+    // Sort entries by priority and last accessed time
+    const entries = Array.from(this.cache.entries())
+      .sort((a, b) => {
+        // First sort by priority
+        const priorityOrder = { low: 0, medium: 1, high: 2 };
+        const priorityDiff = priorityOrder[a[1].priority] - priorityOrder[b[1].priority];
+        
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        // Then by access count
+        const accessDiff = b[1].accessCount - a[1].accessCount;
+        if (accessDiff !== 0) return accessDiff;
+        
+        // Finally by last accessed time
+        return b[1].lastAccessed - a[1].lastAccessed;
+      });
+
+    // Remove 25% of entries
+    const removeCount = Math.ceil(this.cache.size * 0.25);
+    let evicted = 0;
+
+    for (let i = 0; i < removeCount && i < entries.length; i++) {
+      this.cache.delete(entries[i][0]);
+      evicted++;
+    }
+
+    return evicted;
   }
 
   private generateCacheKey(key: string): string {
-    return `api_cache_${key}`;
+    return `cache_${key}`;
   }
 
   // Get cache statistics
   getStats() {
     const now = Date.now();
-    const entries = Array.from(this.cache.entries());
-    
-    return {
-      totalEntries: this.cache.size,
-      freshEntries: entries.filter(([_, entry]) => 
-        now - entry.timestamp < this.config.maxAge * 1000
-      ).length,
-      staleEntries: entries.filter(([_, entry]) => 
-        now - entry.timestamp >= this.config.maxAge * 1000
-      ).length,
-      averageAge: entries.reduce((sum, [_, entry]) => 
-        sum + (now - entry.timestamp), 0
-      ) / (entries.length || 1),
-      oldestEntry: Math.min(...entries.map(([_, entry]) => entry.timestamp)),
-      newestEntry: Math.max(...entries.map(([_, entry]) => entry.timestamp)),
+    const stats = {
+      size: this.cache.size,
+      maxEntries: this.config.maxEntries,
+      entriesByPriority: {
+        low: 0,
+        medium: 0,
+        high: 0,
+      },
+      freshEntries: 0,
+      staleEntries: 0,
+      averageAccessCount: 0,
+      totalAccessCount: 0,
     };
+
+    for (const entry of this.cache.values()) {
+      stats.entriesByPriority[entry.priority]++;
+      stats.totalAccessCount += entry.accessCount;
+      
+      if (now - entry.timestamp < this.config.maxAge * 1000) {
+        stats.freshEntries++;
+      } else {
+        stats.staleEntries++;
+      }
+    }
+
+    stats.averageAccessCount = stats.totalAccessCount / this.cache.size;
+    return stats;
   }
 
-  // Clear the entire cache
   clear(): void {
     this.cache.clear();
+    this.prefetchQueue.clear();
   }
 
-  // Remove a specific entry
   remove(key: string): void {
-    const cacheKey = this.generateCacheKey(key);
-    this.cache.delete(cacheKey);
+    this.cache.delete(this.generateCacheKey(key));
   }
 
-  // Check if an entry exists and is fresh
   isFresh(key: string): boolean {
-    const cacheKey = this.generateCacheKey(key);
-    const entry = this.cache.get(cacheKey);
-    
+    const entry = this.cache.get(this.generateCacheKey(key));
     if (!entry) return false;
-    
     return Date.now() - entry.timestamp < this.config.maxAge * 1000;
   }
 
-  // Check if an entry exists but is stale
   isStale(key: string): boolean {
-    const cacheKey = this.generateCacheKey(key);
-    const entry = this.cache.get(cacheKey);
-    
+    const entry = this.cache.get(this.generateCacheKey(key));
     if (!entry) return false;
-    
     const age = Date.now() - entry.timestamp;
-    return age >= this.config.maxAge * 1000 && 
-           age < this.config.staleWhileRevalidate * 1000;
+    return age > this.config.maxAge * 1000 && age < this.config.staleWhileRevalidate * 1000;
   }
 }
 
