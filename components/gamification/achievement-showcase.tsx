@@ -110,48 +110,122 @@ const AchievementDetailsModal = ({ achievement, isUnlocked, onClose }: Achieveme
   );
 };
 
-export function AchievementShowcase() {
-  const { userProgress } = useGamification();
+export function AchievementShowcase({ achievements }: { achievements: Achievement[] }) {
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  const [selectedTier, setSelectedTier] = useState<'all' | Achievement['tier']>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const achievements = Object.values(ACHIEVEMENTS);
-  const unlockedAchievements = new Set(userProgress?.achievements || []);
+  const filteredAchievements = achievements.filter(achievement => {
+    const matchesFilter = filter === 'all' || 
+      (filter === 'unlocked' && achievement.unlocked) || 
+      (filter === 'locked' && !achievement.unlocked);
+    const matchesTier = selectedTier === 'all' || achievement.tier === selectedTier;
+    const matchesSearch = achievement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      achievement.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesFilter && matchesTier && matchesSearch;
+  });
 
-  const achievementsByCategory = achievements.reduce((acc, achievement) => {
-    if (!acc[achievement.category]) {
-      acc[achievement.category] = [];
-    }
-    acc[achievement.category].push(achievement);
-    return acc;
-  }, {} as Record<string, Achievement[]>);
+  const stats = {
+    total: achievements.length,
+    unlocked: achievements.filter(a => a.unlocked).length,
+    points: achievements.reduce((sum, a) => sum + (a.unlocked ? a.points : 0), 0)
+  };
 
   return (
-    <div className="space-y-8">
-      {Object.entries(achievementsByCategory).map(([category, categoryAchievements]) => (
-        <div key={category} className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-800">
-            {category.split('_').map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-            ).join(' ')}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categoryAchievements.map(achievement => (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="text-4xl mb-2">🏆</div>
+          <div className="text-2xl font-bold">{stats.unlocked}/{stats.total}</div>
+          <div className="text-sm text-gray-500">Achievements Unlocked</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="text-4xl mb-2">✨</div>
+          <div className="text-2xl font-bold">{stats.points}</div>
+          <div className="text-sm text-gray-500">Total Points Earned</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="text-4xl mb-2">📊</div>
+          <div className="text-2xl font-bold">{Math.round((stats.unlocked / stats.total) * 100)}%</div>
+          <div className="text-sm text-gray-500">Completion Rate</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-grow">
+            <input
+              type="text"
+              placeholder="Search achievements..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <select
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as typeof filter)}
+          >
+            <option value="all">All</option>
+            <option value="unlocked">Unlocked</option>
+            <option value="locked">Locked</option>
+          </select>
+          <select
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={selectedTier}
+            onChange={(e) => setSelectedTier(e.target.value as typeof selectedTier)}
+          >
+            <option value="all">All Tiers</option>
+            <option value="bronze">Bronze</option>
+            <option value="silver">Silver</option>
+            <option value="gold">Gold</option>
+            <option value="platinum">Platinum</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Achievement Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <AnimatePresence>
+          {filteredAchievements.map((achievement) => (
+            <motion.div
+              key={achievement.id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+            >
               <AchievementCard
-                key={achievement.id}
                 achievement={achievement}
-                isUnlocked={unlockedAchievements.has(achievement.id)}
+                isUnlocked={achievement.unlocked}
                 onClick={() => setSelectedAchievement(achievement)}
               />
-            ))}
-          </div>
-        </div>
-      ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
+      {/* Empty State */}
+      {filteredAchievements.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-4xl mb-4">🔍</div>
+          <h3 className="text-lg font-medium text-gray-900">No achievements found</h3>
+          <p className="text-gray-500">Try adjusting your filters or search query</p>
+        </div>
+      )}
+
+      {/* Achievement Details Modal */}
       <AnimatePresence>
         {selectedAchievement && (
           <AchievementDetailsModal
             achievement={selectedAchievement}
-            isUnlocked={unlockedAchievements.has(selectedAchievement.id)}
+            isUnlocked={selectedAchievement.unlocked}
             onClose={() => setSelectedAchievement(null)}
           />
         )}

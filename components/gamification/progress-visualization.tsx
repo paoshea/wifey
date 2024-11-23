@@ -71,19 +71,73 @@ const LevelProgress = ({ level, progress, nextThreshold }: {
 );
 
 const mockActivityData = [
-  { date: '2024-01-01', measurements: 12 },
-  { date: '2024-01-02', measurements: 8 },
-  { date: '2024-01-03', measurements: 15 },
-  { date: '2024-01-04', measurements: 10 },
-  { date: '2024-01-05', measurements: 20 },
-  { date: '2024-01-06', measurements: 18 },
-  { date: '2024-01-07', measurements: 25 },
+  { date: '2024-01-01', measurements: 12, ruralMeasurements: 8, uniqueLocations: 5 },
+  { date: '2024-01-02', measurements: 8, ruralMeasurements: 6, uniqueLocations: 3 },
+  { date: '2024-01-03', measurements: 15, ruralMeasurements: 12, uniqueLocations: 7 },
+  { date: '2024-01-04', measurements: 10, ruralMeasurements: 7, uniqueLocations: 4 },
+  { date: '2024-01-05', measurements: 20, ruralMeasurements: 15, uniqueLocations: 8 },
+  { date: '2024-01-06', measurements: 18, ruralMeasurements: 14, uniqueLocations: 6 },
+  { date: '2024-01-07', measurements: 25, ruralMeasurements: 20, uniqueLocations: 10 },
 ];
 
-export function ProgressVisualization() {
-  const { userProgress, levelProgress } = useGamification();
+const ActivityChart = ({ data }: { data: typeof mockActivityData }) => (
+  <div className="bg-white p-6 rounded-lg shadow-sm">
+    <h3 className="text-lg font-bold mb-4">Activity Overview</h3>
+    <div className="h-64">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis 
+            dataKey="date" 
+            tickFormatter={(date) => new Date(date).toLocaleDateString(undefined, { weekday: 'short' })} 
+          />
+          <YAxis />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (active && payload && payload.length) {
+                return (
+                  <div className="bg-white p-3 rounded shadow-lg border">
+                    <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
+                    {payload.map((entry) => (
+                      <p key={entry.name} style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="measurements" 
+            stroke="#3B82F6" 
+            name="Total Measurements"
+            strokeWidth={2}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="ruralMeasurements" 
+            stroke="#10B981" 
+            name="Rural Measurements"
+            strokeWidth={2}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="uniqueLocations" 
+            stroke="#8B5CF6" 
+            name="Unique Locations"
+            strokeWidth={2}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </div>
+);
 
-  if (!userProgress || !levelProgress) {
+export function ProgressVisualization({ progress }: { progress: any }) {
+  if (!progress) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin text-2xl">🔄</div>
@@ -94,90 +148,66 @@ export function ProgressVisualization() {
   const stats = [
     {
       label: 'Total Measurements',
-      value: userProgress.stats.totalMeasurements,
+      value: progress.stats.totalMeasurements,
       icon: '📊',
-      trend: 12 // Mock trend data
+      trend: progress.stats.measurementsTrend
     },
     {
-      label: 'Rural Areas Mapped',
-      value: userProgress.stats.ruralMeasurements,
-      icon: '🌾',
-      trend: 25
+      label: 'Rural Coverage',
+      value: progress.stats.ruralMeasurements,
+      icon: '🌲',
+      trend: progress.stats.ruralTrend
     },
     {
-      label: 'Streak Days',
-      value: userProgress.stats.consecutiveDays,
-      icon: '🔥',
-      trend: 0
+      label: 'Unique Locations',
+      value: progress.stats.uniqueLocations,
+      icon: '📍',
+      trend: progress.stats.locationsTrend
     },
     {
-      label: 'People Helped',
-      value: userProgress.stats.helpfulActions,
-      icon: '🤝',
-      trend: 8
+      label: 'Contribution Score',
+      value: progress.stats.contributionScore,
+      icon: '⭐️',
+      trend: progress.stats.scoreTrend
     }
   ];
 
   return (
     <div className="space-y-6">
-      {/* Level Progress */}
       <LevelProgress 
-        level={userProgress.level}
-        progress={levelProgress.progress}
-        nextThreshold={levelProgress.nextThreshold}
+        level={progress.level} 
+        progress={progress.levelProgress} 
+        nextThreshold={progress.nextLevelThreshold}
       />
-
-      {/* Stats Grid */}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(stat => (
+        {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
 
-      {/* Activity Chart */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-bold mb-4">Recent Activity</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={mockActivityData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(value) => new Date(value).toLocaleDateString()}
-              />
-              <YAxis />
-              <Tooltip
-                labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                formatter={(value: number) => [value, 'Measurements']}
-              />
-              <Line
-                type="monotone"
-                dataKey="measurements"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={{ fill: '#2563eb' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <ActivityChart data={progress.activityData || mockActivityData} />
 
-      {/* Achievement Progress */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-bold mb-4">Achievement Progress</h3>
+        <h3 className="text-lg font-bold mb-4">Milestones</h3>
         <div className="space-y-4">
-          {userProgress.achievements.slice(-3).map((achievementId, index) => (
-            <div
-              key={achievementId}
-              className="flex items-center space-x-3 text-sm"
-            >
-              <div className="text-xl">🏆</div>
-              <div className="flex-grow">
-                <div className="font-medium">Achievement Unlocked</div>
-                <div className="text-gray-500">{achievementId}</div>
+          {progress.milestones.map((milestone: any) => (
+            <div key={milestone.id} className="flex items-center space-x-4">
+              <div className={`text-2xl ${milestone.completed ? 'opacity-100' : 'opacity-50'}`}>
+                {milestone.icon}
               </div>
-              <div className="text-gray-400">
-                {index === 0 ? 'Just now' : index === 1 ? '2h ago' : '1d ago'}
+              <div className="flex-grow">
+                <div className="font-medium">{milestone.title}</div>
+                <div className="text-sm text-gray-500">{milestone.description}</div>
+              </div>
+              <div>
+                {milestone.completed ? (
+                  <span className="text-green-600">✓</span>
+                ) : (
+                  <span className="text-sm text-gray-500">
+                    {milestone.progress}/{milestone.target}
+                  </span>
+                )}
               </div>
             </div>
           ))}

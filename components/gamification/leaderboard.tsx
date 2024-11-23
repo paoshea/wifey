@@ -69,111 +69,149 @@ const LeaderboardRow = ({ entry, isCurrentUser, rank }: LeaderboardRowProps) => 
   );
 };
 
-export function Leaderboard() {
+export function Leaderboard({ entries, timeframe }: { entries: LeaderboardEntry[]; timeframe: string }) {
   const { data: session } = useSession();
-  const { getLeaderboard, getUserRank } = useGamification();
-  const [timeframe, setTimeframe] = useState<typeof timeframes[number]['id']>('weekly');
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [userRank, setUserRank] = useState<{ rank: number; total: number } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [showUserStats, setShowUserStats] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [leaderboardData, rankData] = await Promise.all([
-          getLeaderboard(timeframe),
-          session?.user?.id ? getUserRank(timeframe) : null
-        ]);
-        setEntries(leaderboardData);
-        setUserRank(rankData);
-      } catch (error) {
-        console.error('Failed to fetch leaderboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [timeframe, getLeaderboard, getUserRank, session?.user?.id]);
+  const currentUserEntry = entries.find(entry => entry.userId === session?.user?.id);
+  const currentUserRank = entries.findIndex(entry => entry.userId === session?.user?.id) + 1;
 
   return (
     <div className="space-y-6">
-      {/* Timeframe Selector */}
-      <div className="flex space-x-2 p-1 bg-gray-100 rounded-lg">
+      {/* Timeframe Tabs */}
+      <div className="flex space-x-2 overflow-x-auto pb-2">
         {timeframes.map(({ id, label }) => (
-          <button
+          <motion.button
             key={id}
-            onClick={() => setTimeframe(id)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={cn(
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              timeframe === id 
-                ? 'bg-white text-blue-600 shadow-sm' 
-                : 'text-gray-600 hover:bg-gray-200'
+              'px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap',
+              timeframe === id
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
             )}
+            onClick={() => {/* Handled by parent */}}
           >
             {label}
-          </button>
+          </motion.button>
         ))}
       </div>
 
-      {/* User's Rank */}
-      {session?.user && userRank && (
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-sm text-blue-600 font-medium">Your Ranking</div>
-          <div className="mt-1 text-2xl font-bold">
-            #{userRank.rank.toLocaleString()}
-            <span className="text-base font-normal text-gray-600 ml-2">
-              of {userRank.total.toLocaleString()} players
-            </span>
+      {/* Current User Stats */}
+      {currentUserEntry && (
+        <motion.div
+          initial={false}
+          animate={{ height: showUserStats ? 'auto' : '80px' }}
+          className="bg-blue-50 rounded-lg overflow-hidden"
+        >
+          <div 
+            className="p-4 cursor-pointer"
+            onClick={() => setShowUserStats(!showUserStats)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  {currentUserEntry.avatarUrl ? (
+                    <img
+                      src={currentUserEntry.avatarUrl}
+                      alt={currentUserEntry.username}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl">👤</span>
+                  )}
+                </div>
+                <div>
+                  <div className="font-medium">Your Position</div>
+                  <div className="text-sm text-gray-600">
+                    Rank #{currentUserRank} • Level {currentUserEntry.level}
+                  </div>
+                </div>
+              </div>
+              <motion.div
+                animate={{ rotate: showUserStats ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                ▼
+              </motion.div>
+            </div>
           </div>
-        </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showUserStats ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {showUserStats && (
+              <div className="px-4 pb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Points</div>
+                    <div className="text-lg font-bold">{currentUserEntry.points.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Measurements</div>
+                    <div className="text-lg font-bold">{currentUserEntry.measurements.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Rural Coverage</div>
+                    <div className="text-lg font-bold">{currentUserEntry.ruralMeasurements.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Locations</div>
+                    <div className="text-lg font-bold">{currentUserEntry.uniqueLocations.toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Leaderboard List */}
-      <div className="space-y-2">
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center py-12"
-            >
-              <div className="space-y-2 text-center">
-                <div className="animate-spin text-2xl">🔄</div>
-                <div className="text-gray-500">Loading leaderboard...</div>
-              </div>
-            </motion.div>
-          ) : entries.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-12 text-gray-500"
-            >
-              No entries for this timeframe yet.
-              Be the first to contribute!
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-2"
-            >
-              {entries.map((entry, index) => (
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="divide-y">
+          <AnimatePresence>
+            {entries.map((entry, index) => (
+              <motion.div
+                key={entry.userId}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+              >
                 <LeaderboardRow
-                  key={entry.id}
                   entry={entry}
                   isCurrentUser={entry.userId === session?.user?.id}
                   rank={index + 1}
                 />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {entries.length === 0 && (
+          <div className="py-12 text-center">
+            <div className="text-4xl mb-4">🏆</div>
+            <h3 className="text-lg font-medium text-gray-900">No entries yet</h3>
+            <p className="text-gray-500">Be the first to make it to the leaderboard!</p>
+          </div>
+        )}
       </div>
+
+      {/* Pagination or Load More */}
+      {entries.length > 0 && entries.length % 10 === 0 && (
+        <div className="flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-4 py-2 bg-white rounded-lg text-gray-600 hover:bg-gray-50"
+          >
+            Load More
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 }
