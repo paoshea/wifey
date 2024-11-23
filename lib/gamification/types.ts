@@ -8,6 +8,18 @@ export type AchievementCategory =
   | 'NETWORK_VALIDATOR'   // Verifying others' measurements
   | 'COVERAGE_CHAMPION';  // Top contributor
 
+export type AchievementRequirementType = 
+  | 'measurements'
+  | 'rural_measurements'
+  | 'verified_spots'
+  | 'helping_others'
+  | 'consistency';
+
+export interface AchievementRequirement {
+  type: AchievementRequirementType;
+  count: number;
+}
+
 export interface Achievement {
   id: string;
   title: string;
@@ -19,6 +31,7 @@ export interface Achievement {
   target: number;
   completed: boolean;
   earnedDate?: string;
+  requirements: AchievementRequirement;
 }
 
 export interface UserProgress {
@@ -35,16 +48,6 @@ export interface UserProgress {
   };
 }
 
-export interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  points: number;
-  level: number;
-  topAchievements: Achievement[];
-  rank: number;
-  avatarUrl?: string;
-}
-
 export interface ContributionReward {
   points: number;
   bonuses: {
@@ -53,9 +56,19 @@ export interface ContributionReward {
     consistencyStreak?: number;
     qualityBonus?: number;
   };
-  achievements?: Achievement[];
+  achievements: Achievement[];
   levelUp?: {
     newLevel: number;
     rewards: string[];
   };
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  points: number;
+  level: number;
+  topAchievements: Achievement[];
+  rank: number;
+  avatarUrl?: string;
 }

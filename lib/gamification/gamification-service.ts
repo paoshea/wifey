@@ -2,21 +2,43 @@ import {
   Achievement, 
   UserProgress, 
   ContributionReward,
-  LeaderboardEntry 
+  LeaderboardEntry,
+  AchievementRequirementType 
 } from './types';
 import { 
   ACHIEVEMENTS, 
   RURAL_BONUS_MULTIPLIER, 
   FIRST_IN_AREA_BONUS,
-  STREAK_BONUS_MULTIPLIER,
+  QUALITY_BONUS_MAX,
   calculateLevel,
-  getNextLevelThreshold
+  getNextLevelThreshold,
+  calculateAchievementProgress
 } from './achievements';
 
 export class GamificationService {
-  private async getUserProgress(userId: string): Promise<UserProgress> {
+  private userProgress: Map<string, UserProgress> = new Map();
+  
+  constructor() {
+    // Initialize with empty user progress
+  }
+
+  private async getUserProgress(userId: string): Promise<UserProgress | null> {
     // TODO: Implement database fetch
-    return {
+    return this.userProgress.get(userId) || null;
+  }
+
+  private async updateUserProgress(userId: string, progress: UserProgress): Promise<void> {
+    // TODO: Implement database update
+    this.userProgress.set(userId, progress);
+  }
+
+  public async processMeasurement(userId: string, measurement: { 
+    isRural: boolean;
+    isFirstInArea: boolean;
+    quality: number;
+  }): Promise<ContributionReward> {
+    const { isRural, isFirstInArea, quality } = measurement;
+    let userProgress = await this.getUserProgress(userId) || {
       totalPoints: 0,
       level: 1,
       achievements: [],
@@ -29,160 +51,155 @@ export class GamificationService {
         lastMeasurementDate: new Date().toISOString()
       }
     };
-  }
 
-  private async updateUserProgress(userId: string, progress: UserProgress): Promise<void> {
-    // TODO: Implement database update
-  }
-
-  async processMeasurement(
-    userId: string, 
-    isRuralArea: boolean,
-    isFirstInArea: boolean,
-    quality: number // 0-1 measurement quality score
-  ): Promise<ContributionReward> {
-    const userProgress = await this.getUserProgress(userId);
-    const basePoints = 10; // Base points for any measurement
-    let totalPoints = basePoints;
+    // Calculate base points and bonuses
+    let points = 10; // Base points for measurement
     const bonuses: ContributionReward['bonuses'] = {};
 
-    // Apply rural bonus
-    if (isRuralArea) {
-      const ruralBonus = Math.floor(basePoints * (RURAL_BONUS_MULTIPLIER - 1));
-      totalPoints += ruralBonus;
+    if (isRural) {
+      const ruralBonus = Math.round(points * RURAL_BONUS_MULTIPLIER);
+      points += ruralBonus;
       bonuses.ruralArea = ruralBonus;
       userProgress.stats.ruralMeasurements++;
     }
 
-    // Apply first-in-area bonus
     if (isFirstInArea) {
-      totalPoints += FIRST_IN_AREA_BONUS;
+      points += FIRST_IN_AREA_BONUS;
       bonuses.firstInArea = FIRST_IN_AREA_BONUS;
     }
 
-    // Apply streak bonus
-    const lastMeasurement = new Date(userProgress.stats.lastMeasurementDate);
+    // Quality bonus (0-10 points based on quality score)
+    const qualityBonus = Math.round(quality * QUALITY_BONUS_MAX);
+    points += qualityBonus;
+    bonuses.qualityBonus = qualityBonus;
+
+    // Update user progress
     const today = new Date();
-    const dayDiff = Math.floor((today.getTime() - lastMeasurement.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (dayDiff === 1) {
+    const lastMeasurementDate = new Date(userProgress.stats.lastMeasurementDate);
+    const daysSinceLastMeasurement = Math.floor((today.getTime() - lastMeasurementDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysSinceLastMeasurement === 1) {
       userProgress.stats.consecutiveDays++;
-      const streakBonus = Math.floor(basePoints * (STREAK_BONUS_MULTIPLIER - 1));
-      totalPoints += streakBonus;
+      const streakBonus = Math.min(userProgress.stats.consecutiveDays, 7);
+      points += streakBonus;
       bonuses.consistencyStreak = streakBonus;
-    } else if (dayDiff > 1) {
+    } else if (daysSinceLastMeasurement > 1) {
       userProgress.stats.consecutiveDays = 1;
     }
 
-    // Apply quality bonus
-    const qualityBonus = Math.floor(basePoints * quality);
-    totalPoints += qualityBonus;
-    bonuses.qualityBonus = qualityBonus;
-
-    // Update user stats
     userProgress.stats.totalMeasurements++;
     userProgress.stats.lastMeasurementDate = today.toISOString();
-    userProgress.totalPoints += totalPoints;
+    userProgress.totalPoints += points;
 
     // Check for new achievements
-    const newAchievements = this.checkAchievements(userProgress);
+    const newAchievements = await this.checkAchievements(userId, userProgress.stats);
     for (const achievement of newAchievements) {
       userProgress.achievements.push(achievement.id);
       userProgress.totalPoints += achievement.points;
     }
 
     // Check for level up
-    const oldLevel = userProgress.level;
     const newLevel = calculateLevel(userProgress.totalPoints);
-    const levelUp = newLevel > oldLevel ? {
+    const levelUp = newLevel > userProgress.level ? {
       newLevel,
       rewards: this.getLevelRewards(newLevel)
     } : undefined;
+    userProgress.level = newLevel;
 
-    if (levelUp) {
-      userProgress.level = newLevel;
-    }
-
-    // Save progress
     await this.updateUserProgress(userId, userProgress);
 
     return {
-      points: totalPoints,
+      points,
       bonuses,
       achievements: newAchievements,
       levelUp
     };
   }
 
-  private checkAchievements(progress: UserProgress): Achievement[] {
-    const newAchievements: Achievement[] = [];
+  private async checkAchievements(userId: string, stats: UserProgress['stats']): Promise<Achievement[]> {
+    const earnedAchievements: Achievement[] = [];
+    const userAchievements = await this.getUserAchievements(userId);
 
-    for (const achievement of Object.values(ACHIEVEMENTS)) {
-      if (progress.achievements.includes(achievement.id)) {
-        continue;
-      }
+    for (const achievement of userAchievements) {
+      if (achievement.completed) continue;
 
-      let earned = false;
-      switch (achievement.requirements.type) {
+      const { type, count } = achievement.requirements;
+      let currentProgress = 0;
+
+      switch (type) {
         case 'measurements':
-          earned = progress.stats.totalMeasurements >= achievement.requirements.count;
+          currentProgress = stats.totalMeasurements;
           break;
         case 'rural_measurements':
-          earned = progress.stats.ruralMeasurements >= achievement.requirements.count;
+          currentProgress = stats.ruralMeasurements;
           break;
         case 'verified_spots':
-          earned = progress.stats.verifiedSpots >= achievement.requirements.count;
+          currentProgress = stats.verifiedSpots;
           break;
         case 'helping_others':
-          earned = progress.stats.helpfulActions >= achievement.requirements.count;
+          currentProgress = stats.helpfulActions;
           break;
         case 'consistency':
-          earned = progress.stats.consecutiveDays >= achievement.requirements.count;
+          currentProgress = stats.consecutiveDays;
           break;
       }
 
-      if (earned) {
-        newAchievements.push(achievement);
+      achievement.progress = currentProgress;
+      if (currentProgress >= count && !achievement.completed) {
+        achievement.completed = true;
+        achievement.earnedDate = new Date().toISOString();
+        earnedAchievements.push(achievement);
       }
     }
 
-    return newAchievements;
+    return earnedAchievements;
+  }
+
+  public async getUserAchievements(userId: string): Promise<Achievement[]> {
+    const progress = await this.getUserProgress(userId);
+    if (!progress) {
+      return [...ACHIEVEMENTS]; // Return copy of base achievements for new users
+    }
+
+    // Merge base achievements with user progress
+    return ACHIEVEMENTS.map(achievement => {
+      const userAchievement = { ...achievement };
+      if (progress.achievements.includes(achievement.id)) {
+        userAchievement.completed = true;
+      }
+      return userAchievement;
+    });
+  }
+
+  public async getLeaderboard(timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime' = 'allTime'): Promise<LeaderboardEntry[]> {
+    // TODO: Implement proper leaderboard with timeframe filtering
+    const entries: LeaderboardEntry[] = [];
+    for (const [userId, progress] of this.userProgress.entries()) {
+      entries.push({
+        userId,
+        username: `User ${userId}`,
+        points: progress.totalPoints,
+        rank: 0 // Will be calculated after sorting
+      });
+    }
+    
+    // Sort by points and assign ranks
+    return entries
+      .sort((a, b) => b.points - a.points)
+      .map((entry, index) => ({ ...entry, rank: index + 1 }));
   }
 
   private getLevelRewards(level: number): string[] {
     const rewards: string[] = [];
     
-    // Define rewards for each level
-    switch (level) {
-      case 5:
-        rewards.push('Unlock custom profile badge');
-        break;
-      case 10:
-        rewards.push('Unlock verified contributor status');
-        break;
-      case 15:
-        rewards.push('Unlock coverage expert badge');
-        break;
-      default:
-        rewards.push('Bonus points multiplier increased');
+    // Add level-specific rewards
+    if (level % 5 === 0) {
+      rewards.push('special_badge');
     }
-
+    if (level % 10 === 0) {
+      rewards.push('premium_feature');
+    }
+    
     return rewards;
-  }
-
-  async getLeaderboard(
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime',
-    limit: number = 10
-  ): Promise<LeaderboardEntry[]> {
-    // TODO: Implement leaderboard fetch from database
-    return [];
-  }
-
-  async getUserRank(
-    userId: string,
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime'
-  ): Promise<{ rank: number; total: number }> {
-    // TODO: Implement user rank fetch from database
-    return { rank: 1, total: 1 };
   }
 }

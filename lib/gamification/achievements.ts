@@ -11,7 +11,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     progress: 1,
     target: 1,
     completed: true,
-    earnedDate: '2024-01-01'
+    earnedDate: '2024-01-01',
+    requirements: {
+      type: 'rural_measurements',
+      count: 1
+    }
   },
   {
     id: 'coverage-master',
@@ -22,7 +26,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     rarity: 'rare',
     progress: 750,
     target: 1000,
-    completed: false
+    completed: false,
+    requirements: {
+      type: 'measurements',
+      count: 1000
+    }
   },
   {
     id: 'speed-demon',
@@ -34,7 +42,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     progress: 50,
     target: 50,
     completed: true,
-    earnedDate: '2024-01-15'
+    earnedDate: '2024-01-15',
+    requirements: {
+      type: 'measurements',
+      count: 50
+    }
   },
   {
     id: 'consistency-king',
@@ -45,7 +57,11 @@ export const ACHIEVEMENTS: Achievement[] = [
     rarity: 'epic',
     progress: 15,
     target: 30,
-    completed: false
+    completed: false,
+    requirements: {
+      type: 'consistency',
+      count: 30
+    }
   },
   {
     id: 'helpful-hero',
@@ -56,13 +72,19 @@ export const ACHIEVEMENTS: Achievement[] = [
     rarity: 'rare',
     progress: 10,
     target: 25,
-    completed: false
+    completed: false,
+    requirements: {
+      type: 'helping_others',
+      count: 25
+    }
   }
 ];
 
 // Helper functions for achievement calculations
 export function calculateAchievementProgress(achievement: Achievement): number {
-  return Math.min(achievement.progress / achievement.target, 1);
+  const progress = Math.max(0, achievement.progress); // Handle negative progress
+  const target = Math.max(1, achievement.target); // Prevent division by zero
+  return Math.min(progress / target, 1);
 }
 
 export function isAchievementCompleted(achievement: Achievement): boolean {
