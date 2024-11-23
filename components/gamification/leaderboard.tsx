@@ -91,6 +91,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           <div
             className="p-4 cursor-pointer"
             onClick={() => setIsStatsExpanded(!isStatsExpanded)}
+            data-testid="stats-toggle"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -113,9 +114,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             </div>
           </div>
           <motion.div
+            className={`overflow-hidden transition-all ${isStatsExpanded ? '' : 'hidden'}`}
             initial={{ height: 0 }}
             animate={{ height: isStatsExpanded ? 'auto' : 0 }}
-            transition={{ duration: 0.2 }}
+            data-testid="stats-panel"
           >
             {isStatsExpanded && (
               <div className="p-4 pt-0 space-y-2">
@@ -153,16 +155,17 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                 animate="animate"
                 exit="exit"
               >
-                <div className="flex-none w-12 text-center font-bold">
+                <div className="flex-none w-12 text-center font-bold" data-testid={`rank-icon-${entry.rank}`}>
                   {getRankEmoji(entry.rank)}
                 </div>
                 <div className="flex-grow flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                    {entry.avatar ? (
+                    {entry.avatarUrl ? (
                       <img
-                        src={entry.avatar}
+                        src={entry.avatarUrl}
                         alt={entry.username}
                         className="w-full h-full object-cover"
+                        data-testid="avatar-image"
                       />
                     ) : (
                       <div

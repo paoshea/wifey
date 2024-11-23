@@ -16,31 +16,34 @@ jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => children,
 }));
 
-const mockEntries = [
+const mockEntries: LeaderboardEntry[] = [
   {
     id: '1',
-    username: 'Test User',
+    username: 'User 1',
     level: 5,
-    points: 1500,
+    points: 1000,
     rank: 1,
-    isCurrentUser: true,
-    avatar: null
+    topAchievements: [],
+    avatarUrl: 'avatar1.jpg',
+    isCurrentUser: true
   },
   {
     id: '2',
-    username: 'Rural Explorer',
-    level: 7,
-    points: 2500,
+    username: 'User 2',
+    level: 4,
+    points: 900,
     rank: 2,
-    avatar: 'https://example.com/avatar2.jpg'
+    topAchievements: [],
+    avatarUrl: 'avatar2.jpg'
   },
   {
     id: '3',
-    username: 'Coverage Master',
+    username: 'User 3',
     level: 3,
     points: 800,
     rank: 3,
-    avatar: 'https://example.com/avatar3.jpg'
+    topAchievements: [],
+    avatarUrl: null
   }
 ];
 
@@ -67,14 +70,14 @@ describe('Leaderboard', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
     const usernames = screen.getAllByTestId('username').map(el => el.textContent);
-    expect(usernames).toEqual(['Test User', 'Rural Explorer', 'Coverage Master']);
+    expect(usernames).toEqual(['User 1', 'User 2', 'User 3']);
   });
 
   it('highlights current user\'s entry', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
     // Find the current user's entry by username
-    const currentUserEntry = screen.getByText('Test User')
+    const currentUserEntry = screen.getByText('User 1')
       .closest('.flex.items-center.p-4');
     expect(currentUserEntry).toHaveClass('bg-blue-50');
   });
@@ -105,10 +108,92 @@ describe('Leaderboard', () => {
   it('displays avatar images when available', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    const avatarImages = screen.getAllByRole('img');
+    const avatarImages = screen.getAllByTestId('avatar-image');
     expect(avatarImages).toHaveLength(2); // Two users have avatar URLs
     
     const defaultAvatarContainer = screen.getByTestId('default-avatar');
-    expect(defaultAvatarContainer).toBeInTheDocument(); // One user has no avatar
+    expect(defaultAvatarContainer).toBeInTheDocument();
+  });
+
+  it('displays rank icons correctly', () => {
+    const entriesWithRanks: LeaderboardEntry[] = [
+      {
+        id: '1',
+        username: 'User 1',
+        level: 5,
+        points: 1000,
+        rank: 1,
+        topAchievements: [],
+        avatarUrl: null
+      },
+      {
+        id: '2',
+        username: 'User 2',
+        level: 4,
+        points: 900,
+        rank: 2,
+        topAchievements: [],
+        avatarUrl: null
+      },
+      {
+        id: '3',
+        username: 'User 3',
+        level: 3,
+        points: 800,
+        rank: 3,
+        topAchievements: [],
+        avatarUrl: null
+      },
+      {
+        id: '4',
+        username: 'User 4',
+        level: 2,
+        points: 700,
+        rank: 4,
+        topAchievements: [],
+        avatarUrl: null
+      }
+    ];
+    
+    render(<Leaderboard entries={entriesWithRanks} timeframe="weekly" />);
+    
+    const rankIcons = screen.getAllByTestId(/^rank-icon/);
+    expect(rankIcons).toHaveLength(4);
+    expect(rankIcons[0]).toHaveTextContent('👑');
+    expect(rankIcons[1]).toHaveTextContent('🥈');
+    expect(rankIcons[2]).toHaveTextContent('🥉');
+    expect(rankIcons[3]).toHaveTextContent('4');
+  });
+
+  it('handles stats expansion toggle correctly', async () => {
+    const mockCurrentUser: LeaderboardEntry = {
+      id: '1',
+      username: 'Test User',
+      level: 5,
+      points: 1000,
+      rank: 1,
+      topAchievements: [],
+      avatarUrl: null,
+      isCurrentUser: true
+    };
+
+    render(
+      <Leaderboard
+        entries={[mockCurrentUser]}
+        timeframe="weekly"
+      />
+    );
+
+    // Initial state should be collapsed
+    const statsPanel = screen.getByTestId('stats-panel');
+    expect(statsPanel).toHaveClass('hidden');
+
+    // Click to expand
+    const statsToggle = screen.getByTestId('stats-toggle');
+    await userEvent.click(statsToggle);
+
+    // Should now be expanded
+    expect(statsPanel).not.toHaveClass('hidden');
+    expect(screen.getByText('1,000')).toBeInTheDocument();
   });
 });
