@@ -5,10 +5,8 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-const options = {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-};
+// These options are no longer needed as they are now default
+const options = {};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;

@@ -139,13 +139,13 @@ export async function detectCarrier(
 ): Promise<string> {
   // Try network info first
   const networkResult = await detectFromNetworkInfo();
-  if (networkResult?.confidence > 0.8) {
+  if (networkResult && networkResult.confidence && networkResult.confidence > 0.8) {
     return networkResult.carrierId;
   }
 
   // Try location-based detection
-  const locationResult = await detectFromLocation(measurement.location);
-  if (locationResult?.confidence > 0.8) {
+  const locationResult = await detectFromLocation(measurement.geolocation);
+  if (locationResult && locationResult.confidence && locationResult.confidence > 0.8) {
     return locationResult.carrierId;
   }
 

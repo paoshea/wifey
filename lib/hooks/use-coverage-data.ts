@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCoverageStore } from '@/lib/store/coverage-store';
 import { CarrierCoverage } from '@/lib/carriers/types';
+import { SignalMeasurement } from '@/lib/types/monitoring';
 
 const COVERAGE_KEYS = {
   all: ['coverage'] as const,
@@ -9,6 +10,22 @@ const COVERAGE_KEYS = {
   provider: (provider: string) => [...COVERAGE_KEYS.all, 'provider', provider] as const,
   point: (id: string) => [...COVERAGE_KEYS.all, 'point', id] as const,
 };
+
+// Convert CarrierCoverage to SignalMeasurement
+const mapCarrierToSignal = (coverage: CarrierCoverage, id?: string): SignalMeasurement => ({
+  id,
+  timestamp: Date.now(),
+  carrier: coverage.provider,
+  network: coverage.technology,
+  networkType: coverage.technology,
+  geolocation: {
+    lat: coverage.location.lat,
+    lng: coverage.location.lng,
+  },
+  signalStrength: coverage.signalStrength,
+  technology: coverage.technology,
+  provider: coverage.provider,
+});
 
 export function useCoverageData(bounds: {
   minLat: number;
@@ -63,17 +80,18 @@ export function useCoverageData(bounds: {
         id: `temp-${Date.now()}`,
         timestamp: new Date().toISOString(),
       };
-      addCoveragePoint(optimisticPoint as CarrierCoverage);
+      const signalMeasurement = mapCarrierToSignal(optimisticPoint as CarrierCoverage, optimisticPoint.id);
+      addCoveragePoint(signalMeasurement);
 
-      return { optimisticPoint };
+      return { optimisticPoint: signalMeasurement };
     },
     onSuccess: (response, variables, context) => {
       // Update with the real data
       queryClient.setQueryData(
         COVERAGE_KEYS.area(bounds),
-        (old: CarrierCoverage[] | undefined) =>
+        (old: SignalMeasurement[] | undefined) =>
           old?.map((point) =>
-            point.id === context?.optimisticPoint.id ? response : point
+            point.id === context?.optimisticPoint.id ? mapCarrierToSignal(response, point.id) : point
           )
       );
     },
@@ -83,7 +101,7 @@ export function useCoverageData(bounds: {
       if (!isOffline) {
         queryClient.setQueryData(
           COVERAGE_KEYS.area(bounds),
-          (old: CarrierCoverage[] | undefined) =>
+          (old: SignalMeasurement[] | undefined) =>
             old?.filter((point) => point.id !== context?.optimisticPoint.id)
         );
       }

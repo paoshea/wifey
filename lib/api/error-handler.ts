@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-interface ErrorResponse {
+export interface ErrorResponse {
   error: {
     message: string;
     code?: string;
@@ -32,29 +32,39 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
 
   // Handle known error types
   if (error instanceof ApiError) {
-    return NextResponse.json(
-      {
+    return new NextResponse<ErrorResponse>(
+      JSON.stringify({
         error: {
           message: error.message,
           code: error.code,
           details: error.details,
         },
-      },
-      { status: error.statusCode }
+      }),
+      {
+        status: error.statusCode,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
   // Handle Zod validation errors
   if (error instanceof ZodError) {
-    return NextResponse.json(
-      {
+    return new NextResponse<ErrorResponse>(
+      JSON.stringify({
         error: {
           message: 'Validation error',
           code: 'VALIDATION_ERROR',
           validationErrors: error.flatten().fieldErrors,
         },
-      },
-      { status: 400 }
+      }),
+      {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
@@ -63,37 +73,52 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
     const prismaError = error as any;
     switch (prismaError.code) {
       case 'P2002':
-        return NextResponse.json(
-          {
+        return new NextResponse<ErrorResponse>(
+          JSON.stringify({
             error: {
               message: 'Unique constraint violation',
               code: 'UNIQUE_CONSTRAINT_ERROR',
               details: prismaError.meta,
             },
-          },
-          { status: 409 }
+          }),
+          {
+            status: 409,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
       case 'P2025':
-        return NextResponse.json(
-          {
+        return new NextResponse<ErrorResponse>(
+          JSON.stringify({
             error: {
               message: 'Record not found',
               code: 'NOT_FOUND',
               details: prismaError.meta,
             },
-          },
-          { status: 404 }
+          }),
+          {
+            status: 404,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
       default:
-        return NextResponse.json(
-          {
+        return new NextResponse<ErrorResponse>(
+          JSON.stringify({
             error: {
               message: 'Database error',
               code: 'DATABASE_ERROR',
               details: prismaError.meta,
             },
-          },
-          { status: 500 }
+          }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
     }
   }
@@ -103,78 +128,108 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
     const mongoError = error as any;
     switch (mongoError.code) {
       case 11000:
-        return NextResponse.json(
-          {
+        return new NextResponse<ErrorResponse>(
+          JSON.stringify({
             error: {
               message: 'Duplicate key error',
               code: 'DUPLICATE_KEY_ERROR',
               details: mongoError.keyValue,
             },
-          },
-          { status: 409 }
+          }),
+          {
+            status: 409,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
       default:
-        return NextResponse.json(
-          {
+        return new NextResponse<ErrorResponse>(
+          JSON.stringify({
             error: {
               message: 'Database error',
               code: 'DATABASE_ERROR',
             },
-          },
-          { status: 500 }
+          }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
     }
   }
 
   // Handle JWT errors
   if (error instanceof Error && error.name === 'JsonWebTokenError') {
-    return NextResponse.json(
-      {
+    return new NextResponse<ErrorResponse>(
+      JSON.stringify({
         error: {
           message: 'Invalid token',
           code: 'INVALID_TOKEN',
         },
-      },
-      { status: 401 }
+      }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
   // Handle network errors
   if (error instanceof Error && error.name === 'NetworkError') {
-    return NextResponse.json(
-      {
+    return new NextResponse<ErrorResponse>(
+      JSON.stringify({
         error: {
           message: 'Network error',
           code: 'NETWORK_ERROR',
         },
-      },
-      { status: 503 }
+      }),
+      {
+        status: 503,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
   // Handle rate limit errors
   if (error instanceof Error && error.name === 'RateLimitError') {
-    return NextResponse.json(
-      {
+    return new NextResponse<ErrorResponse>(
+      JSON.stringify({
         error: {
           message: 'Too many requests',
           code: 'RATE_LIMIT_EXCEEDED',
         },
-      },
-      { status: 429 }
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
   // Handle unknown errors
   console.error('Unhandled error:', error);
-  return NextResponse.json(
-    {
+  return new NextResponse<ErrorResponse>(
+    JSON.stringify({
       error: {
         message: 'Internal server error',
         code: 'INTERNAL_SERVER_ERROR',
       },
-    },
-    { status: 500 }
+    }),
+    {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
   );
 }
 

@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { CarrierCoverage } from '@/lib/carriers/types';
 import { offlineStorage } from '@/lib/services/offline-storage';
 import { useMonitoring } from '@/components/providers/monitoring-provider';
+import { Session } from '@/lib/types/auth';
 
 interface UseOfflineSyncResult {
   isOnline: boolean;
@@ -23,7 +24,7 @@ interface UseOfflineSyncResult {
 }
 
 export function useOfflineSync(): UseOfflineSyncResult {
-  const { data: session } = useSession();
+  const { data: session } = useSession() as { data: Session | null };
   const { trackEvent } = useMonitoring();
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isPending, setIsPending] = useState(false);
@@ -88,7 +89,7 @@ export function useOfflineSync(): UseOfflineSyncResult {
     setIsPending(true);
     try {
       // Add user ID if available
-      const coverageData = session?.user?.id
+      const coverageData = session?.user
         ? { ...data, userId: session.user.id }
         : data;
 

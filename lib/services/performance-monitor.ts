@@ -114,7 +114,7 @@ export class PerformanceMonitor {
     return duration;
   }
 
-  private recordMetric(
+  recordMetric(
     name: string,
     value: number,
     metadata?: Record<string, any>

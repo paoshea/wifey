@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { 
   UserProgress, 
   ContributionReward, 
-  LeaderboardEntry 
-} from '@/lib/gamification/types';
-import { GamificationService } from '@/lib/gamification/gamification-service';
-import { getLevelProgress } from '@/lib/gamification/achievements';
+  LeaderboardEntry,
+  Achievement 
+} from '../lib/gamification/types';
+import { GamificationService } from '../lib/gamification/gamification-service';
+import { calculateLevel, getNextLevelThreshold } from '../lib/gamification/achievements';
+import { Session } from '../lib/types/auth';
 
 const gamificationService = new GamificationService();
 
@@ -33,7 +35,7 @@ interface UseGamificationReturn {
 }
 
 export function useGamification(): UseGamificationReturn {
-  const { data: session } = useSession();
+  const { data: session } = useSession() as { data: Session | null };
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -44,14 +46,35 @@ export function useGamification(): UseGamificationReturn {
 
   // Fetch user progress
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user) return;
 
     const fetchProgress = async () => {
       try {
         setIsLoading(true);
-        const progress = await gamificationService.getUserProgress(session.user.id);
-        setUserProgress(progress);
-        setLevelProgress(getLevelProgress(progress.totalPoints));
+        const achievements = await gamificationService.getUserAchievements(session.user.id);
+        const totalPoints = achievements.reduce((sum, achievement) => 
+          achievement.completed ? sum + achievement.points : sum, 0);
+        
+        if (typeof totalPoints === 'number') {
+          const level = calculateLevel(totalPoints);
+          setUserProgress({
+            totalPoints,
+            level,
+            achievements: achievements.filter(a => a.completed).map(a => a.id),
+            stats: {
+              totalMeasurements: 0,
+              ruralMeasurements: 0,
+              verifiedSpots: 0,
+              helpfulActions: 0,
+              consecutiveDays: 0,
+              lastMeasurementDate: new Date().toISOString()
+            }
+          });
+          setLevelProgress({
+            progress: totalPoints,
+            nextThreshold: getNextLevelThreshold(level)
+          });
+        }
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch user progress'));
       } finally {
@@ -60,7 +83,7 @@ export function useGamification(): UseGamificationReturn {
     };
 
     fetchProgress();
-  }, [session?.user?.id]);
+  }, [session?.user]);
 
   // Process new measurements
   const processMeasurement = useCallback(async (
@@ -68,14 +91,12 @@ export function useGamification(): UseGamificationReturn {
     isFirstInArea: boolean,
     quality: number
   ) => {
-    if (!session?.user?.id || !userProgress) return;
+    if (!session?.user || !userProgress) return;
 
     try {
       const reward = await gamificationService.processMeasurement(
         session.user.id,
-        isRuralArea,
-        isFirstInArea,
-        quality
+        { isRural: isRuralArea, isFirstInArea, quality }
       );
 
       // Update local state
@@ -83,40 +104,52 @@ export function useGamification(): UseGamificationReturn {
         if (!prev) return prev;
         return {
           ...prev,
-          totalPoints: prev.totalPoints + reward.points,
-          level: reward.levelUp?.newLevel || prev.level,
+          totalPoints: prev.totalPoints + (reward?.points || 0),
+          level: reward?.levelUp?.newLevel || prev.level,
           achievements: [
             ...prev.achievements,
-            ...(reward.achievements?.map(a => a.id) || [])
+            ...(reward?.achievements?.map((a: Achievement) => a.id) || [])
           ]
         };
       });
 
       // Show rewards toast
-      showRewardToast(reward);
+      if (reward) {
+        showRewardToast(reward);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to process measurement'));
-      toast.error('Failed to process measurement rewards');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process measurement rewards"
+      });
     }
-  }, [session?.user?.id, userProgress]);
+  }, [session?.user, userProgress]);
 
   // Fetch leaderboard
   const getLeaderboard = useCallback(async (
     timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime'
-  ) => {
+  ): Promise<LeaderboardEntry[]> => {
     return gamificationService.getLeaderboard(timeframe);
   }, []);
 
   // Get user rank
   const getUserRank = useCallback(async (
     timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime'
-  ) => {
-    if (!session?.user?.id) {
+  ): Promise<{ rank: number; total: number }> => {
+    if (!session?.user) {
       return { rank: 0, total: 0 };
     }
-    return gamificationService.getUserRank(session.user.id, timeframe);
-  }, [session?.user?.id]);
+    return gamificationService.getLeaderboard(timeframe).then(leaderboard => {
+      const userEntry = leaderboard.find(entry => entry.userId === session.user.id);
+      return {
+        rank: userEntry?.rank || 0,
+        total: leaderboard.length
+      };
+    });
+  }, [session?.user]);
 
   return {
     userProgress,
@@ -130,16 +163,18 @@ export function useGamification(): UseGamificationReturn {
 }
 
 // Helper function to show reward toasts
-function showRewardToast(reward: ContributionReward) {
-  // Base points
-  let message = `+${reward.points} points`;
+function showRewardToast(reward: ContributionReward): void {
+  let message = `+${reward.points} points earned!`;
 
-  // Bonuses
+  // Add bonus point details
   if (reward.bonuses.ruralArea) {
-    message += `\n🌾 Rural bonus: +${reward.bonuses.ruralArea}`;
+    message += `\n🌳 Rural area bonus: +${reward.bonuses.ruralArea}`;
   }
   if (reward.bonuses.firstInArea) {
-    message += `\n🎯 First explorer: +${reward.bonuses.firstInArea}`;
+    message += `\n🎯 First in area: +${reward.bonuses.firstInArea}`;
+  }
+  if (reward.bonuses.qualityBonus) {
+    message += `\n✨ Quality bonus: +${reward.bonuses.qualityBonus}`;
   }
   if (reward.bonuses.consistencyStreak) {
     message += `\n🔥 Streak bonus: +${reward.bonuses.consistencyStreak}`;
@@ -147,20 +182,23 @@ function showRewardToast(reward: ContributionReward) {
 
   // New achievements
   reward.achievements?.forEach(achievement => {
-    toast.success(`🏆 New Achievement: ${achievement.title}`, {
+    toast({
+      title: "🏆 New Achievement: " + achievement.title,
       description: achievement.description
     });
   });
 
   // Level up
   if (reward.levelUp) {
-    toast.success(`🎉 Level Up! You're now level ${reward.levelUp.newLevel}`, {
-      description: `Rewards: ${reward.levelUp.rewards.join(', ')}`
+    toast({
+      title: "🎉 Level Up! You're now level " + reward.levelUp.newLevel,
+      description: "Rewards: " + reward.levelUp.rewards.join(', ')
     });
   }
 
   // Show points toast last
-  toast.success('Points Earned!', {
+  toast({
+    title: "Points Earned!",
     description: message
   });
 }
