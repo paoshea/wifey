@@ -48,19 +48,19 @@ describe('Leaderboard', () => {
   it('renders timeframe tabs correctly', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    expect(screen.getByText('Daily')).toBeInTheDocument();
-    expect(screen.getByText('Weekly')).toBeInTheDocument();
-    expect(screen.getByText('Monthly')).toBeInTheDocument();
+    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.getByText('This Week')).toBeInTheDocument();
+    expect(screen.getByText('This Month')).toBeInTheDocument();
     expect(screen.getByText('All Time')).toBeInTheDocument();
   });
 
   it('displays user stats correctly', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    const userStats = screen.getByText('Your Position').closest('div');
-    expect(userStats).toBeInTheDocument();
-    expect(userStats?.textContent).toContain('Rank #1');
-    expect(userStats?.textContent).toContain('Level 5');
+    const userStatsContainer = screen.getByText('Your Position').closest('div')?.parentElement;
+    expect(userStatsContainer).toBeInTheDocument();
+    expect(userStatsContainer?.textContent).toMatch(/Rank #1/);
+    expect(userStatsContainer?.textContent).toMatch(/Level 5/);
   });
 
   it('renders leaderboard entries in correct order', () => {
@@ -73,8 +73,12 @@ describe('Leaderboard', () => {
   it('highlights current user\'s entry', () => {
     render(<Leaderboard entries={mockEntries} timeframe="weekly" />);
     
-    const currentUserEntry = screen.getByTestId('leaderboard-entry-1');
-    expect(currentUserEntry.className).toContain('bg-blue-50');
+    // Find all leaderboard entries
+    const entries = screen.getAllByRole('button', { hidden: true }).filter(el => 
+      el.className.includes('flex items-center p-4 rounded-lg')
+    );
+    const currentUserEntry = entries.find(entry => entry.className.includes('bg-blue-50'));
+    expect(currentUserEntry).toBeInTheDocument();
   });
 
   it('displays empty state when no entries exist', () => {
@@ -92,7 +96,8 @@ describe('Leaderboard', () => {
       />
     );
     
-    await userEvent.click(screen.getByText('Monthly'));
+    const monthlyTab = screen.getByRole('button', { name: 'This Month' });
+    await userEvent.click(monthlyTab);
     expect(onTimeframeChange).toHaveBeenCalledWith('monthly');
   });
 

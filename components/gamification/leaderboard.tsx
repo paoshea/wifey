@@ -21,9 +21,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   const currentUser = entries.find(entry => entry.isCurrentUser);
 
   const timeframes = [
-    { key: 'daily', label: 'Daily' },
-    { key: 'weekly', label: 'Weekly' },
-    { key: 'monthly', label: 'Monthly' },
+    { key: 'daily', label: 'Today' },
+    { key: 'weekly', label: 'This Week' },
+    { key: 'monthly', label: 'This Month' },
     { key: 'all', label: 'All Time' }
   ];
 
@@ -52,21 +52,23 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     <div className="space-y-6">
       {/* Timeframe tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
-        {timeframes.map(({ key: tf }) => (
+        {timeframes.map(({ key, label }) => (
           <motion.button
-            key={tf}
+            key={key}
             className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-              timeframe === tf ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+              timeframe === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
-            onClick={() => onTimeframeChange?.(tf)}
+            onClick={() => onTimeframeChange?.(key)}
             variants={{
               hover: { scale: 1.05 },
               tap: { scale: 0.95 }
             }}
             whileHover="hover"
             whileTap="tap"
+            role="button"
+            aria-pressed={timeframe === key}
           >
-            {tf.charAt(0).toUpperCase() + tf.slice(1)}
+            {label}
           </motion.button>
         ))}
       </div>
@@ -130,7 +132,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               transition={{ duration: 0.2 }}
             >
               <motion.div 
-                className="flex items-center p-4 rounded-lg transition-colors hover:bg-gray-50"
+                className={`flex items-center p-4 rounded-lg transition-colors ${
+                  entry.isCurrentUser ? 'bg-blue-50' : 'hover:bg-gray-50'
+                }`}
+                role="button"
+                tabIndex={0}
                 data-testid={`leaderboard-entry-${entry.rank}`}
                 variants={{
                   hover: { scale: 1.02 }
