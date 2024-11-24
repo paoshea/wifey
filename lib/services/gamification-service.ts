@@ -1,5 +1,6 @@
 import { GamificationDB } from './db/gamification-db';
 import type { Measurement, UserProgress } from '@prisma/client';
+import type { JsonValue } from '@prisma/client/runtime/library';
 import { cache } from 'react';
 
 interface UserStats {
@@ -15,6 +16,13 @@ interface UserProgressWithStats extends UserProgress {
   stats: UserStats;
 }
 
+interface MeasurementData {
+  isRural: boolean;
+  location: any;
+  latitude: number;
+  longitude: number;
+}
+
 class GamificationService {
   private db: GamificationDB;
 
@@ -23,7 +31,17 @@ class GamificationService {
   }
 
   async processMeasurement(measurement: Measurement, userId: string): Promise<void> {
-    await this.db.processMeasurement(measurement, userId);
+    // Convert Measurement to MeasurementData
+    const location = this.parseLocation(measurement.location);
+    
+    const measurementData: MeasurementData = {
+      isRural: location ? this.isRuralLocation(location) : false,
+      location: measurement.location,
+      latitude: location?.latitude ?? 0,
+      longitude: location?.longitude ?? 0
+    };
+
+    await this.db.processMeasurement(userId, measurementData);
     
     // Recalculate leaderboard position
     const score = await this.calculateScore(userId);
@@ -31,7 +49,16 @@ class GamificationService {
   }
 
   async getUserProgress(userId: string): Promise<UserProgressWithStats | null> {
-    return this.db.getUserProgress(userId) as Promise<UserProgressWithStats | null>;
+    const progress = await this.db.getUserProgress(userId);
+    if (!progress) return null;
+
+    return {
+      ...progress,
+      stats: {
+        ...progress.stats,
+        lastUpdated: progress.stats.updatedAt
+      }
+    };
   }
 
   private async calculateScore(userId: string): Promise<number> {
@@ -77,6 +104,30 @@ class GamificationService {
 
   async getUserRank(userId: string, timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime') {
     return this.db.calculateUserRank(userId, timeframe);
+  }
+
+  private parseLocation(location: JsonValue | null): { latitude: number; longitude: number; type?: string } | null {
+    if (
+      location &&
+      typeof location === 'object' &&
+      'latitude' in location &&
+      'longitude' in location &&
+      typeof (location as any).latitude === 'number' &&
+      typeof (location as any).longitude === 'number'
+    ) {
+      return {
+        latitude: (location as any).latitude,
+        longitude: (location as any).longitude,
+        type: (location as any).type as string | undefined
+      };
+    }
+    return null;
+  }
+
+  private isRuralLocation(location: { latitude: number; longitude: number; type?: string }): boolean {
+    // Implement rural location detection logic
+    // This is a placeholder - implement your actual rural detection logic
+    return location.type === 'rural';
   }
 }
 

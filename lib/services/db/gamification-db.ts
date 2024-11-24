@@ -104,7 +104,11 @@ export class GamificationDB {
         where: { userId },
         include: {
           stats: true,
-          achievements: true,
+          achievements: {
+            include: {
+              achievement: true
+            }
+          }
         },
       });
 
@@ -112,7 +116,37 @@ export class GamificationDB {
         throw new Error(`User progress not found for user ${userId}`);
       }
 
-      return progress;
+      // Create default stats if they don't exist
+      if (!progress.stats) {
+        const stats = await this.prisma.userStats.create({
+          data: {
+            userProgressId: progress.id,
+            totalMeasurements: 0,
+            ruralMeasurements: 0,
+            uniqueLocations: 0,
+            totalDistance: 0,
+            contributionScore: 0,
+            verifiedSpots: 0,
+            helpfulActions: 0,
+            consecutiveDays: 0,
+            qualityScore: 0,
+            accuracyRate: 0,
+          },
+        });
+        return { 
+          ...progress, 
+          stats,
+          achievements: progress.achievements.map(ua => ua.achievement)
+        };
+      }
+
+      return {
+        ...progress,
+        achievements: progress.achievements.map(ua => ua.achievement)
+      } as UserProgress & { 
+        stats: UserStats; 
+        achievements: Achievement[];
+      };
     } catch (error) {
       handleValidationError(error);
       throw error;
@@ -227,26 +261,42 @@ export class GamificationDB {
       userIdSchema.parse(userId);
       validateUserStats(stats);
 
-      const defaultStats: UserStatsData = {
+      // First get the user's progress to get the userProgressId
+      const progress = await this.prisma.userProgress.findUnique({
+        where: { userId },
+        select: { id: true }
+      });
+
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
+      }
+
+      const defaultStats: Partial<UserStatsData> = {
         totalMeasurements: 0,
         ruralMeasurements: 0,
         uniqueLocations: 0,
         totalDistance: 0,
         contributionScore: 0,
+        verifiedSpots: 0,
+        helpfulActions: 0,
+        consecutiveDays: 0,
+        qualityScore: 0,
+        accuracyRate: 0,
       };
 
       const updatedStats = await this.prisma.userStats.upsert({
-        where: { userId },
-        update: {
-          ...stats,
-          updatedAt: new Date(),
-        },
+        where: { userProgressId: progress.id },
         create: {
-          userId,
           ...defaultStats,
           ...stats,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          userProgress: {
+            connect: {
+              id: progress.id
+            }
+          }
+        },
+        update: {
+          ...stats
         },
       });
 
@@ -262,54 +312,81 @@ export class GamificationDB {
   }
 
   // Achievement Methods
-  async unlockAchievement(
+  public async unlockAchievement(
     userId: string,
     achievementId: string
   ): Promise<Achievement> {
     try {
       userIdSchema.parse(userId);
-      achievementIdSchema.parse(achievementId);
 
-      const existing = await this.prisma.achievement.findFirst({
-        where: { 
-          userId,
-          achievementId,
-        },
+      // Get user progress first
+      const progress = await this.prisma.userProgress.findUnique({
+        where: { userId },
+        select: { id: true }
       });
 
-      if (existing) {
-        return existing;
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
       }
 
-      const achievement = await this.prisma.achievement.create({
-        data: {
-          userId,
-          achievementId,
-          unlockedAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+      // Create or update the user achievement
+      const userAchievement = await this.prisma.userAchievement.upsert({
+        where: {
+          userProgressId_achievementId: {
+            userProgressId: progress.id,
+            achievementId
+          }
         },
+        create: {
+          userProgress: {
+            connect: { id: progress.id }
+          },
+          achievement: {
+            connect: { id: achievementId }
+          },
+          completed: true,
+          completedAt: new Date(),
+          progress: 100
+        },
+        update: {
+          completed: true,
+          completedAt: new Date(),
+          progress: 100
+        },
+        include: {
+          achievement: true
+        }
       });
 
-      if (!achievement) {
-        throw new Error(`Failed to create achievement for user ${userId}`);
-      }
-
-      return achievement;
+      return userAchievement.achievement;
     } catch (error) {
       handleValidationError(error);
       throw error;
     }
   }
 
-  async getUserAchievements(userId: string): Promise<Achievement[]> {
+  public async getUserAchievements(userId: string): Promise<Achievement[]> {
     try {
       userIdSchema.parse(userId);
-      const achievements = await this.prisma.achievement.findMany({
+
+      // Get user progress first
+      const progress = await this.prisma.userProgress.findUnique({
         where: { userId },
-        orderBy: { unlockedAt: 'desc' },
+        include: {
+          achievements: {
+            include: {
+              achievement: true
+            }
+          }
+        }
       });
-      return achievements;
+
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
+      }
+
+      // Map UserAchievement to Achievement
+      return progress.achievements.map(ua => ua.achievement);
     } catch (error) {
       handleValidationError(error);
       throw error;
@@ -317,30 +394,39 @@ export class GamificationDB {
   }
 
   // Leaderboard Methods
-  async updateLeaderboardEntry(
+  public async updateLeaderboardEntry(
     userId: string,
     data: LeaderboardData
   ): Promise<LeaderboardEntry> {
     try {
       userIdSchema.parse(userId);
-      validateLeaderboardEntry(data);
+
+      // Get user progress first
+      const progress = await this.prisma.userProgress.findUnique({
+        where: { userId },
+        include: { user: true }
+      });
+
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
+      }
 
       const entry = await this.prisma.leaderboardEntry.upsert({
         where: {
           userId_timeframe: {
-            userId,
-            timeframe: data.timeframe,
-          },
-        },
-        update: {
-          ...data,
-          updatedAt: new Date(),
+            userId: progress.userId,
+            timeframe: data.timeframe
+          }
         },
         create: {
-          userId,
-          ...data,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          userId: progress.userId,
+          points: data.score,
+          rank: data.rank ?? 0,
+          timeframe: data.timeframe,
+        },
+        update: {
+          points: data.score,
+          ...(data.rank !== undefined && data.rank !== null ? { rank: data.rank } : {}),
         },
       });
 
@@ -358,27 +444,30 @@ export class GamificationDB {
   async getLeaderboard(
     timeframe: TimeFrame,
     limit = 100
-  ): Promise<Array<LeaderboardEntry & { user: Pick<User, 'name' | 'image'> }>> {
+  ): Promise<Array<LeaderboardEntry & { user: Pick<User, 'name'> }>> {
     try {
       if (limit < 1 || limit > 1000) {
         throw new Error('Limit must be between 1 and 1000');
       }
 
       const entries = await this.prisma.leaderboardEntry.findMany({
-        where: { timeframe },
-        orderBy: { score: 'desc' },
-        take: limit,
+        where: {
+          timeframe,
+        },
         include: {
           user: {
             select: {
               name: true,
-              image: true,
             },
           },
         },
+        orderBy: {
+          points: 'desc',
+        },
+        take: limit,
       });
 
-      return entries ?? [];
+      return entries;
     } catch (error) {
       handleValidationError(error);
       throw error;
@@ -400,24 +489,43 @@ export class GamificationDB {
 
       const prismaClient = tx || this.prisma;
 
-      // Calculate new stats based on measurement
-      const currentStats = await prismaClient.userStats.findUnique({
+      // Get user progress first
+      const progress = await prismaClient.userProgress.findUnique({
         where: { userId },
+        include: { stats: true }
       });
 
-      if (!currentStats) {
-        throw new Error(`Stats not found for user ${userId}`);
+      if (!progress) {
+        throw new Error(`Progress not found for user ${userId}`);
       }
 
+      // Create default stats if they don't exist
+      let currentStats = progress.stats;
+      if (!currentStats) {
+        currentStats = await prismaClient.userStats.create({
+          data: {
+            userProgressId: progress.id,
+            totalMeasurements: 0,
+            ruralMeasurements: 0,
+            uniqueLocations: 0,
+            totalDistance: 0,
+            contributionScore: 0,
+            verifiedSpots: 0,
+            helpfulActions: 0,
+            consecutiveDays: 0,
+            qualityScore: 0,
+            accuracyRate: 0,
+          },
+        });
+      }
+
+      // Calculate new stats based on measurement
       const newStats = calculateUpdatedStats(currentStats, measurement);
       validateUserStats(newStats);
 
       const updatedStats = await prismaClient.userStats.update({
-        where: { userId },
-        data: {
-          ...newStats,
-          updatedAt: new Date(),
-        },
+        where: { userProgressId: progress.id },
+        data: newStats,
       });
 
       if (!updatedStats) {
@@ -425,23 +533,12 @@ export class GamificationDB {
       }
 
       // Update progress
-      const currentProgress = await prismaClient.userProgress.findUnique({
-        where: { userId },
-      });
-
-      if (!currentProgress) {
-        throw new Error(`Progress not found for user ${userId}`);
-      }
-
-      const newProgress = calculateUpdatedProgress(currentProgress, measurement);
+      const newProgress = calculateUpdatedProgress(progress, measurement);
       validateUserProgress(newProgress);
 
       const updatedProgress = await prismaClient.userProgress.update({
         where: { userId },
-        data: {
-          ...newProgress,
-          updatedAt: new Date(),
-        },
+        data: newProgress,
       });
 
       if (!updatedProgress) {
@@ -449,7 +546,7 @@ export class GamificationDB {
       }
 
       // Check and update achievements
-      await this.checkAndUpdateAchievements(userId, updatedStats, updatedProgress, prismaClient);
+      await this.checkAndUpdateAchievements(progress, updatedStats, updatedProgress, prismaClient);
 
       return {
         stats: updatedStats,
@@ -462,33 +559,58 @@ export class GamificationDB {
   }
 
   private async checkAndUpdateAchievements(
-    userId: string,
-    stats: UserStats,
     progress: UserProgress,
+    stats: UserStats,
+    updatedProgress: UserProgress,
     prismaClient: PrismaClient | Prisma.TransactionClient
   ): Promise<void> {
     try {
-      const eligibleAchievements = determineEligibleAchievements(stats, progress);
-      
-      for (const achievementId of eligibleAchievements) {
-        const existing = await prismaClient.achievement.findFirst({
-          where: {
-            userId,
-            achievementId,
-          },
-        });
-
-        if (!existing) {
-          await prismaClient.achievement.create({
-            data: {
-              userId,
-              achievementId,
-              unlockedAt: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          });
+      // Get all achievements that haven't been unlocked yet
+      const allAchievements = await prismaClient.achievement.findMany({
+        where: {
+          NOT: {
+            userAchievements: {
+              some: {
+                userProgressId: progress.id,
+                completed: true
+              }
+            }
+          }
         }
+      });
+
+      // Check which achievements should be unlocked
+      const eligibleAchievements = allAchievements.filter(achievement => {
+        // Add your achievement eligibility logic here
+        return determineEligibleAchievements(stats, updatedProgress).includes(achievement.id);
+      });
+
+      // Unlock eligible achievements
+      for (const achievement of eligibleAchievements) {
+        await prismaClient.userAchievement.upsert({
+          where: {
+            userProgressId_achievementId: {
+              userProgressId: progress.id,
+              achievementId: achievement.id
+            }
+          },
+          create: {
+            userProgress: {
+              connect: { id: progress.id }
+            },
+            achievement: {
+              connect: { id: achievement.id }
+            },
+            completed: true,
+            completedAt: new Date(),
+            progress: 100
+          },
+          update: {
+            completed: true,
+            completedAt: new Date(),
+            progress: 100
+          }
+        });
       }
     } catch (error) {
       handleValidationError(error);
@@ -496,58 +618,64 @@ export class GamificationDB {
     }
   }
 
-  async getUserRankHistory(
+  public async getUserRankHistory(
     userId: string,
     timeframe: TimeFrame,
     limit = 30
   ): Promise<RankHistoryEntry[]> {
     try {
       userIdSchema.parse(userId);
-      if (limit < 1 || limit > 90) {
-        throw new Error('History limit must be between 1 and 90 days');
+
+      // Get user progress first
+      const progress = await this.prisma.userProgress.findUnique({
+        where: { userId }
+      });
+
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
       }
 
-      const entries = await this.prisma.rankHistory.findMany({
+      const history = await this.prisma.rankHistory.findMany({
         where: {
-          userId,
+          userId: progress.userId,
           timeframe,
         },
         orderBy: {
           date: 'desc',
         },
         take: limit,
-        select: {
-          rank: true,
-          date: true,
-        },
       });
 
-      return entries;
+      return history;
     } catch (error) {
       handleValidationError(error);
       throw error;
     }
   }
 
-  async updateRankHistory(
+  public async updateRankHistory(
     userId: string,
     timeframe: TimeFrame,
     rank: number
   ): Promise<void> {
     try {
       userIdSchema.parse(userId);
-      if (rank < 1) {
-        throw new Error('Rank must be positive');
+
+      // Get user progress first
+      const progress = await this.prisma.userProgress.findUnique({
+        where: { userId }
+      });
+
+      if (!progress) {
+        throw new Error(`User progress not found for user ${userId}`);
       }
 
       await this.prisma.rankHistory.create({
         data: {
-          userId,
+          userId: progress.userId,
           timeframe,
           rank,
           date: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       });
     } catch (error) {

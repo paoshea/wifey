@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, User, UserProgress, UserStreak } from '@prisma/client';
 import { apiCache } from './api-cache';
 import { createApiError } from '../api/error-handler';
 
@@ -46,11 +46,7 @@ export interface LeaderboardResponse {
   stats?: LeaderboardStats;
 }
 
-interface DateFilter {
-  createdAt?: {
-    gte?: Date;
-  };
-}
+type MeasurementDateFilter = Prisma.MeasurementWhereInput;
 
 export class LeaderboardService {
   private static instance: LeaderboardService;
@@ -72,11 +68,12 @@ export class LeaderboardService {
     pageSize = 10,
     includeStats = false
   ): Promise<LeaderboardResponse> {
-    const validatedPage = Math.max(1, page);
-    const validatedPageSize = Math.min(Math.max(1, pageSize), this.MAX_PAGE_SIZE);
-    const offset = (validatedPage - 1) * validatedPageSize;
+    if (pageSize > this.MAX_PAGE_SIZE) {
+      throw createApiError('Page size exceeds maximum allowed', 400);
+    }
 
-    const cacheKey = `leaderboard_${timeframe}_${validatedPage}_${validatedPageSize}_${includeStats}`;
+    const skip = (page - 1) * pageSize;
+    const cacheKey = `leaderboard_${timeframe}_${page}_${pageSize}_${includeStats}`;
     
     return apiCache.fetch(
       cacheKey,
@@ -85,9 +82,9 @@ export class LeaderboardService {
           const dateFilter = this.getDateFilter(timeframe);
           
           const totalCountKey = `leaderboard_count_${timeframe}`;
-          const totalCount = await apiCache.fetch(
+          const totalCount = await apiCache.fetch<number>(
             totalCountKey,
-            () => tx.userProgress.count({
+            async () => await tx.userProgress.count({
               where: {
                 user: {
                   measurements: {
@@ -107,86 +104,84 @@ export class LeaderboardService {
                 }
               }
             },
-            select: {
-              userId: true,
-              totalPoints: true,
-              level: true,
-              user: {
-                select: {
-                  name: true,
-                  email: true,
-                  image: true
-                }
-              },
-              streaks: {
-                select: {
-                  currentStreak: true,
-                  longestStreak: true
-                }
-              },
-              badges: {
-                select: {
-                  id: true,
-                  badgeType: true,
-                  level: true
-                }
-              },
-              stats: {
-                select: {
-                  totalMeasurements: true,
-                  qualityScore: true
-                }
-              }
+            include: {
+              user: true,
+              streaks: true
             },
-            orderBy: [
-              { totalPoints: 'desc' },
-              { level: 'desc' }
-            ],
-            take: validatedPageSize,
-            skip: offset
-          });
+            orderBy: {
+              totalPoints: 'desc'
+            },
+            skip,
+            take: pageSize
+          }) as (UserProgress & { user: User; streaks: UserStreak | null })[];
 
           const entries: LeaderboardEntry[] = users.map((user, index) => ({
+            rank: skip + index + 1,
             userId: user.userId,
             username: user.user.name ?? user.user.email.split('@')[0],
-            avatar: user.user.image ?? undefined,
-            rank: offset + index + 1,
+            avatar: user.user.image,
             points: user.totalPoints,
-            contributions: user.stats?.totalMeasurements ?? 0,
-            badges: user.badges.length,
             level: user.level,
-            streak: {
-              current: user.streaks?.currentStreak ?? 0,
-              longest: user.streaks?.longestStreak ?? 0
-            }
+            streak: user.streaks ?? { current: 0, longest: 0 },
+            contributions: 0,  // TODO: Calculate from measurements
+            badges: 0         // TODO: Calculate from achievements
           }));
 
-          const stats = includeStats ? await this.getLeaderboardStats(tx, dateFilter) : undefined;
+          let stats: LeaderboardStats | undefined;
+          if (includeStats) {
+            stats = await this.getLeaderboardStats(tx, dateFilter);
+          }
 
           return {
             entries,
             pagination: {
               total: totalCount,
-              page: validatedPage,
-              pageSize: validatedPageSize,
-              hasMore: offset + entries.length < totalCount
+              page,
+              pageSize,
+              hasMore: skip + entries.length < totalCount
             },
             stats
           };
         });
 
-        if (result.pagination.hasMore) {
-          const nextPageKey = `leaderboard_${timeframe}_${validatedPage + 1}_${validatedPageSize}_${includeStats}`;
-          apiCache.prefetch(nextPageKey);
-        }
-
         return result;
       },
-      {
-        maxAge: this.CACHE_TTL,
-        priority: validatedPage === 1 ? 'high' : 'medium'
-      }
+      { maxAge: this.CACHE_TTL }
     );
+  }
+
+  private getDateFilter(timeframe: TimeFrame): MeasurementDateFilter {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    switch (timeframe) {
+      case 'daily':
+        return {
+          timestamp: {
+            gte: now
+          }
+        };
+      case 'weekly':
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        return {
+          timestamp: {
+            gte: weekStart
+          }
+        };
+      case 'monthly':
+        return {
+          timestamp: {
+            gte: new Date(now.setMonth(now.getMonth() - 1))
+          }
+        };
+      default:
+        return {
+          timestamp: {
+            gte: new Date(0)
+          }
+        };
+    }
   }
 
   async getUserRankContext(
@@ -204,7 +199,7 @@ export class LeaderboardService {
     return apiCache.fetch(
       cacheKey,
       async () => {
-        const dateFilter = this.getDateFilter(timeframe);
+        const dateFilter: MeasurementDateFilter = this.getDateFilter(timeframe);
         
         const userProgress = await prisma.userProgress.findUnique({
           where: { userId },
@@ -249,7 +244,7 @@ export class LeaderboardService {
 
   private async getLeaderboardStats(
     tx: PrismaClient,
-    dateFilter: DateFilter
+    dateFilter: MeasurementDateFilter
   ): Promise<LeaderboardStats> {
     const statsKey = `leaderboard_stats_${JSON.stringify(dateFilter)}`;
     
@@ -315,33 +310,6 @@ export class LeaderboardService {
         priority: 'high'
       }
     );
-  }
-
-  private getDateFilter(timeframe: TimeFrame): DateFilter {
-    const now = new Date();
-    
-    switch (timeframe) {
-      case 'daily':
-        return {
-          createdAt: {
-            gte: new Date(now.setHours(0, 0, 0, 0))
-          }
-        };
-      case 'weekly':
-        return {
-          createdAt: {
-            gte: new Date(now.setDate(now.getDate() - 7))
-          }
-        };
-      case 'monthly':
-        return {
-          createdAt: {
-            gte: new Date(now.setMonth(now.getMonth() - 1))
-          }
-        };
-      default:
-        return {};
-    }
   }
 }
 

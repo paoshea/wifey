@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase, deleteDB } from 'idb';
-import { logError } from '@/lib/monitoring/sentry';
+import { trackError } from '@/lib/monitoring/sentry';
 import type { CarrierCoverage, StorageMetadata } from '@/lib/types';
 
 interface CacheEntry {
@@ -85,7 +85,7 @@ class EnhancedOfflineStorage {
         await this.db.put('metadata', this.metadata);
       }
     } catch (error) {
-      logError(error as Error, { context: 'initialize-offline-storage' });
+      trackError(error as Error, { context: 'initialize-offline-storage' });
       throw new Error('Failed to initialize offline storage');
     }
   }
@@ -98,10 +98,11 @@ class EnhancedOfflineStorage {
     await this.initialize();
     
     try {
+      if (!this.db) return '';
       const id = crypto.randomUUID();
       const compressedData = await this.compressData(data);
       
-      await this.db!.add('pendingPoints', {
+      await this.db.add('pendingPoints', {
         id,
         data: compressedData,
         timestamp: Date.now(),
@@ -113,7 +114,7 @@ class EnhancedOfflineStorage {
       await this.updateStorageUsage();
       return id;
     } catch (error) {
-      logError(error as Error, { context: 'store-pending-point' });
+      trackError(error as Error, { context: 'store-pending-point' });
       throw new Error('Failed to store pending point');
     }
   }
@@ -133,7 +134,8 @@ class EnhancedOfflineStorage {
     await this.initialize();
 
     try {
-      const points = await this.db!.getAllFromIndex('pendingPoints', 'by-status', status);
+      if (!this.db) return [];
+      const points = await this.db.getAllFromIndex('pendingPoints', 'by-status', status);
       const sortedPoints = points
         .sort((a, b) => b.priority - a.priority || a.timestamp - b.timestamp)
         .slice(0, limit);
@@ -145,7 +147,7 @@ class EnhancedOfflineStorage {
         }))
       );
     } catch (error) {
-      logError(error as Error, { context: 'get-pending-points' });
+      trackError(error as Error, { context: 'get-pending-points' });
       throw new Error('Failed to retrieve pending points');
     }
   }
@@ -158,17 +160,18 @@ class EnhancedOfflineStorage {
     await this.initialize();
 
     try {
-      const point = await this.db!.get('pendingPoints', id);
+      if (!this.db) return;
+      const point = await this.db.get('pendingPoints', id);
       if (!point) throw new Error('Point not found');
 
-      await this.db!.put('pendingPoints', {
+      await this.db.put('pendingPoints', {
         ...point,
         status,
         error,
         retryCount: status === 'failed' ? point.retryCount + 1 : point.retryCount
       });
     } catch (error) {
-      logError(error as Error, { context: 'update-point-status' });
+      trackError(error as Error, { context: 'update-point-status' });
       throw new Error('Failed to update point status');
     }
   }
@@ -181,9 +184,10 @@ class EnhancedOfflineStorage {
     await this.initialize();
 
     try {
+      if (!this.db) return;
       const compressedData = await this.compressData(points);
       
-      await this.db!.put('coverageCache', {
+      await this.db.put('coverageCache', {
         data: compressedData,
         bounds,
         expiresAt: Date.now() + ttl
@@ -191,26 +195,23 @@ class EnhancedOfflineStorage {
 
       await this.updateStorageUsage();
     } catch (error) {
-      logError(error as Error, { context: 'cache-coverage-data' });
+      trackError(error as Error, { context: 'cache-coverage-data' });
       throw new Error('Failed to cache coverage data');
     }
   }
 
   async getCachedCoverage(bounds: BoundingBox): Promise<CarrierCoverage[] | null> {
-    await this.initialize();
     if (!this.db) return null;
 
     try {
-      const key = JSON.stringify(bounds);
-      const cached = await this.db.get('coverageCache', key);
-      
+      const cached = await this.db.get('coverageCache', this.generateCacheKey(bounds));
       if (!cached || cached.expiresAt < Date.now()) {
         return null;
       }
 
       return cached.points;
     } catch (error) {
-      logError('Failed to get cached coverage', error);
+      trackError(new Error('Failed to get cached coverage'), { context: error });
       return null;
     }
   }
@@ -219,10 +220,11 @@ class EnhancedOfflineStorage {
     await this.initialize();
 
     try {
-      await this.db!.delete('pendingPoints', id);
+      if (!this.db) return;
+      await this.db.delete('pendingPoints', id);
       await this.updateStorageUsage();
     } catch (error) {
-      logError(error as Error, { context: 'remove-pending-point' });
+      trackError(error as Error, { context: 'remove-pending-point' });
       throw new Error('Failed to remove pending point');
     }
   }
@@ -237,9 +239,17 @@ class EnhancedOfflineStorage {
     await this.initialize();
 
     try {
+      if (!this.db) return {
+        pendingPoints: 0,
+        cacheSize: 0,
+        storageUsage: 0,
+        quotaUsage: 0,
+        lastCleanup: new Date(0)
+      };
+
       const [pendingPoints, cacheEntries] = await Promise.all([
-        this.db!.count('pendingPoints'),
-        this.db!.count('coverageCache')
+        this.db.count('pendingPoints'),
+        this.db.count('coverageCache')
       ]);
 
       return {
@@ -250,7 +260,7 @@ class EnhancedOfflineStorage {
         lastCleanup: new Date(this.metadata.lastCleanup || 0)
       };
     } catch (error) {
-      logError(error as Error, { context: 'get-storage-stats' });
+      trackError(error as Error, { context: 'get-storage-stats' });
       throw new Error('Failed to get storage stats');
     }
   }
@@ -290,20 +300,20 @@ class EnhancedOfflineStorage {
       ]);
 
       const totalSize = pendingSize + cacheSize;
-      const quota = await navigator.storage.estimate();
-      const quotaUsage = quota.usage ? Math.round((quota.usage / (quota.quota || 1)) * 100) : 0;
+      const quota = await this.getStorageQuota();
+      const quotaUsage = quota ? (totalSize / quota) * 100 : 0;
 
-      const metadata: StorageMetadata = {
+      const metadata = {
+        ...this.metadata,
         totalSize,
         quotaUsage,
-        lastCleanup: Date.now(),
-        version: 1
+        lastUpdated: Date.now()
       };
 
       await this.db.put('metadata', metadata, 'stats');
       this.metadata = metadata;
     } catch (error) {
-      logError('Failed to update storage usage', error);
+      trackError(new Error('Failed to update storage usage'), { context: error });
     }
   }
 
@@ -315,7 +325,7 @@ class EnhancedOfflineStorage {
       const allValues = await this.db.getAll(storeName);
       return allValues.reduce((total, value) => total + JSON.stringify(value).length, 0);
     } catch (error) {
-      logError(`Failed to calculate size for store: ${storeName}`, error);
+      trackError(new Error(`Failed to calculate size for store: ${storeName}`), { context: error });
       return 0;
     }
   }
@@ -335,6 +345,19 @@ class EnhancedOfflineStorage {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  private generateCacheKey(bounds: BoundingBox): string {
+    return JSON.stringify(bounds);
+  }
+
+  private async getStorageQuota(): Promise<number | null> {
+    try {
+      const quota = await navigator.storage.estimate();
+      return quota.quota ?? null;
+    } catch {
+      return null;
     }
   }
 }
