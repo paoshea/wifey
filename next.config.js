@@ -8,6 +8,9 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  env: {
+    _next_intl_trailing_slash: '',
+  },
 };
 
 // Wrap the Sentry config with next-intl
