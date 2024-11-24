@@ -86,10 +86,15 @@
     "info": "Information"
   },
   "SentryExample": {
-    "Sentry Example Page": "Sentry Example Page",
-    "Throw Frontend Error": "Throw Frontend Error",
-    "Throw API Error": "Throw API Error",
-    "Log Test Message": "Log Test Message",
-    "Count": "Count"
+    "Page Title": "Sentry Example Page",
+    "Frontend Error Button": "Throw Frontend Error",
+    "API Error Button": "Throw API Error",
+    "Log Message Button": "Log Test Message",
+    "Counter": "Count",
+    "Frontend Error Message": "Sentry Frontend Test Error",
+    "API Error Message": "API Error",
+    "Test Message": "Test message from Sentry example page",
+    "Message Sent": "Message sent to Sentry!",
+    "Error Fallback": "Error occurred! Check Sentry for details."
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import createMiddleware from 'next-intl/middleware';
 
 // Paths that don't require authentication
 const publicPaths = [
@@ -19,8 +20,18 @@ const roleProtectedPaths = {
   '/api/coverage/delete': ['admin', 'moderator'],
 };
 
+const intlMiddleware = createMiddleware({
+  locales: ['en', 'es'],
+  defaultLocale: 'en',
+  localePrefix: 'always'
+});
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Handle internationalization first
+  const response = await intlMiddleware(request);
+  if (response) return response;
 
   // Allow public paths
   if (publicPaths.some(path => pathname.startsWith(path))) {
@@ -33,26 +44,21 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  // Redirect to signin if not authenticated
+  // If no token and not a public path, redirect to signin
   if (!token) {
-    const signInUrl = new URL('/auth/signin', request.url);
-    signInUrl.searchParams.set('callbackUrl', request.url);
-    return NextResponse.redirect(signInUrl);
+    const url = new URL('/auth/signin', request.url);
+    url.searchParams.set('callbackUrl', encodeURI(request.url));
+    return NextResponse.redirect(url);
   }
 
-  // Check role requirements for protected paths
-  for (const [path, roles] of Object.entries(roleProtectedPaths)) {
-    if (pathname.startsWith(path)) {
-      if (!roles.includes(token.role as string)) {
+  // Check role-protected paths
+  for (const [protectedPath, allowedRoles] of Object.entries(roleProtectedPaths)) {
+    if (pathname.startsWith(protectedPath)) {
+      const userRole = token.role as string;
+      if (!allowedRoles.includes(userRole)) {
         return new NextResponse(
-          JSON.stringify({
-            success: false,
-            message: 'Insufficient permissions',
-          }),
-          {
-            status: 403,
-            headers: { 'content-type': 'application/json' },
-          }
+          JSON.stringify({ success: false, message: 'insufficient_permissions' }),
+          { status: 403, headers: { 'content-type': 'application/json' } }
         );
       }
     }
@@ -84,5 +90,7 @@ export const config = {
      * - public folder
      */
     '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    // Match all paths that might have a locale prefix
+    '/(en|es)/:path*'
   ],
 };

@@ -86,10 +86,15 @@
     "info": "Información"
   },
   "SentryExample": {
-    "Sentry Example Page": "Página de Ejemplo de Sentry",
-    "Throw Frontend Error": "Lanzar Error Frontend",
-    "Throw API Error": "Lanzar Error API",
-    "Log Test Message": "Registrar Mensaje de Prueba",
-    "Count": "Contador"
+    "Page Title": "Página de Ejemplo de Sentry",
+    "Frontend Error Button": "Lanzar Error Frontend",
+    "API Error Button": "Lanzar Error API",
+    "Log Message Button": "Registrar Mensaje de Prueba",
+    "Counter": "Contador",
+    "Frontend Error Message": "Error de Prueba Frontend de Sentry",
+    "API Error Message": "Error de API",
+    "Test Message": "Mensaje de prueba desde la página de Sentry",
+    "Message Sent": "¡Mensaje enviado a Sentry!",
+    "Error Fallback": "¡Se produjo un error! Consulte Sentry para más detalles."
   }
 }

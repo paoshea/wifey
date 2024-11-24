@@ -1,6 +1,6 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
-import { getMessages } from '@/lib/i18n/get-messages';
+import { getMessages } from '../../../lib/i18n/get-messages';
 
 type Props = {
   children: React.ReactNode;
