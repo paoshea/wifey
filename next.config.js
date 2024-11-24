@@ -2,15 +2,17 @@
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
-const withNextIntl = createNextIntlPlugin();
+const withNextIntl = createNextIntlPlugin({
+  // Add trailing slash configuration here
+  localePrefix: 'always',
+  locales: ['en', 'es'],
+  defaultLocale: 'en'
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  env: {
-    _next_intl_trailing_slash: '',
-  },
 };
 
 // Wrap the Sentry config with next-intl
