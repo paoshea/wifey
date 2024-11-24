@@ -1,14 +1,37 @@
-// Mock Sentry implementation for testing
-export const logError = (error: Error | string, context?: any) => {
-    // In test environment, just log to console
-    console.error('[Mock Sentry]', error, context);
+// Updated Sentry implementation for production
+import * as Sentry from '@sentry/nextjs';
+
+export const initializeSentry = () => {
+  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      tracesSampleRate: 1.0,
+      environment: process.env.NODE_ENV,
+    });
+  }
+};
+
+export const identifyUser = (userId: string, email?: string) => {
+  Sentry.setUser({
+    id: userId,
+    email: email,
+  });
+};
+
+export const trackError = (error: Error, context?: Record<string, any>) => {
+  Sentry.captureException(error, {
+    extra: context,
+  });
 };
 
 export const trackPerformance = (name: string, value: any, properties?: Record<string, any>) => {
-    // In test environment, just log to console
-    console.log('[Mock Sentry Performance]', { name, value, properties });
-};
-
-export const initSentry = () => {
-    console.log('[Mock Sentry] Initialized');
+  Sentry.addBreadcrumb({
+    category: 'performance',
+    message: name,
+    data: {
+      value,
+      ...properties,
+    },
+    level: 'info',
+  });
 };

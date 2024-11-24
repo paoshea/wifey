@@ -10,10 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSession } from 'next-auth/react';
 import { LeaderboardEntry, LeaderboardStats as LeaderboardStatsType, leaderboardService } from '@/lib/services/leaderboard-service';
-import { LeaderboardStats } from './leaderboard-stats';
-import { LeaderboardHeader } from './leaderboard-header';
-import { LeaderboardTable } from './leaderboard-table';
-import { LeaderboardFilters } from './leaderboard-filters';
 
 const TIMEFRAMES = {
   daily: 'Today',
@@ -47,7 +43,7 @@ function LeaderboardRow({ entry, highlight = false }: { entry: LeaderboardEntry;
 
       <div className="flex-shrink-0 ml-4">
         <Avatar>
-          <AvatarImage src={entry.avatar} alt={entry.username} />
+          <AvatarImage src={entry.avatar ?? undefined} alt={entry.username} />
           <AvatarFallback>{entry.username.charAt(0)}</AvatarFallback>
         </Avatar>
       </div>
@@ -137,33 +133,30 @@ export default function Leaderboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLeaderboard = async () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Fetch leaderboard with stats included
+        const response = await leaderboardService.getLeaderboard(timeframe, 1, 10, true);
+        setEntries(response.entries);
+        setStats(response.stats ?? null);
 
-        const [leaderboardEntries, leaderboardStats] = await Promise.all([
-          leaderboardService.getLeaderboard(timeframe, 10),
-          leaderboardService.getLeaderboardStats(),
-        ]);
-
-        setEntries(leaderboardEntries);
-        setStats(leaderboardStats);
-
+        // Get user's rank if logged in
         if (session?.user?.id) {
-          const { userRank } = await leaderboardService.getUserRankAndNeighbors(session.user.id);
-          setUserRank(userRank);
+          const userRankData = await leaderboardService.getUserRankContext(session.user.id, timeframe);
+          setUserRank(userRankData.surroundingEntries.find(entry => entry.userId === session.user.id) ?? null);
         }
       } catch (err) {
-        setError('Failed to load leaderboard data');
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch leaderboard');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [timeframe, session]);
+    fetchLeaderboard();
+  }, [timeframe, session?.user?.id]);
 
   if (loading) {
     return (
@@ -195,7 +188,7 @@ export default function Leaderboard() {
         </CardHeader>
 
         <CardContent>
-          <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as Timeframe)}>
+          <Tabs value={timeframe} onValueChange={(value: string) => setTimeframe(value as Timeframe)}>
             <TabsList className="mb-6">
               {Object.entries(TIMEFRAMES).map(([key, label]) => (
                 <TabsTrigger key={key} value={key}>

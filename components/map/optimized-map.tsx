@@ -3,36 +3,13 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Map as MapIcon, Loader2 } from 'lucide-react';
-import { usePerformance } from '@/lib/hooks/use-performance';
+import { MapContainer, TileLayer as ReactTileLayer, Marker, Popup } from 'react-leaflet';
+import * as L from 'leaflet';
 import { performanceMonitor } from '@/lib/services/performance-monitor';
-import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
 
 // Dynamically import map components with no SSR
-const MapContainer = dynamic(
-  () => import('react-leaflet').then(mod => mod.MapContainer),
-  { ssr: false }
-);
-
-const TileLayer = dynamic(
-  () => import('react-leaflet').then(mod => mod.TileLayer),
-  { ssr: false }
-);
-
-const Marker = dynamic(
-  () => import('react-leaflet').then(mod => mod.Marker),
-  { ssr: false }
-);
-
-interface OptimizedMapProps {
-  center: [number, number];
-  zoom: number;
-  markers?: Array<{
-    position: [number, number];
-    popup?: string;
-  }>;
-  onMapLoad?: () => void;
-  className?: string;
-}
+const dynamic = require('next/dynamic');
 
 // Tile layer cache
 const tileCache = new Map<string, HTMLImageElement>();
@@ -46,6 +23,17 @@ function MapFallback() {
       </div>
     </div>
   );
+}
+
+interface OptimizedMapProps {
+  center: [number, number];
+  zoom: number;
+  markers?: Array<{
+    position: [number, number];
+    popup?: string;
+  }>;
+  onMapLoad?: () => void;
+  className?: string;
 }
 
 export default function OptimizedMap({
@@ -63,14 +51,7 @@ export default function OptimizedMap({
     triggerOnce: true,
   });
 
-  const { trackEffect, trackEventHandler, getPerformanceReport } = usePerformance({
-    componentName: 'OptimizedMap',
-    thresholds: {
-      renderTime: 50,
-      effectTime: 200,
-      eventTime: 100,
-    },
-  });
+  const { startMark, endMark } = performanceMonitor;
 
   // Memoize tile layer URL function
   const getTileUrl = useMemo(() => {
@@ -89,13 +70,12 @@ export default function OptimizedMap({
   }, []);
 
   // Handle map load
-  const handleMapLoad = trackEventHandler('map-load', (map: L.Map) => {
-    performanceMonitor.startMark('map_load');
-    mapRef.current = map;
+  const handleMapLoad = () => {
+    startMark('map_load');
     setIsMapLoaded(true);
     onMapLoad?.();
-    performanceMonitor.endMark('map_load');
-  });
+    endMark('map_load');
+  };
 
   // Update visible markers based on viewport
   const updateVisibleMarkers = useCallback(() => {
@@ -109,51 +89,53 @@ export default function OptimizedMap({
   }, [markers]);
 
   // Handle map movement
-  const handleMapMove = trackEventHandler('map-move', () => {
-    performanceMonitor.startMark('map_move');
+  const handleMapMove = () => {
+    startMark('map_move');
     updateVisibleMarkers();
-    performanceMonitor.endMark('map_move');
-  });
+    endMark('map_move');
+  };
 
-  // Initialize map event listeners
-  useEffect(
-    trackEffect('map-events', () => {
-      if (!mapRef.current) return;
+  // Handle map zoom change
+  const handleZoomChange = () => {
+    startMark('map_zoom_change');
+    updateVisibleMarkers();
+    endMark('map_zoom_change');
+  };
 
-      const map = mapRef.current;
-      map.on('moveend', handleMapMove);
-      map.on('zoomend', handleMapMove);
-
-      return () => {
-        map.off('moveend', handleMapMove);
-        map.off('zoomend', handleMapMove);
-      };
-    }),
-    [handleMapMove]
-  );
+  // Initialize map when component mounts
+  useEffect(() => {
+    if (!mapRef.current) return;
+    
+    // Initialize map features
+    const map = mapRef.current;
+    map.setView(center, zoom);
+    
+    // Add event listeners
+    map.on('moveend', handleMapMove);
+    map.on('zoomend', handleZoomChange);
+    
+    return () => {
+      map.off('moveend', handleMapMove);
+      map.off('zoomend', handleZoomChange);
+    };
+  }, [center, zoom, handleMapMove, handleZoomChange]);
 
   // Clean up tile cache
-  useEffect(
-    trackEffect('tile-cache-cleanup', () => {
-      return () => {
-        tileCache.clear();
-      };
-    }),
-    []
-  );
+  useEffect(() => {
+    return () => {
+      tileCache.clear();
+    };
+  }, []);
 
   // Log performance metrics
-  useEffect(
-    trackEffect('performance-logging', () => {
-      const interval = setInterval(() => {
-        const report = getPerformanceReport();
-        console.debug('Map Performance Report:', report);
-      }, 60000); // Log every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const report = performanceMonitor.getPerformanceReport();
+      console.debug('Map Performance Report:', report);
+    }, 60000); // Log every minute
 
-      return () => clearInterval(interval);
-    }),
-    [getPerformanceReport]
-  );
+    return () => clearInterval(interval);
+  }, []);
 
   if (!inView) {
     return <div ref={inViewRef} className={`h-[400px] ${className}`} />;
@@ -162,17 +144,32 @@ export default function OptimizedMap({
   return (
     <div className={`relative h-[400px] ${className}`}>
       <MapContainer
+        ref={mapRef}
+        className="h-full w-full"
         center={center}
         zoom={zoom}
-        whenReady={handleMapLoad}
-        className="h-full w-full"
-        preferCanvas={true}
+        minZoom={2}
+        maxZoom={18}
+        scrollWheelZoom={true}
+        whenReady={() => {
+          if (mapRef.current) {
+            handleMapLoad();
+          }
+        }}
       >
-        <TileLayer
+        <ReactTileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          getTileUrl={getTileUrl}
           maxZoom={19}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          eventHandlers={{
+            tileload: (e) => {
+              const tile = e.tile as HTMLImageElement;
+              const url = tile.src;
+              if (!tileCache.has(url)) {
+                tileCache.set(url, tile.cloneNode() as HTMLImageElement);
+              }
+            }
+          }}
         />
 
         {isMapLoaded && visibleMarkers.map((marker, index) => (

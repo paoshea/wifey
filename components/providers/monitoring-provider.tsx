@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { initializeSentry, identifyUser as identifySentryUser } from '@/lib/monitoring/sentry';
+import { initializeSentry, identifyUser as identifySentryUser, trackError as trackSentryError } from '@/lib/monitoring/sentry';
 import { 
     initializeAnalytics, 
     identifyUser as identifyAnalyticsUser,
@@ -19,7 +19,7 @@ interface MonitoringContextType {
     trackError: (error: Error, context?: Record<string, any>) => void;
 }
 
-const MonitoringContext = createContext<MonitoringContextType | null>(null);
+const MonitoringContext = createContext<MonitoringContextType | undefined>(undefined);
 
 export function MonitoringProvider({ children }: { children: ReactNode }) {
     const { data: session } = useSession();
@@ -32,99 +32,26 @@ export function MonitoringProvider({ children }: { children: ReactNode }) {
         initializeAnalytics();
     }, []);
 
-    // Track page views
-    usePageTracking();
-
-    // Identify user when session changes
+    // Identify user across monitoring services when session changes
     useEffect(() => {
-        if (session?.user) {
-            const { id, email, name } = session.user;
-            identifySentryUser(id, email);
-            identifyAnalyticsUser(id, { email, name });
+        if (session?.user?.id) {
+            const email = session.user.email || undefined; 
+            identifySentryUser(session.user.id, email);
+            identifyAnalyticsUser(session.user.id, {
+                email: session.user.email || undefined,
+                name: session.user.name || undefined
+            });
         }
     }, [session]);
 
-    // Track route changes for performance
-    useEffect(() => {
-        if (pathname) {
-            performanceMonitor.startMark('route_change');
-            return () => {
-                performanceMonitor.endMark('route_change', {
-                    pathname,
-                    params: searchParams?.toString()
-                });
-            };
-        }
-    }, [pathname, searchParams]);
-
-    // Monitor client-side errors
-    useEffect(() => {
-        const handleError = (event: ErrorEvent) => {
-            trackEvent('client_error', {
-                message: event.message,
-                filename: event.filename,
-                lineno: event.lineno,
-                colno: event.colno,
-                error: event.error?.toString(),
-            });
-        };
-
-        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-            trackEvent('unhandled_promise_rejection', {
-                reason: event.reason?.toString(),
-            });
-        };
-
-        window.addEventListener('error', handleError);
-        window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-        return () => {
-            window.removeEventListener('error', handleError);
-            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-        };
-    }, []);
-
-    // Monitor network status
-    useEffect(() => {
-        const handleOnline = () => trackEvent('network_status_change', { status: 'online' });
-        const handleOffline = () => trackEvent('network_status_change', { status: 'offline' });
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-
-    // Monitor memory usage
-    useEffect(() => {
-        const memoryInterval = setInterval(() => {
-            if (performance.memory) {
-                trackEvent('memory_usage', {
-                    usedJSHeapSize: performance.memory.usedJSHeapSize,
-                    totalJSHeapSize: performance.memory.totalJSHeapSize,
-                    jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
-                });
-            }
-        }, 60000); // Check every minute
-
-        return () => clearInterval(memoryInterval);
-    }, []);
+    // Track page views
+    usePageTracking();
 
     const value = {
         trackEvent,
-        startPerformanceMark: (name: string) => performanceMonitor.startMark(name),
-        endPerformanceMark: (name: string, properties?: Record<string, any>) => 
-            performanceMonitor.endMark(name, properties),
-        trackError: (error: Error, context?: Record<string, any>) => {
-            trackEvent('error', {
-                message: error.message,
-                stack: error.stack,
-                ...context,
-            });
-        },
+        startPerformanceMark: performanceMonitor.startMark.bind(performanceMonitor),
+        endPerformanceMark: performanceMonitor.endMark.bind(performanceMonitor),
+        trackError: trackSentryError
     };
 
     return (

@@ -1,17 +1,22 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next-intl/client';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Languages } from 'lucide-react';
 
 export default function LanguageSwitcher() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('common');
 
   const toggleLocale = () => {
     const newLocale = locale === 'en' ? 'es' : 'en';
-    router.replace(pathname, { locale: newLocale });
+    const newPath = pathname.startsWith('/' + locale) 
+      ? pathname.replace(`/${locale}`, `/${newLocale}`) 
+      : `/${newLocale}${pathname}`;
+    router.push(newPath);
   };
 
   return (
@@ -19,9 +24,10 @@ export default function LanguageSwitcher() {
       variant="ghost"
       size="sm"
       onClick={toggleLocale}
-      className="text-sm font-medium"
+      className="flex items-center gap-2"
     >
-      {locale === 'en' ? 'ES' : 'EN'}
+      <Languages className="h-4 w-4" />
+      <span>{locale === 'en' ? 'English' : 'Español'}</span>
     </Button>
   );
 }

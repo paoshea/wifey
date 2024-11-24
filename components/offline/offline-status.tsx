@@ -23,45 +23,13 @@ export function OfflineStatus() {
             variant={isOnline ? "default" : "destructive"}
             className="rounded-none border-t-0"
           >
-            <div className="container mx-auto flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {isOnline ? (
-                  <Cloud className="h-5 w-5 text-blue-500" />
-                ) : (
-                  <CloudOff className="h-5 w-5" />
-                )}
-                <AlertDescription className="text-sm">
-                  {!isOnline ? (
-                    "You're offline. Changes will sync when connection is restored."
-                  ) : pendingCount > 0 ? (
-                    <span className="flex items-center space-x-2">
-                      <span>Syncing {pendingCount} pending changes</span>
-                      {isPending && (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      )}
-                    </span>
-                  ) : null}
-                </AlertDescription>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                {isOnline ? (
-                  <Wifi className="h-5 w-5 text-green-500" />
-                ) : (
-                  <WifiOff className="h-5 w-5" />
-                )}
-                {pendingCount > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <Progress
-                      value={((syncStatus.pendingPoints - pendingCount) / syncStatus.pendingPoints) * 100}
-                      className="w-24"
-                    />
-                    <span className="text-xs text-gray-500">
-                      {pendingCount}/{syncStatus.pendingPoints}
-                    </span>
-                  </div>
-                )}
-              </div>
+            <div className="container mx-auto">
+              <OfflineBanner 
+                isOnline={isOnline}
+                isPending={isPending}
+                pendingCount={pendingCount}
+                syncStatus={syncStatus}
+              />
             </div>
           </Alert>
         </motion.div>
@@ -72,11 +40,21 @@ export function OfflineStatus() {
 
 interface OfflineBannerProps {
   className?: string;
+  isOnline: boolean;
+  isPending: boolean;
+  pendingCount: number;
+  syncStatus: {
+    pendingPoints: number;
+  };
 }
 
-export function OfflineBanner({ className = '' }: OfflineBannerProps) {
-  const { isOnline, pendingCount } = useOfflineSync();
-
+export function OfflineBanner({ 
+  className = '', 
+  isOnline,
+  isPending,
+  pendingCount,
+  syncStatus
+}: OfflineBannerProps) {
   if (isOnline && pendingCount === 0) return null;
 
   return (
