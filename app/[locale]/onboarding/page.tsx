@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X } from 'lucide-react';
+import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
 
 const steps = ['welcome', 'features', 'location', 'language'] as const;
 type Step = typeof steps[number];
@@ -145,24 +146,96 @@ export default function OnboardingPage() {
     setContactForm({ name: '', email: '', message: '' });
   };
 
-  const FeaturesStep = () => {
-    const t = useTranslations('onboarding');
-    
-    return (
-      <div className="w-full max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-3xl font-bold mb-4">{t('features.title')}</h2>
-          <p className="text-gray-600">{t('features.subtitle')}</p>
-        </motion.div>
-
-        <FeatureShowcase />
-      </div>
-    );
+  const renderStep = () => {
+    switch (currentStep) {
+      case 'welcome':
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="max-w-4xl w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center space-y-6"
+              >
+                <h1 className="text-5xl font-bold text-gray-900">{t('welcome.title')}</h1>
+                <p className="text-xl text-gray-600">{t('welcome.description')}</p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => router.push('/map')}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {t('welcome.explore')}
+                  </button>
+                  <button
+                    onClick={() => requestLocationPermission()}
+                    className="bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors"
+                  >
+                    {t('welcome.getStarted')}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        );
+      case 'features':
+        return <FeatureShowcase />;
+      case 'location':
+        return (
+          <div className="min-h-screen bg-white py-20">
+            <div className="max-w-4xl mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="space-y-12"
+              >
+                <h2 className="text-4xl font-bold text-center text-gray-900">{t('location.title')}</h2>
+                <p className="text-gray-600">{t('location.description')}</p>
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleNext}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {t('location.next')}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        );
+      case 'language':
+        return (
+          <div className="min-h-screen bg-white py-20">
+            <div className="max-w-4xl mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="space-y-12"
+              >
+                <h2 className="text-4xl font-bold text-center text-gray-900">{t('language.title')}</h2>
+                <p className="text-gray-600">{t('language.description')}</p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => router.push('/en/map')}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    English
+                  </button>
+                  <button
+                    onClick={() => router.push('/es/map')}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Español
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -238,37 +311,7 @@ export default function OnboardingPage() {
       </AnimatePresence>
 
       {/* Hero Section */}
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-6"
-          >
-            <h1 className="text-5xl font-bold text-gray-900">{t('welcome.title')}</h1>
-            <p className="text-xl text-gray-600">{t('welcome.description')}</p>
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={() => scrollToSection(featuresRef)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {t('welcome.explore')}
-              </button>
-              <button
-                onClick={() => requestLocationPermission()}
-                className="bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors"
-              >
-                {t('welcome.getStarted')}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div ref={featuresRef} className="min-h-screen bg-white py-20">
-        <FeaturesStep />
-      </div>
+      {renderStep()}
 
       {/* Testimonials Section */}
       <div ref={testimonialsRef} className="min-h-screen bg-gray-50 py-20">

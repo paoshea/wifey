@@ -71,34 +71,66 @@
   "onboarding": {
     "welcome": {
       "title": "Bienvenido a Wifey",
-      "description": "Tu compañero definitivo para encontrar WiFi y cobertura celular en cualquier lugar. ¡Comencemos!",
-      "getStarted": "Comenzar",
-      "explore": "Explorar Funciones"
+      "description": "Tu compañero inteligente para encontrar la mejor conectividad",
+      "explore": "Explorar funciones",
+      "getStarted": "Comenzar"
     },
     "features": {
-      "title": "Todo lo que necesitas",
+      "title": "Funciones Potentes",
+      "subtitle": "Todo lo que necesitas para mantenerte conectado",
       "wifi": {
         "title": "Buscador de WiFi",
-        "description": "Encuentra puntos de WiFi gratuitos y confiables donde quiera que vayas"
+        "description": "Encuentra puntos de acceso WiFi gratuitos cerca de ti",
+        "benefits": {
+          "security": "Redes seguras verificadas",
+          "updates": "Actualizaciones en tiempo real",
+          "speed": "Información de velocidad de red",
+          "reliability": "Conexiones confiables"
+        }
       },
       "coverage": {
         "title": "Mapa de Cobertura",
-        "description": "Visualiza áreas de cobertura celular y zonas sin señal"
+        "description": "Encuentra cobertura celular en tu área",
+        "benefits": {
+          "realtime": "Datos de cobertura en tiempo real",
+          "accuracy": "Mapeo preciso de intensidad de señal",
+          "predictions": "Predicciones de cobertura",
+          "alerts": "Notificaciones de zonas sin señal"
+        }
       },
       "navigation": {
         "title": "Navegación Inteligente",
-        "description": "Obtén direcciones al punto de conexión más cercano"
+        "description": "Llega a la conectividad rápidamente",
+        "benefits": {
+          "routing": "Planificación de ruta óptima",
+          "offline": "Soporte de mapas sin conexión",
+          "alternatives": "Sugerencias de rutas alternativas",
+          "eta": "Estimaciones precisas de llegada"
+        }
       }
     },
     "location": {
       "title": "Habilitar Ubicación",
-      "description": "Para ayudarte a encontrar los puntos de WiFi y cobertura más cercanos, necesitamos tu ubicación",
-      "enable": "Habilitar Ubicación",
-      "skip": "Omitir por ahora"
+      "description": "Permite el acceso a la ubicación para encontrar la mejor cobertura cerca de ti",
+      "next": "Siguiente"
     },
     "language": {
-      "title": "Elige tu Idioma",
-      "description": "Selecciona tu idioma preferido para la mejor experiencia"
+      "title": "Selecciona tu Idioma",
+      "description": "Elige el idioma que prefieras para la aplicación"
+    },
+    "testimonials": {
+      "title": "Lo que dicen nuestros usuarios"
+    },
+    "contact": {
+      "title": "Contáctanos",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "form": {
+        "name": "Nombre",
+        "email": "Correo electrónico",
+        "message": "Mensaje",
+        "submit": "Enviar"
+      }
     }
   },
   "testimonials": {
