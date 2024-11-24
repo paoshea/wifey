@@ -68,6 +68,38 @@
     "centerOnMe": "Center on my location",
     "mapImplementation": "Map implementation coming soon..."
   },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Wifey",
+      "description": "Your ultimate companion for finding WiFi and cellular coverage anywhere. Let's get you started!",
+      "getStarted": "Get Started"
+    },
+    "features": {
+      "title": "Everything you need",
+      "wifi": {
+        "title": "WiFi Finder",
+        "description": "Find free and reliable WiFi hotspots wherever you go"
+      },
+      "coverage": {
+        "title": "Coverage Map",
+        "description": "View cellular coverage areas and dead zones"
+      },
+      "navigation": {
+        "title": "Smart Navigation",
+        "description": "Get directions to the nearest connection point"
+      }
+    },
+    "location": {
+      "title": "Enable Location",
+      "description": "To help you find the nearest WiFi and coverage points, we need your location",
+      "enable": "Enable Location",
+      "skip": "Skip for now"
+    },
+    "language": {
+      "title": "Choose Your Language",
+      "description": "Select your preferred language for the best experience"
+    }
+  },
   "auth": {
     "register": {
       "title": "Create your account",
@@ -99,7 +131,11 @@
     "cancel": "Cancel",
     "success": "Success",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "continue": "Continue",
+    "skip": "Skip",
+    "next": "Next",
+    "back": "Back"
   },
   "SentryExample": {
     "Page Title": "Sentry Example Page",

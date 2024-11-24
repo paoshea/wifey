@@ -8,7 +8,7 @@
   "home": {
     "title": "Encuentra Cobertura",
     "subtitle": "En Cualquier Lugar",
-    "description": "Localiza puntos de cobertura celular y puntos de acceso WiFi gratuitos cerca de ti. Nunca pierdas la conexión.",
+    "description": "Localiza puntos de cobertura celular y puntos de WiFi gratuitos cerca de ti. Nunca más te quedes sin conexión.",
     "findCoverageButton": "Encontrar Cobertura Ahora",
     "features": {
       "cellular": {
@@ -17,11 +17,11 @@
       },
       "wifi": {
         "title": "WiFi Gratuito",
-        "description": "Descubre puntos de acceso WiFi gratuitos cercanos"
+        "description": "Descubre puntos de WiFi gratuitos cercanos"
       },
       "navigation": {
         "title": "Navegación",
-        "description": "Obtén direcciones paso a paso hasta el punto de conexión más cercano"
+        "description": "Obtén indicaciones paso a paso al punto de conexión más cercano"
       }
     }
   },
@@ -29,7 +29,7 @@
     "title": "Buscador de Cobertura",
     "tabs": {
       "coverageRoute": "Encontrar Ruta de Cobertura",
-      "freeWifi": "Puntos WiFi Gratuitos"
+      "freeWifi": "Puntos de WiFi Gratuitos"
     },
     "findRoute": {
       "title": "Encontrar Ruta a Cobertura",
@@ -37,29 +37,77 @@
       "loading": "Buscando Cobertura...",
       "gettingLocation": "Obteniendo tu ubicación...",
       "noLocation": "Se requiere acceso a la ubicación para encontrar cobertura",
-      "error": "Error al buscar cobertura. Por favor intenta de nuevo."
+      "error": "Error al buscar cobertura. Por favor, inténtalo de nuevo."
     },
     "wifi": {
-      "title": "Puntos WiFi Gratuitos Cercanos",
+      "title": "Puntos de WiFi Gratuitos Cercanos",
       "refreshButton": "Actualizar Puntos Cercanos",
-      "loading": "Buscando puntos WiFi...",
-      "noHotspots": "No se encontraron puntos WiFi cercanos",
+      "loading": "Buscando puntos de WiFi...",
+      "noHotspots": "No se encontraron puntos de WiFi cercanos",
       "details": {
         "provider": "Proveedor",
         "speed": "Velocidad",
         "distance": "Distancia",
-        "reliability": "Confiabilidad"
+        "reliability": "Fiabilidad"
       }
+    }
+  },
+  "Map": {
+    "title": "Mapa Interactivo",
+    "layers": "Capas",
+    "showOnMap": "Mostrar en el Mapa",
+    "allPoints": "Todos los Puntos",
+    "wifiOnly": "Solo Puntos WiFi",
+    "coverageOnly": "Solo Puntos de Cobertura",
+    "searchPlaceholder": "Buscar ubicaciones...",
+    "legend": "Leyenda",
+    "mapLegend": "Leyenda del Mapa",
+    "wifiPoint": "Punto WiFi",
+    "coveragePoint": "Punto de Cobertura",
+    "getDirections": "Obtener Direcciones",
+    "centerOnMe": "Centrar en mi ubicación",
+    "mapImplementation": "Implementación del mapa próximamente..."
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Bienvenido a Wifey",
+      "description": "Tu compañero definitivo para encontrar WiFi y cobertura celular en cualquier lugar. ¡Comencemos!",
+      "getStarted": "Comenzar"
+    },
+    "features": {
+      "title": "Todo lo que necesitas",
+      "wifi": {
+        "title": "Buscador de WiFi",
+        "description": "Encuentra puntos de WiFi gratuitos y confiables donde quiera que vayas"
+      },
+      "coverage": {
+        "title": "Mapa de Cobertura",
+        "description": "Visualiza áreas de cobertura celular y zonas sin señal"
+      },
+      "navigation": {
+        "title": "Navegación Inteligente",
+        "description": "Obtén direcciones al punto de conexión más cercano"
+      }
+    },
+    "location": {
+      "title": "Habilitar Ubicación",
+      "description": "Para ayudarte a encontrar los puntos de WiFi y cobertura más cercanos, necesitamos tu ubicación",
+      "enable": "Habilitar Ubicación",
+      "skip": "Omitir por ahora"
+    },
+    "language": {
+      "title": "Elige tu Idioma",
+      "description": "Selecciona tu idioma preferido para la mejor experiencia"
     }
   },
   "auth": {
     "register": {
       "title": "Crea tu cuenta",
-      "subtitle": "Únete a Wifey y nunca pierdas la conexión",
+      "subtitle": "Únete a Wifey y nunca más pierdas la conexión",
       "nameLabel": "Nombre Completo",
       "namePlaceholder": "Ingresa tu nombre",
       "emailLabel": "Correo Electrónico",
-      "emailPlaceholder": "Ingresa tu correo",
+      "emailPlaceholder": "Ingresa tu correo electrónico",
       "passwordLabel": "Contraseña",
       "passwordPlaceholder": "Crea una contraseña (mín. 8 caracteres)",
       "languageLabel": "Idioma Preferido",
@@ -69,7 +117,7 @@
       "successTitle": "¡Registro exitoso!",
       "successMessage": "Tu cuenta ha sido creada. ¡Bienvenido a Wifey!",
       "errorTitle": "Error en el registro",
-      "errorMessage": "Hubo un problema al crear tu cuenta. Por favor intenta de nuevo.",
+      "errorMessage": "Hubo un problema al crear tu cuenta. Por favor, inténtalo de nuevo.",
       "alreadyHaveAccount": "¿Ya tienes una cuenta?",
       "loginLink": "Inicia sesión aquí"
     }
@@ -83,49 +131,10 @@
     "cancel": "Cancelar",
     "success": "Éxito",
     "warning": "Advertencia",
-    "info": "Información"
-  },
-  "SentryExample": {
-    "Page Title": "Página de Ejemplo de Sentry",
-    "Frontend Error Button": "Lanzar Error Frontend",
-    "API Error Button": "Lanzar Error API",
-    "Log Message Button": "Registrar Mensaje de Prueba",
-    "Counter": "Contador",
-    "Frontend Error Message": "Error de Prueba Frontend de Sentry",
-    "API Error Message": "Error de API",
-    "Test Message": "Mensaje de prueba desde la página de Sentry",
-    "Message Sent": "¡Mensaje enviado a Sentry!",
-    "Error Fallback": "¡Se produjo un error! Consulte Sentry para más detalles."
-  },
-  "WifiFinder": {
-    "title": "Buscador de WiFi",
-    "listView": "Vista de Lista",
-    "mapView": "Vista de Mapa",
-    "searchPlaceholder": "Buscar por nombre o ubicación...",
-    "filter": "Filtrar",
-    "allTypes": "Todos los Tipos",
-    "freeOnly": "Solo Gratis",
-    "paidOnly": "Solo de Pago",
-    "free": "Gratis",
-    "paid": "De Pago",
-    "restricted": "Restringido",
-    "getDirections": "Obtener Direcciones",
-    "mapComingSoon": "Vista de mapa próximamente..."
-  },
-  "Map": {
-    "title": "Mapa Interactivo",
-    "layers": "Capas",
-    "showOnMap": "Mostrar en el Mapa",
-    "allPoints": "Todos los Puntos",
-    "wifiOnly": "Solo Puntos WiFi",
-    "coverageOnly": "Solo Puntos de Cobertura",
-    "searchPlaceholder": "Buscar ubicaciones...",
-    "legend": "Leyenda",
-    "mapLegend": "Leyenda del Mapa",
-    "wifiPoint": "Punto de WiFi",
-    "coveragePoint": "Punto de Cobertura",
-    "getDirections": "Obtener Direcciones",
-    "centerOnMe": "Centrar en mi ubicación",
-    "mapImplementation": "Implementación del mapa próximamente..."
+    "info": "Información",
+    "continue": "Continuar",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "back": "Atrás"
   }
 }

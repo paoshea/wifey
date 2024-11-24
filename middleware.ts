@@ -10,6 +10,7 @@ const publicPaths = [
   '/auth/signup',
   '/api/auth/signin',
   '/api/auth/signup',
+  '/onboarding',
 ];
 
 // Paths that require specific roles
@@ -20,14 +21,27 @@ const roleProtectedPaths = {
   '/api/coverage/delete': ['admin', 'moderator'],
 };
 
+const locales = ['en', 'es'];
+
 const intlMiddleware = createMiddleware({
-  locales: ['en', 'es'],
+  locales,
   defaultLocale: 'en',
   localePrefix: 'always'
 });
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Check if the user needs onboarding
+  const hasCompletedOnboarding = request.cookies.get('hasCompletedOnboarding');
+  const isOnboardingPage = pathname.includes('/onboarding');
+
+  // If user hasn't completed onboarding and isn't on the onboarding page,
+  // redirect them to onboarding
+  if (!hasCompletedOnboarding && !isOnboardingPage && !pathname.includes('/_next')) {
+    const locale = request.cookies.get('NEXT_LOCALE')?.value || 'en';
+    return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url));
+  }
 
   // Handle internationalization first
   const response = await intlMiddleware(request);
