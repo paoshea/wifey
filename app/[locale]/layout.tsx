@@ -5,12 +5,10 @@ import { getMessages } from 'next-intl/server';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import Navbar from '@/components/layout/navbar';
+import { locales, type SupportedLocale } from '@/lib/i18n/config';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
-
-const locales = ['en', 'es'] as const;
-type SupportedLocale = (typeof locales)[number];
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -46,7 +44,7 @@ export default async function LocaleLayout({
 }: LocaleLayoutProps) {
   let messages;
   try {
-    messages = await getMessages(locale);
+    messages = await getMessages({ locale });
   } catch (error) {
     notFound();
   }
@@ -67,7 +65,7 @@ export default async function LocaleLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <NextIntlClientProvider messages={messages} locale={locale}>
+          <NextIntlClientProvider locale={locale} messages={messages}>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
               <main className="flex-grow">{children}</main>
