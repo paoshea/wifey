@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { useTranslations } from 'next-intl';
+import { ErrorBoundary } from '@sentry/nextjs';
 
-export default function SentryExamplePage() {
+function SentryContent() {
   const t = useTranslations('SentryExample');
   const [count, setCount] = useState(0);
 
@@ -60,5 +61,13 @@ export default function SentryExamplePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SentryExamplePage() {
+  return (
+    <ErrorBoundary fallback={<div>Error occurred! Check Sentry for details.</div>}>
+      <SentryContent />
+    </ErrorBoundary>
   );
 }
