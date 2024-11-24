@@ -1,11 +1,10 @@
 // This file sets up the configuration for Next.js
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
-const { locales, defaultLocale } = require('./lib/i18n/config');
 
 const withNextIntl = createNextIntlPlugin({
-  locales: locales,
-  defaultLocale: defaultLocale,
+  locales: ['en', 'es'],
+  defaultLocale: 'en',
   localePrefix: 'always'
 });
 
