@@ -10,7 +10,14 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   // Add trailing slash configuration directly in the config
-  trailingSlash: true
+  trailingSlash: true,
+  // Configure image optimization
+  images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: []
+  }
 };
 
 // First wrap with next-intl

@@ -25,12 +25,13 @@ export default function Navbar() {
               <motion.div
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative w-8 h-8 mr-2"
+                className="relative mr-2"
               >
                 <Image
                   src="/logo.svg"
                   alt="Wifey Logo"
-                  fill
+                  width={32}
+                  height={32}
                   className="object-contain"
                   priority
                 />
