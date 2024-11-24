@@ -76,38 +76,22 @@
       "getStarted": "Get Started"
     },
     "features": {
-      "title": "Everything You Need",
-      "keyBenefits": "Key Benefits",
-      "tryNow": "Try This Feature",
+      "title": "Powerful Features",
+      "subtitle": "Everything you need to stay connected",
       "wifi": {
         "title": "WiFi Finder",
-        "description": "Discover and connect to reliable WiFi hotspots anywhere",
-        "benefits": {
-          "speed": "Real-time speed testing and quality metrics",
-          "reliability": "Verified and trusted network connections",
-          "security": "Security ratings and encryption information",
-          "updates": "Regular updates from community contributors"
-        }
+        "description": "Locate free WiFi hotspots near you",
+        "benefits": ["Real-time updates", "Speed information", "User ratings"]
       },
       "coverage": {
-        "title": "Coverage Maps",
-        "description": "View detailed cellular coverage maps for your area",
-        "benefits": {
-          "realtime": "Real-time coverage strength indicators",
-          "accuracy": "Accurate carrier-specific information",
-          "predictions": "Coverage predictions for travel routes",
-          "alerts": "Low coverage area notifications"
-        }
+        "title": "Coverage Map",
+        "description": "Find cellular coverage in your area",
+        "benefits": ["Dead zone alerts", "Provider comparison", "Signal strength"]
       },
       "navigation": {
         "title": "Smart Navigation",
-        "description": "Navigate while staying connected to the best networks",
-        "benefits": {
-          "routing": "Optimal routes with best coverage",
-          "offline": "Offline map support for remote areas",
-          "alternatives": "Alternative route suggestions",
-          "eta": "Accurate ETA with coverage consideration"
-        }
+        "description": "Get to connectivity quickly",
+        "benefits": ["Turn-by-turn directions", "Offline maps", "ETA calculation"]
       }
     },
     "location": {
@@ -131,7 +115,9 @@
         "email": "Email Address",
         "message": "Message",
         "submit": "Send Message"
-      }
+      },
+      "email": "support@wifey.app",
+      "phone": "+1 (555) 123-4567"
     }
   },
   "testimonials": {

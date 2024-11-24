@@ -9,18 +9,21 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 const features = [
   {
     icon: Wifi,
-    titleKey: 'features.wifi.title',
-    descriptionKey: 'features.wifi.description',
+    titleKey: 'onboarding.features.wifi.title',
+    descriptionKey: 'onboarding.features.wifi.description',
+    benefits: 'onboarding.features.wifi.benefits'
   },
   {
     icon: Signal,
-    titleKey: 'features.coverage.title',
-    descriptionKey: 'features.coverage.description',
+    titleKey: 'onboarding.features.coverage.title',
+    descriptionKey: 'onboarding.features.coverage.description',
+    benefits: 'onboarding.features.coverage.benefits'
   },
   {
     icon: Navigation2,
-    titleKey: 'features.navigation.title',
-    descriptionKey: 'features.navigation.description',
+    titleKey: 'onboarding.features.navigation.title',
+    descriptionKey: 'onboarding.features.navigation.description',
+    benefits: 'onboarding.features.navigation.benefits'
   },
 ]
 
@@ -40,24 +43,15 @@ const item = {
 }
 
 export function FeatureShowcase() {
-  const t = useTranslations()
+  const t = useTranslations('onboarding')
 
   return (
     <section className="py-16 px-4 md:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Navigation Menu */}
-        <NavigationMenu className="mb-12">
-          <NavigationMenuList>
-            {features.map((feature) => (
-              <NavigationMenuItem key={feature.titleKey}>
-                <NavigationMenuTrigger variant="primary">
-                  <feature.icon className="w-4 h-4 mr-2" />
-                  {t(feature.titleKey)}
-                </NavigationMenuTrigger>
-              </NavigationMenuItem>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">{t('features.title')}</h2>
+          <p className="text-gray-600">{t('features.subtitle')}</p>
+        </div>
 
         {/* Feature Cards */}
         <motion.div 
@@ -70,12 +64,19 @@ export function FeatureShowcase() {
             <motion.div key={feature.titleKey} variants={item}>
               <Card variant="feature" className="h-full">
                 <CardHeader>
-                  <feature.icon className="w-8 h-8 mb-4" />
+                  <feature.icon className="w-8 h-8 mb-4 text-primary" />
                   <CardTitle>{t(feature.titleKey)}</CardTitle>
                   <CardDescription>{t(feature.descriptionKey)}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Additional content can be added here */}
+                  <ul className="space-y-2">
+                    {t(feature.benefits).map((benefit: string, index: number) => (
+                      <li key={index} className="flex items-center text-sm text-gray-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2" />
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             </motion.div>
