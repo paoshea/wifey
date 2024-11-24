@@ -3,24 +3,12 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = localFont({
-  src: [
-    {
-      path: './fonts/GeistVF.woff2',
-      weight: '100 900',
-      style: 'normal',
-    }
-  ],
+  src: '../public/fonts/GeistVF.woff2',
   variable: "--font-geist-sans",
 });
 
 const geistMono = localFont({
-  src: [
-    {
-      path: './fonts/GeistMonoVF.woff2',
-      weight: '100 900',
-      style: 'normal',
-    }
-  ],
+  src: '../public/fonts/GeistMonoVF.woff2',
   variable: "--font-geist-mono",
 });
 
@@ -36,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
