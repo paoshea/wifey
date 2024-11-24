@@ -81,17 +81,31 @@
       "wifi": {
         "title": "WiFi Finder",
         "description": "Locate free WiFi hotspots near you",
-        "benefits": ["Real-time updates", "Speed information", "User ratings"]
+        "benefits": {
+          "security": "Verified secure networks",
+          "updates": "Real-time availability updates",
+          "speed": "Network speed information"
+        }
       },
       "coverage": {
         "title": "Coverage Map",
         "description": "Find cellular coverage in your area",
-        "benefits": ["Dead zone alerts", "Provider comparison", "Signal strength"]
+        "benefits": {
+          "realtime": "Real-time coverage data",
+          "accuracy": "Precise signal strength mapping",
+          "predictions": "Coverage predictions",
+          "alerts": "Dead zone notifications"
+        }
       },
       "navigation": {
         "title": "Smart Navigation",
         "description": "Get to connectivity quickly",
-        "benefits": ["Turn-by-turn directions", "Offline maps", "ETA calculation"]
+        "benefits": {
+          "routing": "Optimal route planning",
+          "offline": "Offline map support",
+          "alternatives": "Alternative route suggestions",
+          "eta": "Accurate arrival estimates"
+        }
       }
     },
     "location": {
