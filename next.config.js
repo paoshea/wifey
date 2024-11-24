@@ -2,24 +2,23 @@
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
-const withNextIntl = createNextIntlPlugin({
-  locales: ['en', 'es'],
-  defaultLocale: 'en',
-  localePrefix: 'always'
-});
+// First create the next-intl configuration
+const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  env: {
-    _next_intl_trailing_slash: '1'
-  }
+  // Add trailing slash configuration directly in the config
+  trailingSlash: true
 };
 
-// Combine next-intl with Sentry config
-module.exports = withNextIntl(withSentryConfig(
-  nextConfig,
+// First wrap with next-intl
+let config = withNextIntl(nextConfig);
+
+// Then wrap with Sentry
+config = withSentryConfig(
+  config,
   {
     org: "ownco-bp",
     project: "javascript-nextjs",
@@ -38,4 +37,6 @@ module.exports = withNextIntl(withSentryConfig(
     disableServerWebpackPlugin: process.env.NODE_ENV === 'development',
     disableClientWebpackPlugin: process.env.NODE_ENV === 'development',
   }
-));
+);
+
+module.exports = config;
