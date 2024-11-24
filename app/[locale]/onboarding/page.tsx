@@ -4,10 +4,18 @@ import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { LucideWifi, MapPin, Navigation, Star, Mail, Phone } from 'lucide-react';
+import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X } from 'lucide-react';
 
 const steps = ['welcome', 'features', 'location', 'language'] as const;
 type Step = typeof steps[number];
+
+type FeatureDetails = {
+  title: string;
+  description: string;
+  benefits: string[];
+  icon: React.ReactNode;
+  color: string;
+};
 
 const testimonials = [
   {
@@ -35,6 +43,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -44,6 +53,45 @@ export default function OnboardingPage() {
   const featuresRef = useRef<HTMLDivElement>(null);
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
+
+  const featureDetails: Record<string, FeatureDetails> = {
+    wifi: {
+      title: t('features.wifi.title'),
+      description: t('features.wifi.description'),
+      benefits: [
+        t('features.wifi.benefits.speed'),
+        t('features.wifi.benefits.reliability'),
+        t('features.wifi.benefits.security'),
+        t('features.wifi.benefits.updates')
+      ],
+      icon: <LucideWifi className="w-8 h-8" />,
+      color: 'from-blue-500 to-blue-600'
+    },
+    coverage: {
+      title: t('features.coverage.title'),
+      description: t('features.coverage.description'),
+      benefits: [
+        t('features.coverage.benefits.realtime'),
+        t('features.coverage.benefits.accuracy'),
+        t('features.coverage.benefits.predictions'),
+        t('features.coverage.benefits.alerts')
+      ],
+      icon: <MapPin className="w-8 h-8" />,
+      color: 'from-green-500 to-green-600'
+    },
+    navigation: {
+      title: t('features.navigation.title'),
+      description: t('features.navigation.description'),
+      benefits: [
+        t('features.navigation.benefits.routing'),
+        t('features.navigation.benefits.offline'),
+        t('features.navigation.benefits.alternatives'),
+        t('features.navigation.benefits.eta')
+      ],
+      icon: <Navigation className="w-8 h-8" />,
+      color: 'from-purple-500 to-purple-600'
+    }
+  };
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
@@ -99,6 +147,76 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Feature Modal */}
+      <AnimatePresence>
+        {selectedFeature && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedFeature(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-lg w-full space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg bg-gradient-to-r ${featureDetails[selectedFeature].color}`}>
+                    {featureDetails[selectedFeature].icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {featureDetails[selectedFeature].title}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedFeature(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <p className="text-gray-600">
+                {featureDetails[selectedFeature].description}
+              </p>
+
+              <div className="space-y-2">
+                <h4 className="font-semibold text-gray-900">{t('features.keyBenefits')}</h4>
+                <ul className="space-y-2">
+                  {featureDetails[selectedFeature].benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <div className="flex-shrink-0 w-5 h-5 mt-1">
+                        <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-gray-600">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  onClick={() => {
+                    setSelectedFeature(null);
+                    router.push('/map');
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
+                >
+                  {t('features.tryNow')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-4xl w-full">
@@ -117,7 +235,7 @@ export default function OnboardingPage() {
                 {t('welcome.explore')}
               </button>
               <button
-                onClick={handleNext}
+                onClick={() => requestLocationPermission()}
                 className="bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors"
               >
                 {t('welcome.getStarted')}
@@ -138,38 +256,22 @@ export default function OnboardingPage() {
           >
             <h2 className="text-4xl font-bold text-center text-gray-900">{t('features.title')}</h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="group relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
-                <div className="relative z-10 space-y-4">
-                  <div className="bg-blue-100 p-3 rounded-lg w-12 h-12 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <LucideWifi className="w-6 h-6 text-blue-600 group-hover:text-white" />
+              {Object.entries(featureDetails).map(([key, feature]) => (
+                <div
+                  key={key}
+                  onClick={() => setSelectedFeature(key)}
+                  className="group relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-100 rounded-xl transition-opacity`} />
+                  <div className="relative z-10 space-y-4">
+                    <div className="bg-blue-100 p-3 rounded-lg w-12 h-12 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-white">{feature.title}</h3>
+                    <p className="text-gray-600 group-hover:text-white/90">{feature.description}</p>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-white">{t('features.wifi.title')}</h3>
-                  <p className="text-gray-600 group-hover:text-white/90">{t('features.wifi.description')}</p>
                 </div>
-              </div>
-
-              <div className="group relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
-                <div className="relative z-10 space-y-4">
-                  <div className="bg-green-100 p-3 rounded-lg w-12 h-12 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <MapPin className="w-6 h-6 text-green-600 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-white">{t('features.coverage.title')}</h3>
-                  <p className="text-gray-600 group-hover:text-white/90">{t('features.coverage.description')}</p>
-                </div>
-              </div>
-
-              <div className="group relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
-                <div className="relative z-10 space-y-4">
-                  <div className="bg-purple-100 p-3 rounded-lg w-12 h-12 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <Navigation className="w-6 h-6 text-purple-600 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-white">{t('features.navigation.title')}</h3>
-                  <p className="text-gray-600 group-hover:text-white/90">{t('features.navigation.description')}</p>
-                </div>
-              </div>
+              ))}
             </div>
           </motion.div>
         </div>

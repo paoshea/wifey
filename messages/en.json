@@ -70,35 +70,68 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Welcome to Wifey",
-      "description": "Your ultimate companion for finding WiFi and cellular coverage anywhere. Let's get started!",
-      "getStarted": "Get Started",
-      "explore": "Explore Features"
+      "title": "Find the Best WiFi & Coverage",
+      "description": "Never worry about connectivity again. Get real-time coverage maps, WiFi hotspots, and navigation all in one place.",
+      "explore": "Explore Features",
+      "getStarted": "Get Started"
     },
     "features": {
       "title": "Everything You Need",
+      "keyBenefits": "Key Benefits",
+      "tryNow": "Try This Feature",
       "wifi": {
         "title": "WiFi Finder",
-        "description": "Find reliable and free WiFi points wherever you go"
+        "description": "Discover and connect to reliable WiFi hotspots anywhere",
+        "benefits": {
+          "speed": "Real-time speed testing and quality metrics",
+          "reliability": "Verified and trusted network connections",
+          "security": "Security ratings and encryption information",
+          "updates": "Regular updates from community contributors"
+        }
       },
       "coverage": {
-        "title": "Coverage Map",
-        "description": "Visualize cellular coverage areas and dead zones"
+        "title": "Coverage Maps",
+        "description": "View detailed cellular coverage maps for your area",
+        "benefits": {
+          "realtime": "Real-time coverage strength indicators",
+          "accuracy": "Accurate carrier-specific information",
+          "predictions": "Coverage predictions for travel routes",
+          "alerts": "Low coverage area notifications"
+        }
       },
       "navigation": {
         "title": "Smart Navigation",
-        "description": "Get directions to the nearest connection point"
+        "description": "Navigate while staying connected to the best networks",
+        "benefits": {
+          "routing": "Optimal routes with best coverage",
+          "offline": "Offline map support for remote areas",
+          "alternatives": "Alternative route suggestions",
+          "eta": "Accurate ETA with coverage consideration"
+        }
       }
     },
     "location": {
       "title": "Enable Location",
-      "description": "To help you find the nearest WiFi and coverage points, we need your location",
-      "enable": "Enable Location",
-      "skip": "Skip for now"
+      "description": "Allow location access to find the best coverage near you",
+      "button": "Enable Location"
     },
     "language": {
-      "title": "Choose Your Language",
-      "description": "Select your preferred language for the best experience"
+      "title": "Choose Language",
+      "description": "Select your preferred language"
+    },
+    "testimonials": {
+      "title": "What Users Say",
+      "description": "Join thousands of satisfied users worldwide"
+    },
+    "contact": {
+      "title": "Get in Touch",
+      "description": "Have questions? We're here to help",
+      "form": {
+        "name": "Your Name",
+        "email": "Email Address",
+        "message": "Message",
+        "submit": "Send Message"
+      }
     }
   },
   "testimonials": {
