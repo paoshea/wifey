@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="180" height="48" viewBox="0 0 180 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Signal Waves Background -->
+  <path d="M24 12C29.5228 12 34 16.4772 34 22C34 27.5228 29.5228 32 24 32C18.4772 32 14 27.5228 14 22C14 16.4772 18.4772 12 24 12Z" fill="url(#paint0_radial)" fill-opacity="0.2"/>
+  
+  <!-- WiFi Icon -->
+  <path d="M24 16C27.866 16 31 19.134 31 23C31 26.866 27.866 30 24 30C20.134 30 17 26.866 17 23C17 19.134 20.134 16 24 16Z" fill="url(#paint1_linear)"/>
+  <path d="M24 20C25.6569 20 27 21.3431 27 23C27 24.6569 25.6569 26 24 26C22.3431 26 21 24.6569 21 23C21 21.3431 22.3431 20 24 20Z" fill="white"/>
+  
+  <!-- Text "WIFEY" -->
+  <path d="M48 18L52 32H56L60 18H56L54 28L52 18H48Z" fill="#1A1A1A"/>
+  <path d="M62 18V32H66V18H62Z" fill="#1A1A1A"/>
+  <path d="M68 18L72 32H76L80 18H76L74 28L72 18H68Z" fill="#1A1A1A"/>
+  <path d="M82 18V32H86V18H82Z" fill="#1A1A1A"/>
+  <path d="M88 18V32H92L96 24V32H100V18H96L92 26V18H88Z" fill="#1A1A1A"/>
+  
+  <defs>
+    <!-- Radial Gradient for Signal Effect -->
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(24 22) rotate(90) scale(10)">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Linear Gradient for WiFi Icon -->
+    <linearGradient id="paint1_linear" x1="17" y1="16" x2="31" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+</svg>
