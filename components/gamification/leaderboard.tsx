@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GamificationService } from '../../lib/gamification/gamification-service';
-import { LeaderboardEntry } from '../../lib/gamification/types';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Badge } from '../ui/badge';
-import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Spinner } from '../ui/spinner';
+import { GamificationService } from '@/lib/gamification/gamification-service';
+import { LeaderboardEntry } from '@/lib/gamification/types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 
 interface LeaderboardProps {
   refreshInterval?: number;
@@ -130,7 +130,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ refreshInterval = 3000
                 </div>
                 <Avatar className="ml-4">
                   <AvatarImage 
-                    src={entry.avatar} 
+                    src={entry.avatarUrl} 
                     alt={entry.username} 
                   />
                   <AvatarFallback>

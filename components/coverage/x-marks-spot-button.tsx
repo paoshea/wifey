@@ -9,9 +9,10 @@ import { useCoverageStore } from '@/lib/store/coverage-store';
 interface XMarksSpotButtonProps {
   onMarkSpot: (location: { lat: number; lng: number }) => void;
   className?: string;
+  disabled?: boolean;
 }
 
-export default function XMarksSpotButton({ onMarkSpot, className = '' }: XMarksSpotButtonProps) {
+export default function XMarksSpotButton({ onMarkSpot, className = '', disabled = false }: XMarksSpotButtonProps) {
   const [isMarking, setIsMarking] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export default function XMarksSpotButton({ onMarkSpot, className = '' }: XMarksS
         <Button
           variant="destructive"
           size="lg"
-          disabled={isMarking}
+          disabled={disabled || isMarking}
           onClick={handleMarkSpot}
           className={`
             relative overflow-hidden rounded-full w-16 h-16

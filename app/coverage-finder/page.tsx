@@ -30,10 +30,15 @@ export default function CoverageFinder() {
     isLoading,
     error,
     addCoveragePoint,
-    updateCoveragePoint,
+    updateCoveragePoint: updatePoint,
     syncPendingUpdates,
     isOffline
   } = useCoverageData(bounds);
+
+  // Wrapper function to match the expected signature
+  const handleUpdateCoveragePoint = (id: string, data: Partial<any>) => {
+    updatePoint({ id, data });
+  };
 
   // Check if geolocation is available and permitted
   useEffect(() => {
@@ -174,10 +179,10 @@ export default function CoverageFinder() {
           {activeTab === 'map' ? (
             <EnhancedCoverageMap 
               onLocationSelect={handleLocationSelect}
-              coveragePoints={coveragePoints}
+              coveragePoints={coveragePoints ?? []}
               isLoading={isLoading}
               onAddCoveragePoint={addCoveragePoint}
-              onUpdateCoveragePoint={updateCoveragePoint}
+              onUpdateCoveragePoint={handleUpdateCoveragePoint}
               isOffline={isOffline}
             />
           ) : (

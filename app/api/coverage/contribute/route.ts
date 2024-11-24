@@ -102,7 +102,9 @@ async function updateCoverageComparison(
     // Find existing comparison or create new one
     let comparison = await prisma.coverageComparison.findFirst({
       where: {
-        location: location,
+        location: {
+          equals: location
+        },
       },
     });
 

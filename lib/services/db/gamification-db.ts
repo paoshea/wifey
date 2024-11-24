@@ -1,12 +1,12 @@
-import { PrismaClient, PrismaTransaction } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { monitoringService } from '../../monitoring/monitoring-service';
 import type {
   Achievement,
   UserProgress,
   UserStats,
   LeaderboardEntry,
-  Measurement,
   User,
-  MeasurementData,
+  Prisma as PrismaTypes,
 } from '@prisma/client';
 import {
   validateUserProgress,
@@ -20,7 +20,9 @@ import {
 
 const prisma = new PrismaClient();
 
-interface UserStatsData extends Omit<UserStats, 'id' | 'userId'> {
+type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
+
+interface BaseUserStats {
   totalMeasurements: number;
   ruralMeasurements: number;
   uniqueLocations: number;
@@ -28,7 +30,9 @@ interface UserStatsData extends Omit<UserStats, 'id' | 'userId'> {
   contributionScore: number;
 }
 
-interface UserProgressData extends Omit<UserProgress, 'id' | 'userId'> {
+type UserStatsData = Omit<PrismaTypes.UserStatsCreateInput, 'id' | 'userId' | 'user'> & BaseUserStats;
+
+interface BaseUserProgress {
   level: number;
   currentXP: number;
   totalXP: number;
@@ -36,8 +40,25 @@ interface UserProgressData extends Omit<UserProgress, 'id' | 'userId'> {
   lastActive: Date;
 }
 
+type UserProgressData = Omit<PrismaTypes.UserProgressCreateInput, 'id' | 'userId' | 'user' | 'achievements'> & BaseUserProgress;
+
 interface MeasurementData {
   isRural: boolean;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+interface LeaderboardData {
+  score: number;
+  rank?: number | null;
+  timeframe: TimeFrame;
+}
+
+interface RankHistoryEntry {
+  rank: number;
+  date: Date;
 }
 
 function calculateUpdatedStats(currentStats: UserStats, measurement: MeasurementData): Partial<UserStatsData> {
@@ -49,7 +70,7 @@ function calculateUpdatedStats(currentStats: UserStats, measurement: Measurement
   };
 }
 
-function calculateUpdatedProgress(currentProgress: UserProgress, measurement: MeasurementData): UserProgressData {
+function calculateUpdatedProgress(currentProgress: UserProgress, measurement: MeasurementData): Partial<UserProgressData> {
   const xpGained = measurement.isRural ? 20 : 10;
   return {
     currentXP: (currentProgress.currentXP || 0) + xpGained,
@@ -66,20 +87,31 @@ function determineEligibleAchievements(stats: UserStats, progress: UserProgress)
 }
 
 export class GamificationDB {
+  private prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = prisma;
+  }
+
   // User Progress Methods
-  async getUserProgress(userId: string): Promise<UserProgress> {
+  async getUserProgress(userId: string): Promise<UserProgress & { 
+    stats: UserStats; 
+    achievements: Achievement[];
+  }> {
     try {
       userIdSchema.parse(userId);
-      const progress = await prisma.userProgress.findUnique({
+      const progress = await this.prisma.userProgress.findUnique({
         where: { userId },
         include: {
           stats: true,
           achievements: true,
         },
       });
+
       if (!progress) {
         throw new Error(`User progress not found for user ${userId}`);
       }
+
       return progress;
     } catch (error) {
       handleValidationError(error);
@@ -87,22 +119,95 @@ export class GamificationDB {
     }
   }
 
+  public async updateUserProgress(userId: string, points: number): Promise<void> {
+    const tracker = monitoringService.startPerformanceTracking('updateUserProgress', userId);
+    try {
+      const userProgress = await this.prisma.userProgress.findUnique({
+        where: { userId }
+      });
+
+      if (!userProgress) {
+        throw new Error(`User progress not found for userId: ${userId}`);
+      }
+
+      const newTotalPoints = userProgress.totalPoints + points;
+      const newCurrentXP = userProgress.currentXP + points;
+      const { level, nextLevelXP } = this.calculateNewLevel(newCurrentXP);
+
+      await this.prisma.userProgress.update({
+        where: { userId },
+        data: {
+          totalPoints: newTotalPoints,
+          totalXP: userProgress.totalXP + points,
+          currentXP: newCurrentXP,
+          level,
+          nextLevelXP,
+          lastActive: new Date()
+        }
+      });
+
+      tracker.addMetadata({ 
+        pointsAdded: points,
+        newTotal: newTotalPoints,
+        newLevel: level 
+      });
+      await tracker.end(true);
+    } catch (error) {
+      await tracker.end(false);
+      await monitoringService.logError(error, 'error', userId, { points });
+      throw error;
+    }
+  }
+
+  private calculateNewLevel(currentXP: number): { level: number; nextLevelXP: number } {
+    const tracker = monitoringService.startPerformanceTracking('calculateNewLevel');
+    try {
+      const baseXP = 100;
+      const multiplier = 1.5;
+      let level = 1;
+      let xpRequired = baseXP;
+
+      while (currentXP >= xpRequired) {
+        level++;
+        xpRequired = Math.floor(baseXP * Math.pow(multiplier, level - 1));
+      }
+
+      tracker.addMetadata({ 
+        currentXP,
+        calculatedLevel: level,
+        nextLevelXP: xpRequired 
+      });
+      tracker.end(true);
+      return { level, nextLevelXP: xpRequired };
+    } catch (error) {
+      tracker.end(false);
+      monitoringService.logError(error, 'error', undefined, { currentXP });
+      throw error;
+    }
+  }
+
   async createOrUpdateUserProgress(
     userId: string,
-    data: UserProgressData
+    data: Partial<UserProgressData>
   ): Promise<UserProgress> {
     try {
       userIdSchema.parse(userId);
       validateUserProgress(data);
       
-      const progress = await prisma.userProgress.upsert({
+      const progress = await this.prisma.userProgress.upsert({
         where: { userId },
-        update: data,
+        update: {
+          ...data,
+          updatedAt: new Date(),
+        },
         create: {
           userId,
           ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       });
+      
       if (!progress) {
         throw new Error(`Failed to create or update user progress for user ${userId}`);
       }
@@ -130,7 +235,7 @@ export class GamificationDB {
         contributionScore: 0,
       };
 
-      const updatedStats = await prisma.userStats.upsert({
+      const updatedStats = await this.prisma.userStats.upsert({
         where: { userId },
         update: {
           ...stats,
@@ -165,7 +270,7 @@ export class GamificationDB {
       userIdSchema.parse(userId);
       achievementIdSchema.parse(achievementId);
 
-      const existing = await prisma.achievement.findFirst({
+      const existing = await this.prisma.achievement.findFirst({
         where: { 
           userId,
           achievementId,
@@ -176,7 +281,7 @@ export class GamificationDB {
         return existing;
       }
 
-      const achievement = await prisma.achievement.create({
+      const achievement = await this.prisma.achievement.create({
         data: {
           userId,
           achievementId,
@@ -200,7 +305,7 @@ export class GamificationDB {
   async getUserAchievements(userId: string): Promise<Achievement[]> {
     try {
       userIdSchema.parse(userId);
-      const achievements = await prisma.achievement.findMany({
+      const achievements = await this.prisma.achievement.findMany({
         where: { userId },
         orderBy: { unlockedAt: 'desc' },
       });
@@ -214,17 +319,13 @@ export class GamificationDB {
   // Leaderboard Methods
   async updateLeaderboardEntry(
     userId: string,
-    data: {
-      score: number;
-      rank?: number | null;
-      timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime';
-    }
+    data: LeaderboardData
   ): Promise<LeaderboardEntry> {
     try {
       userIdSchema.parse(userId);
       validateLeaderboardEntry(data);
 
-      const entry = await prisma.leaderboardEntry.upsert({
+      const entry = await this.prisma.leaderboardEntry.upsert({
         where: {
           userId_timeframe: {
             userId,
@@ -255,7 +356,7 @@ export class GamificationDB {
   }
 
   async getLeaderboard(
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime',
+    timeframe: TimeFrame,
     limit = 100
   ): Promise<Array<LeaderboardEntry & { user: Pick<User, 'name' | 'image'> }>> {
     try {
@@ -263,7 +364,7 @@ export class GamificationDB {
         throw new Error('Limit must be between 1 and 1000');
       }
 
-      const entries = await prisma.leaderboardEntry.findMany({
+      const entries = await this.prisma.leaderboardEntry.findMany({
         where: { timeframe },
         orderBy: { score: 'desc' },
         take: limit,
@@ -277,11 +378,7 @@ export class GamificationDB {
         },
       });
 
-      if (!entries) {
-        return [];
-      }
-
-      return entries;
+      return entries ?? [];
     } catch (error) {
       handleValidationError(error);
       throw error;
@@ -292,7 +389,7 @@ export class GamificationDB {
   async processMeasurement(
     userId: string,
     measurement: MeasurementData,
-    tx?: PrismaTransaction
+    tx?: Prisma.TransactionClient
   ): Promise<{
     stats: UserStats;
     progress: UserProgress;
@@ -301,7 +398,7 @@ export class GamificationDB {
       userIdSchema.parse(userId);
       validateMeasurement(measurement);
 
-      const prismaClient = tx || prisma;
+      const prismaClient = tx || this.prisma;
 
       // Calculate new stats based on measurement
       const currentStats = await prismaClient.userStats.findUnique({
@@ -368,7 +465,7 @@ export class GamificationDB {
     userId: string,
     stats: UserStats,
     progress: UserProgress,
-    prismaClient: PrismaClient | PrismaTransaction
+    prismaClient: PrismaClient | Prisma.TransactionClient
   ): Promise<void> {
     try {
       const eligibleAchievements = determineEligibleAchievements(stats, progress);
@@ -401,16 +498,16 @@ export class GamificationDB {
 
   async getUserRankHistory(
     userId: string,
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime',
+    timeframe: TimeFrame,
     limit = 30
-  ): Promise<Array<{ rank: number; date: Date }>> {
+  ): Promise<RankHistoryEntry[]> {
     try {
       userIdSchema.parse(userId);
       if (limit < 1 || limit > 90) {
         throw new Error('History limit must be between 1 and 90 days');
       }
 
-      const entries = await prisma.rankHistory.findMany({
+      const entries = await this.prisma.rankHistory.findMany({
         where: {
           userId,
           timeframe,
@@ -434,7 +531,7 @@ export class GamificationDB {
 
   async updateRankHistory(
     userId: string,
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime',
+    timeframe: TimeFrame,
     rank: number
   ): Promise<void> {
     try {
@@ -443,7 +540,7 @@ export class GamificationDB {
         throw new Error('Rank must be positive');
       }
 
-      await prisma.rankHistory.create({
+      await this.prisma.rankHistory.create({
         data: {
           userId,
           timeframe,
@@ -460,41 +557,44 @@ export class GamificationDB {
   }
 
   // Utility Methods
-  async calculateUserRank(
+  public async calculateUserRank(
     userId: string,
-    timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime'
+    timeframe: TimeFrame = 'allTime'
   ): Promise<number> {
+    const tracker = monitoringService.startPerformanceTracking('calculateUserRank', userId);
     try {
-      userIdSchema.parse(userId);
-
-      const userEntry = await prisma.leaderboardEntry.findUnique({
-        where: {
-          userId_timeframe: {
-            userId,
-            timeframe,
-          },
-        },
-        select: {
-          score: true,
-        },
+      const userProgress = await this.prisma.userProgress.findUnique({
+        where: { userId },
+        select: { totalPoints: true }
       });
 
-      if (!userEntry) {
-        return 0;
+      if (!userProgress) {
+        throw new Error(`User progress not found for userId: ${userId}`);
       }
 
-      const higherScores = await prisma.leaderboardEntry.count({
+      const rank = await this.prisma.userProgress.count({
         where: {
-          timeframe,
-          score: {
-            gt: userEntry.score,
-          },
-        },
+          totalPoints: {
+            gt: userProgress.totalPoints
+          }
+        }
       });
 
-      return higherScores + 1;
+      // Store rank history
+      await this.prisma.rankHistory.create({
+        data: {
+          userId,
+          rank: rank + 1,
+          timeframe
+        }
+      });
+
+      tracker.addMetadata({ timeframe, rank: rank + 1 });
+      await tracker.end(true);
+      return rank + 1;
     } catch (error) {
-      handleValidationError(error);
+      await tracker.end(false);
+      await monitoringService.logError(error, 'error', userId, { timeframe });
       throw error;
     }
   }

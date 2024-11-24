@@ -1,3 +1,5 @@
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+
 export type AchievementCategory = 
   | 'COVERAGE_PIONEER'    // First to map an area
   | 'RURAL_EXPLORER'      // Mapping rural areas
@@ -27,11 +29,11 @@ export interface Achievement {
   icon: string;
   points: number;
   rarity: 'common' | 'rare' | 'epic';
+  tier: AchievementTier;
   progress: number;
   target: number;
-  completed: boolean;
-  earnedDate?: string;
-  requirements: AchievementRequirement;
+  category: AchievementCategory;
+  requirements: AchievementRequirement[];
 }
 
 export interface UserProgress {

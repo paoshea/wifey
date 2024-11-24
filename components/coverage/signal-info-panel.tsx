@@ -123,15 +123,15 @@ export function SignalInfoPanel({ measurement, className }: SignalInfoPanelProps
         </div>
       </div>
 
-      {measurement.location && (
+      {measurement.geolocation && (
         <div className="pt-2 border-t">
           <div className="text-sm text-gray-500 mb-1">Location</div>
           <div className="grid grid-cols-2 gap-2">
             <div className="text-sm">
-              Lat: {measurement.location.lat.toFixed(6)}
+              Lat: {measurement.geolocation.lat.toFixed(6)}
             </div>
             <div className="text-sm">
-              Lng: {measurement.location.lng.toFixed(6)}
+              Lng: {measurement.geolocation.lng.toFixed(6)}
             </div>
           </div>
         </div>

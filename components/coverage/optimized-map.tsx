@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy, useState, useEffect } from 'react';
+import { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -40,9 +40,10 @@ export default function OptimizedMap({ center, zoom, markers = [], onMapLoad }: 
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { trackEvent, startPerformanceMark, endPerformanceMark } = useMonitoring();
+  const mapRef = useRef(null);
 
   // Only load map when in viewport
-  const { ref, inView } = useInView({
+  const { ref: containerRef, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true,
   });
@@ -70,27 +71,27 @@ export default function OptimizedMap({ center, zoom, markers = [], onMapLoad }: 
   // Custom tile layer with caching
   const customTileLayer = {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    fetchTile: async (url: string) => {
-      // Check cache first
-      if (tileCache.has(url)) {
-        return tileCache.get(url)!.clone();
-      }
-
-      try {
-        const response = await fetch(url);
-        // Cache the response
-        tileCache.set(url, response.clone());
-        return response;
-      } catch (error) {
-        console.error('Failed to fetch tile:', error);
-        throw error;
-      }
-    },
   };
 
-  // Clear tile cache when component unmounts
+  // Set up tile caching through event handler
   useEffect(() => {
+    const handleTileLoad = (event: any) => {
+      const { url } = event;
+      if (!tileCache.has(url)) {
+        fetch(url)
+          .then(response => response.clone())
+          .then(clone => tileCache.set(url, clone))
+          .catch(error => {
+            console.error('Failed to cache tile:', error);
+            setError('Failed to load map tiles');
+          });
+      }
+    };
+
+    // Add event listener to document since TileLayer doesn't expose tile loading events
+    document.addEventListener('tileloadstart', handleTileLoad);
     return () => {
+      document.removeEventListener('tileloadstart', handleTileLoad);
       tileCache.clear();
     };
   }, []);
@@ -104,10 +105,11 @@ export default function OptimizedMap({ center, zoom, markers = [], onMapLoad }: 
   }
 
   return (
-    <div ref={ref} className="relative h-[400px] rounded-lg overflow-hidden">
+    <div ref={containerRef} className="relative h-[400px] rounded-lg overflow-hidden">
       {inView ? (
         <Suspense fallback={<MapFallback />}>
           <MapContainer
+            ref={mapRef}
             center={center}
             zoom={zoom}
             className="h-full w-full"
@@ -117,21 +119,6 @@ export default function OptimizedMap({ center, zoom, markers = [], onMapLoad }: 
             <TileLayer
               url={customTileLayer.url}
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              // Custom getTileUrl function with caching
-              getTileUrl={(coords) => {
-                const url = customTileLayer.url
-                  .replace('{s}', 'a')
-                  .replace('{z}', coords.z.toString())
-                  .replace('{x}', coords.x.toString())
-                  .replace('{y}', coords.y.toString());
-                
-                // Trigger tile fetch with caching
-                customTileLayer.fetchTile(url).catch(() => {
-                  setError('Failed to load map tiles');
-                });
-
-                return url;
-              }}
             />
 
             {/* Render markers only after map is loaded for better performance */}

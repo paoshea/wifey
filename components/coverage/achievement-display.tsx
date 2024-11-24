@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Flame, Medal, Award } from 'lucide-react';
 import { useGamificationStore } from '@/lib/store/gamification-store';
-import { Badge } from '@/lib/types/gamification';
+import { Badge, BADGES } from '@/lib/types/gamification';
 import { Card, CardContent } from '@/components/ui/card';
 
 const RARITY_COLORS = {

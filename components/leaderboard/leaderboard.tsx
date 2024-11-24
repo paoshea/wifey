@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, Star, Crown, Flame, Award } from 'lucide-react';
@@ -8,7 +9,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSession } from 'next-auth/react';
-import { LeaderboardEntry, LeaderboardStats, leaderboardService } from '@/lib/services/leaderboard-service';
+import { LeaderboardEntry, LeaderboardStats as LeaderboardStatsType, leaderboardService } from '@/lib/services/leaderboard-service';
+import { LeaderboardStats } from './leaderboard-stats';
+import { LeaderboardHeader } from './leaderboard-header';
+import { LeaderboardTable } from './leaderboard-table';
+import { LeaderboardFilters } from './leaderboard-filters';
 
 const TIMEFRAMES = {
   daily: 'Today',
@@ -80,7 +85,7 @@ function LeaderboardRow({ entry, highlight = false }: { entry: LeaderboardEntry;
   );
 }
 
-function LeaderboardStats({ stats }: { stats: LeaderboardStats }) {
+function LeaderboardStats({ stats }: { stats: LeaderboardStatsType }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <Card>
@@ -126,7 +131,7 @@ export default function Leaderboard() {
   const { data: session } = useSession();
   const [timeframe, setTimeframe] = useState<Timeframe>('allTime');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [stats, setStats] = useState<LeaderboardStats | null>(null);
+  const [stats, setStats] = useState<LeaderboardStatsType | null>(null);
   const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

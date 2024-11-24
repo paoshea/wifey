@@ -14,7 +14,7 @@ interface AchievementCardProps {
 }
 
 const AchievementCard = ({ achievement, isUnlocked, onClick }: AchievementCardProps) => {
-  const tierColors = {
+  const tierColors: Record<Achievement['tier'], string> = {
     bronze: 'bg-orange-600',
     silver: 'bg-gray-400',
     gold: 'bg-yellow-500',

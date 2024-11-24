@@ -29,15 +29,15 @@ const mockAchievements: Achievement[] = [
     description: 'Made your first contribution',
     icon: 'trophy',
     points: 100,
-    rarity: 'common',
+    rarity: 'common' as const,
+    tier: 'bronze' as const,
     progress: 100,
     target: 100,
-    completed: true,
-    earnedDate: '2023-01-01',
-    requirements: {
-      type: 'measurements',
+    category: 'COVERAGE_PIONEER' as const,
+    requirements: [{
+      type: 'measurements' as const,
       count: 1
-    }
+    }]
   }
 ];
 
@@ -77,125 +77,115 @@ describe('Leaderboard', () => {
     jest.clearAllMocks();
     
     // Setup default mock implementation
-    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue({
-      entries: mockEntries,
-      pagination: {
-        total: mockEntries.length,
-        page: 1,
-        pageSize: 10,
-        hasMore: false
-      }
-    });
+    (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue(mockEntries);
   });
 
   it('renders timeframe tabs correctly', () => {
-    render(<Leaderboard timeframe="weekly" />);
+    render(<Leaderboard />);
     
-    expect(screen.getByText('Today')).toBeInTheDocument();
-    expect(screen.getByText('This Week')).toBeInTheDocument();
-    expect(screen.getByText('This Month')).toBeInTheDocument();
+    // Check if all timeframe options are present
+    expect(screen.getByText('Daily')).toBeInTheDocument();
+    expect(screen.getByText('Weekly')).toBeInTheDocument();
+    expect(screen.getByText('Monthly')).toBeInTheDocument();
     expect(screen.getByText('All Time')).toBeInTheDocument();
   });
 
-  it('displays user stats correctly', () => {
-    render(<Leaderboard timeframe="weekly" />);
-    
-    const userStatsContainer = screen.getByText('Your Position').closest('div')?.parentElement;
-    expect(userStatsContainer).toBeInTheDocument();
-
-    // Check for user stats display
-    mockEntries.forEach(entry => {
-      expect(screen.getByText(entry.username)).toBeInTheDocument();
-      expect(screen.getByText(`Level ${entry.level}`)).toBeInTheDocument();
-      expect(screen.getByText(`${entry.points.toLocaleString()} pts`)).toBeInTheDocument();
-    });
-  });
-
   it('handles timeframe changes correctly', async () => {
-    render(<Leaderboard timeframe="weekly" />);
-    
-    // Click different timeframe tabs
-    const monthlyTab = screen.getByText('This Month');
-    await userEvent.click(monthlyTab);
-    
-    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith(
-      expect.objectContaining({ timeframe: 'monthly' })
-    );
+    render(<Leaderboard />);
+
+    // Change timeframe to weekly
+    const weeklyTab = screen.getByText('Weekly');
+    fireEvent.click(weeklyTab);
+
+    // Verify getLeaderboard was called with weekly timeframe
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith('weekly');
+
+    // Change timeframe to monthly
+    const monthlyTab = screen.getByText('Monthly');
+    fireEvent.click(monthlyTab);
+
+    // Verify getLeaderboard was called with monthly timeframe
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith('monthly');
   });
 
   it('displays loading state while fetching data', async () => {
     // Mock a delayed response
     (GamificationService.prototype.getLeaderboard as jest.Mock).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({ entries: mockEntries, pagination: { total: 3, page: 1, pageSize: 10, hasMore: false } }), 100))
+      () => new Promise(resolve => setTimeout(() => resolve(mockEntries), 100))
     );
 
-    render(<Leaderboard timeframe="weekly" />);
+    render(<Leaderboard />);
     
     expect(screen.getByTestId('leaderboard-loading')).toBeInTheDocument();
-    
     await waitFor(() => {
       expect(screen.queryByTestId('leaderboard-loading')).not.toBeInTheDocument();
     });
   });
 
-  it('handles error states gracefully', async () => {
+  it('displays error state on fetch failure', async () => {
     // Mock an error response
-    const errorMessage = 'Failed to fetch leaderboard data';
-    (GamificationService.prototype.getLeaderboard as jest.Mock).mockRejectedValue(new Error(errorMessage));
+    (GamificationService.prototype.getLeaderboard as jest.Mock).mockRejectedValue(new Error('Failed to fetch'));
 
-    render(<Leaderboard timeframe="weekly" />);
-    
+    render(<Leaderboard />);
+
     await waitFor(() => {
-      expect(screen.getByText(/error loading leaderboard/i)).toBeInTheDocument();
+      expect(screen.getByText('Error loading leaderboard')).toBeInTheDocument();
     });
   });
 
-  it('displays achievement badges correctly', () => {
-    render(<Leaderboard timeframe="weekly" />);
-    
-    const userWithAchievements = mockEntries[0];
-    const achievementBadges = screen.getAllByTestId('achievement-badge');
-    
-    expect(achievementBadges).toHaveLength(userWithAchievements.topAchievements.length);
-    userWithAchievements.topAchievements.forEach(achievement => {
-      expect(screen.getByTitle(achievement.title)).toBeInTheDocument();
+  it('displays leaderboard entries correctly', async () => {
+    render(<Leaderboard />);
+
+    // Wait for entries to be displayed
+    await waitFor(() => {
+      mockEntries.forEach(entry => {
+        expect(screen.getByText(entry.username)).toBeInTheDocument();
+        expect(screen.getByText(`${entry.points} points`)).toBeInTheDocument();
+      });
     });
   });
 
-  it('handles pagination correctly', async () => {
-    const mockPaginatedResponse = {
-      entries: mockEntries,
-      pagination: {
-        total: 10,
-        page: 1,
-        pageSize: 3,
-        hasMore: true
-      }
-    };
+  it('displays achievement badges for top performers', async () => {
+    render(<Leaderboard />);
 
-    (GamificationService.prototype.getLeaderboard as jest.Mock).mockResolvedValue(mockPaginatedResponse);
-
-    render(<Leaderboard timeframe="weekly" />);
-    
-    const loadMoreButton = screen.getByText(/load more/i);
-    await userEvent.click(loadMoreButton);
-
-    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 2 })
-    );
+    await waitFor(() => {
+      mockEntries[0].topAchievements.forEach(achievement => {
+        expect(screen.getByTitle(achievement.title)).toBeInTheDocument();
+      });
+    });
   });
 
-  it('updates automatically at regular intervals', async () => {
+  it('handles refresh interval correctly', async () => {
     jest.useFakeTimers();
 
-    const refreshInterval = 5000;
-    render(<Leaderboard timeframe="weekly" refreshInterval={refreshInterval} />);
+    render(<Leaderboard refreshInterval={1000} />);
 
-    // Fast-forward past the refresh interval
-    jest.advanceTimersByTime(refreshInterval + 100);
+    // Initial call
+    expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledTimes(1);
 
+    // Advance timers
+    jest.advanceTimersByTime(1000);
+
+    // Should have been called again
     expect(GamificationService.prototype.getLeaderboard).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
+  });
+
+  it('handles search filtering correctly', async () => {
+    render(<Leaderboard />);
+
+    // Wait for initial render
+    await waitFor(() => {
+      expect(screen.getByText(mockEntries[0].username)).toBeInTheDocument();
+    });
+
+    // Type in search
+    const searchInput = screen.getByPlaceholderText('Search users...');
+    fireEvent.change(searchInput, { target: { value: mockEntries[0].username } });
+
+    // Should filter to show only matching entries
+    expect(screen.getByText(mockEntries[0].username)).toBeInTheDocument();
+    expect(screen.queryByText(mockEntries[1].username)).not.toBeInTheDocument();
   });
 });

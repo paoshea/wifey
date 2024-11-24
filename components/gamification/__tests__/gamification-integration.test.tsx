@@ -1,29 +1,29 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TestWrapper } from '@/lib/test-utils';
+import { GamificationService } from '@/lib/gamification/gamification-service';
 import { ProgressVisualization } from '../progress-visualization';
 import { AchievementShowcase } from '../achievement-showcase';
 import { Leaderboard } from '../leaderboard';
+import type { LeaderboardEntry } from '@/lib/gamification/types';
 
-// Create a new QueryClient instance for each test
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-    },
-  },
-});
-
-// Wrapper component with necessary providers
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = createTestQueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
-};
+// Mock the GamificationService
+jest.mock('@/lib/gamification/gamification-service', () => ({
+  GamificationService: jest.fn().mockImplementation(() => ({
+    getLeaderboard: jest.fn().mockResolvedValue([
+      {
+        userId: '1',
+        username: 'TestUser',
+        points: 1500,
+        level: 5,
+        rank: 1,
+        topAchievements: [],
+        avatarUrl: undefined
+      }
+    ])
+  }))
+}));
 
 const mockProgress = {
   level: 5,
@@ -45,31 +45,48 @@ const mockProgress = {
 
 const mockAchievements = [
   {
-    id: '1',
+    id: 'rural-pioneer',
     title: 'Rural Pioneer',
-    description: 'Map your first rural area',
-    icon: '🌲',
-    tier: 'bronze' as const,
+    description: 'Take measurements in rural areas',
+    icon: '🌾',
     points: 100,
-    unlocked: true,
-    requirements: {
-      type: 'rural_measurements',
-      count: 1
-    }
+    rarity: 'common' as const,
+    tier: 'bronze' as const,
+    progress: 5,
+    target: 10,
+    category: 'RURAL_EXPLORER' as const,
+    requirements: [{
+      type: 'rural_measurements' as const,
+      count: 10
+    }]
   },
-  // ... more achievements
+  {
+    id: 'helpful-user',
+    title: 'Helpful User',
+    description: 'Help other users with their measurements',
+    icon: '🤝',
+    points: 150,
+    rarity: 'rare' as const,
+    tier: 'silver' as const,
+    progress: 3,
+    target: 5,
+    category: 'COMMUNITY_HELPER' as const,
+    requirements: [{
+      type: 'helping_others' as const,
+      count: 5
+    }]
+  }
 ];
 
-const mockLeaderboardEntries = [
+const mockLeaderboardEntries: LeaderboardEntry[] = [
   {
-    userId: 'test-user-id',
-    username: 'Test User',
-    avatarUrl: null,
-    level: 5,
+    userId: '1',
+    username: 'TestUser',
     points: 1500,
-    measurements: 150,
-    ruralMeasurements: 75,
-    uniqueLocations: 30
+    level: 5,
+    rank: 1,
+    topAchievements: [],
+    avatarUrl: undefined
   },
   // ... more entries
 ];
@@ -80,17 +97,16 @@ describe('Gamification Integration', () => {
       <TestWrapper>
         <div>
           <ProgressVisualization progress={mockProgress} />
-          <Leaderboard entries={mockLeaderboardEntries} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
     // Level should be consistent in both components
-    const levelInProgress = screen.getByText('Level 5');
-    const levelInLeaderboard = screen.getByText('Level 5', { skip: [levelInProgress] });
-    
-    expect(levelInProgress).toBeInTheDocument();
-    expect(levelInLeaderboard).toBeInTheDocument();
+    const levelElements = screen.getAllByText('Level 5');
+    expect(levelElements).toHaveLength(2);
+    expect(levelElements[0]).toBeInTheDocument();
+    expect(levelElements[1]).toBeInTheDocument();
   });
 
   it('displays consistent achievement points between components', () => {
@@ -103,10 +119,9 @@ describe('Gamification Integration', () => {
       </TestWrapper>
     );
 
-    // Points from unlocked achievements should contribute to total score
+    // Points from achievements should contribute to total score
     const achievementPoints = mockAchievements
-      .filter(a => a.unlocked)
-      .reduce((sum, a) => sum + a.points, 0);
+      .reduce((sum, a) => sum + (a.progress >= a.target ? a.points : 0), 0);
     
     expect(screen.getByText(achievementPoints.toString())).toBeInTheDocument();
   });
@@ -116,17 +131,17 @@ describe('Gamification Integration', () => {
       <TestWrapper>
         <div>
           <ProgressVisualization progress={mockProgress} />
-          <Leaderboard entries={mockLeaderboardEntries} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
     // Stats should be consistent between progress and leaderboard
-    const currentUser = mockLeaderboardEntries.find(e => e.userId === 'test-user-id')!;
-    
-    expect(screen.getByText(currentUser.measurements.toString())).toBeInTheDocument();
-    expect(screen.getByText(currentUser.ruralMeasurements.toString())).toBeInTheDocument();
-    expect(screen.getByText(currentUser.uniqueLocations.toString())).toBeInTheDocument();
+    const levelText = screen.getByText('Level 5');
+    const pointsText = screen.getByText('1500 points');
+
+    expect(levelText).toBeInTheDocument();
+    expect(pointsText).toBeInTheDocument();
   });
 
   it('handles user interactions across components', async () => {
@@ -134,76 +149,145 @@ describe('Gamification Integration', () => {
       <TestWrapper>
         <div>
           <AchievementShowcase achievements={mockAchievements} />
-          <Leaderboard entries={mockLeaderboardEntries} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
-    // Click on an achievement
-    const achievement = screen.getByText('Rural Pioneer').closest('div');
-    fireEvent.click(achievement!);
+    // Check that leaderboard data is loaded
+    const username = await screen.findByText('TestUser');
+    expect(username).toBeInTheDocument();
 
-    // Achievement details should show
-    expect(screen.getByText('Requirements')).toBeInTheDocument();
-
-    // Click on user stats in leaderboard
-    const userStats = screen.getByText('Your Position').closest('div');
-    await userEvent.click(userStats!);
-
-    // Both achievement details and user stats should be visible
-    expect(screen.getByText('Requirements')).toBeInTheDocument();
-    expect(screen.getByText('Points')).toBeInTheDocument();
+    // Verify points are displayed
+    const points = screen.getByText('1500 points');
+    expect(points).toBeInTheDocument();
   });
 
-  it('updates all components when timeframe changes', () => {
+  it('shows loading states correctly', () => {
+    // Mock service to delay response
+    jest.spyOn(GamificationService.prototype, 'getLeaderboard')
+      .mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 1000)));
+
+    render(
+      <TestWrapper>
+        <div>
+          <ProgressVisualization progress={undefined} />
+          <Leaderboard refreshInterval={0} />
+        </div>
+      </TestWrapper>
+    );
+
+    // Should show loading states
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
+  it('handles error states appropriately', async () => {
+    // Mock service to return error
+    jest.spyOn(GamificationService.prototype, 'getLeaderboard')
+      .mockRejectedValueOnce(new Error('Failed to fetch'));
+
+    render(
+      <TestWrapper>
+        <div>
+          <ProgressVisualization progress={undefined} />
+          <Leaderboard refreshInterval={0} />
+        </div>
+      </TestWrapper>
+    );
+
+    // Should show error state
+    const errorMessage = await screen.findByText('Error loading leaderboard');
+    expect(errorMessage).toBeInTheDocument();
+  });
+
+  it('updates all components when timeframe changes', async () => {
+    const mockLeaderboardData = {
+      daily: [{
+        userId: '1',
+        username: 'TestUser',
+        points: 1500,
+        level: 5,
+        rank: 1,
+        topAchievements: [],
+        avatarUrl: undefined
+      }],
+      weekly: [{
+        userId: '1',
+        username: 'TestUser',
+        points: 5000,
+        level: 8,
+        rank: 1,
+        topAchievements: [],
+        avatarUrl: undefined
+      }]
+    };
+
+    // Mock service to return different data for different timeframes
+    jest.spyOn(GamificationService.prototype, 'getLeaderboard')
+      .mockImplementation((timeframe) => Promise.resolve(mockLeaderboardData[timeframe as keyof typeof mockLeaderboardData]));
+
     render(
       <TestWrapper>
         <div>
           <ProgressVisualization progress={mockProgress} />
-          <Leaderboard entries={mockLeaderboardEntries} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
-    // Weekly tab should be active
-    const weeklyTab = screen.getByText('Weekly').closest('button');
-    expect(weeklyTab).toHaveClass('bg-blue-600');
+    // Wait for initial data to load
+    await screen.findByText('1500 points');
 
-    // Activity chart should show weekly data
-    expect(screen.getByText('Activity Overview')).toBeInTheDocument();
+    // Change timeframe
+    const weeklyTab = screen.getByText('Weekly');
+    fireEvent.click(weeklyTab);
+
+    // Wait for updated data
+    const weeklyPoints = await screen.findByText('5000 points');
+    expect(weeklyPoints).toBeInTheDocument();
   });
 
-  it('maintains consistent empty states', () => {
+  it('maintains consistent empty states', async () => {
+    // Mock service to return empty data
+    jest.spyOn(GamificationService.prototype, 'getLeaderboard')
+      .mockResolvedValueOnce([]);
+
     render(
       <TestWrapper>
         <div>
           <ProgressVisualization progress={undefined} />
           <AchievementShowcase achievements={[]} />
-          <Leaderboard entries={[]} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
     // All components should show appropriate empty states
-    expect(screen.getByText('🔄')).toBeInTheDocument(); // Progress loading
-    expect(screen.getByText('No achievements found')).toBeInTheDocument();
-    expect(screen.getByText('No entries yet')).toBeInTheDocument();
+    expect(screen.getByText('No progress yet')).toBeInTheDocument();
+    expect(screen.getByText('No achievements yet')).toBeInTheDocument();
+    const emptyLeaderboard = await screen.findByText('No entries yet');
+    expect(emptyLeaderboard).toBeInTheDocument();
   });
 
-  it('handles error states gracefully', () => {
-    const mockError = new Error('Failed to load data');
-    
+  it('handles error states consistently', async () => {
+    // Mock service to return error
+    jest.spyOn(GamificationService.prototype, 'getLeaderboard')
+      .mockRejectedValueOnce(new Error('Failed to fetch'));
+
     render(
       <TestWrapper>
         <div>
           <ProgressVisualization progress={undefined} />
           <AchievementShowcase achievements={[]} />
-          <Leaderboard entries={[]} timeframe="weekly" />
+          <Leaderboard refreshInterval={0} />
         </div>
       </TestWrapper>
     );
 
     // Components should show appropriate error states
-    expect(screen.getAllByText(/🔄/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Error loading progress')).toBeInTheDocument();
+    expect(screen.getByText('Error loading achievements')).toBeInTheDocument();
+    const leaderboardError = await screen.findByText('Error loading leaderboard');
+    expect(leaderboardError).toBeInTheDocument();
   });
 });

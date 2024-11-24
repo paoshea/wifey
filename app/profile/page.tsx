@@ -9,6 +9,13 @@ import { ProgressVisualization } from '@/components/gamification/progress-visual
 import { cn } from '@/lib/utils';
 import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
 import { useQuery } from '@tanstack/react-query';
+import { redirect } from 'next/navigation';
+import { Trophy, Medal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { ACHIEVEMENTS } from '@/lib/gamification/achievements';
 
 const tabs = [
   { id: 'progress', label: 'Progress', icon: '📈' },
@@ -140,44 +147,41 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'achievements' && (
-              <div className="space-y-6">
-                {isLoadingProgress ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin text-2xl">🔄</div>
-                  </div>
-                ) : progress ? (
-                  <AchievementShowcase achievements={progress.achievements} />
-                ) : (
-                  <div className="text-center text-gray-500">No achievements data available</div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {progress?.achievements?.map((achievement) => (
+                  <Card key={achievement.achievementId} className="p-4">
+                    <CardHeader>
+                      <div className="flex items-center space-x-2">
+                        {achievement.achievement.rarity === 'epic' ? (
+                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        ) : (
+                          <Medal className="h-5 w-5 text-blue-500" />
+                        )}
+                        <CardTitle className="text-lg">{achievement.achievement.title}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600">{achievement.achievement.description}</p>
+                      <div className="mt-2">
+                        <Progress value={achievement.progress || 0} className="h-2" />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Progress: {achievement.progress || 0}%
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
 
             {activeTab === 'leaderboard' && (
-              <div className="space-y-6">
-                <div className="flex justify-end space-x-2">
-                  {(['daily', 'weekly', 'monthly', 'allTime'] as const).map(timeframe => (
-                    <button
-                      key={timeframe}
-                      onClick={() => setSelectedTimeframe(timeframe)}
-                      className={cn(
-                        'px-3 py-1 rounded-md text-sm',
-                        selectedTimeframe === timeframe
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      )}
-                    >
-                      {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
+              <div>
                 {isLoadingLeaderboard ? (
                   <div className="flex justify-center items-center h-64">
                     <div className="animate-spin text-2xl">🔄</div>
                   </div>
                 ) : leaderboard ? (
-                  <Leaderboard entries={leaderboard} timeframe={selectedTimeframe} />
+                  <Leaderboard refreshInterval={30000} />
                 ) : (
                   <div className="text-center text-gray-500">No leaderboard data available</div>
                 )}

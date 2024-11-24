@@ -1,62 +1,77 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
+// Prisma return type
+type PrismaCoveragePoint = Prisma.CoveragePointGetPayload<{}>;
+
+interface CoveragePoint extends Omit<PrismaCoveragePoint, 'location'> {
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+}
+
+interface ProviderAnalysis {
+  provider: string;
+  averageSignalStrength: number;
+  coveragePoints: number;
+  reliabilityScore: number;
+  technologies: { [key: string]: number };
+  recentUpdates: number;
+}
+
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const lat = parseFloat(searchParams.get('lat') || '0');
     const lng = parseFloat(searchParams.get('lng') || '0');
     const radius = parseInt(searchParams.get('radius') || '5000'); // 5km default radius
 
+    // Convert radius to radians (MongoDB uses radians for $centerSphere)
+    const radiusInRadians = radius / 6371000; // Earth's radius in meters
+
     // Get coverage points for all providers in the area
-    const coveragePoints = await prisma.coveragePoint.findMany({
+    const prismaPoints = await prisma.coveragePoint.findMany({
       where: {
         location: {
-          // Using MongoDB $geoWithin operator
-          $geoWithin: {
-            $centerSphere: [[lng, lat], radius / 6371000] // Convert radius to radians
-          }
-        }
+          near: {
+            latitude: lat,
+            longitude: lng,
+          },
+          within: {
+            radius: radiusInRadians,
+          },
+        } as any, // Type assertion needed for MongoDB-specific query
       },
       orderBy: {
-        timestamp: 'desc'
-      }
+        timestamp: 'desc',
+      },
     });
+
+    // Convert Prisma points to CoveragePoint type
+    const coveragePoints: CoveragePoint[] = prismaPoints.map(point => ({
+      ...point,
+      location: point.location as CoveragePoint['location'],
+    }));
 
     // Group and analyze coverage by provider
     const providerAnalysis = analyzeProviderCoverage(coveragePoints);
 
-    // Get historical comparison data
-    const historicalComparison = await prisma.coverageComparison.findMany({
-      where: {
-        location: {
-          $geoWithin: {
-            $centerSphere: [[lng, lat], radius / 6371000]
-          }
-        }
-      },
-      orderBy: {
-        timestamp: 'desc'
-      },
-      take: 100 // Limit to recent comparisons
+    return NextResponse.json({
+      coveragePoints,
+      providerAnalysis,
     });
-
-    // Combine current and historical data
-    const comparisonResult = {
-      currentCoverage: providerAnalysis,
-      historicalData: historicalComparison,
-      metadata: {
-        timestamp: new Date(),
-        location: { lat, lng },
-        radius
-      }
-    };
-
-    return NextResponse.json(comparisonResult);
   } catch (error) {
-    console.error('Error comparing coverage:', error);
+    console.error('Error in coverage comparison:', error);
     return NextResponse.json(
       { error: 'Failed to compare coverage' },
       { status: 500 }
@@ -64,50 +79,38 @@ export async function GET(request: Request) {
   }
 }
 
-function analyzeProviderCoverage(coveragePoints: any[]) {
-  const providerMap = new Map();
-
+function analyzeProviderCoverage(coveragePoints: CoveragePoint[]): ProviderAnalysis[] {
   // Group points by provider
-  coveragePoints.forEach(point => {
-    if (!providerMap.has(point.provider)) {
-      providerMap.set(point.provider, []);
-    }
-    providerMap.get(point.provider).push(point);
-  });
-
-  const analysis = [];
-
-  // Analyze each provider's coverage
-  for (const [provider, points] of providerMap.entries()) {
-    const signalStrengths = points.map((p: any) => p.signalStrength);
-    const avgSignalStrength = signalStrengths.reduce((a: number, b: number) => a + b, 0) / signalStrengths.length;
+  const providerGroups = coveragePoints.reduce((groups, point) => {
+    const group = groups.get(point.provider) || {
+      provider: point.provider,
+      points: [],
+      technologies: new Map<string, number>(),
+    };
     
-    const technologies = new Set(points.map((p: any) => p.technology));
-    const reliability = points.reduce((acc: number, p: any) => acc + p.reliability, 0) / points.length;
+    group.points.push(point);
+    group.technologies.set(
+      point.technology,
+      (group.technologies.get(point.technology) || 0) + 1
+    );
+    
+    groups.set(point.provider, group);
+    return groups;
+  }, new Map());
 
-    // Calculate coverage density
-    const uniqueLocations = new Set(points.map((p: any) => `${p.location.lat},${p.location.lng}`));
-    const coverageDensity = uniqueLocations.size / points.length;
+  // Convert grouped data to analysis
+  return Array.from(providerGroups.entries()).map(([provider, group]) => {
+    const points = group.points;
+    const now = new Date();
+    const recentThreshold = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
 
-    analysis.push({
+    return {
       provider,
-      averageSignalStrength: avgSignalStrength,
-      technologies: Array.from(technologies),
-      reliability,
-      coverageDensity,
-      totalPoints: points.length,
-      recentPoints: points.filter((p: any) => {
-        const pointAge = Date.now() - new Date(p.timestamp).getTime();
-        return pointAge < 7 * 24 * 60 * 60 * 1000; // Points from last 7 days
-      }).length,
-      strengthDistribution: {
-        excellent: signalStrengths.filter(s => s >= 80).length,
-        good: signalStrengths.filter(s => s >= 60 && s < 80).length,
-        fair: signalStrengths.filter(s => s >= 40 && s < 60).length,
-        poor: signalStrengths.filter(s => s < 40).length,
-      }
-    });
-  }
-
-  return analysis;
+      averageSignalStrength: points.reduce((sum: number, p: CoveragePoint) => sum + p.signalStrength, 0) / points.length,
+      coveragePoints: points.length,
+      reliabilityScore: points.reduce((sum: number, p: CoveragePoint) => sum + p.reliability, 0) / points.length,
+      technologies: Object.fromEntries(group.technologies),
+      recentUpdates: points.filter((p: CoveragePoint) => p.timestamp > recentThreshold).length,
+    };
+  });
 }

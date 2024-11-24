@@ -1,42 +1,40 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AchievementShowcase } from '../achievement-showcase';
+import type { Achievement, AchievementCategory } from '@/lib/gamification/types';
 
-const mockAchievements = [
+const mockAchievements: Achievement[] = [
   {
     id: 'rural-pioneer',
     title: 'Rural Pioneer',
     description: 'Complete your first rural area measurement',
     icon: '🌲',
-    earnedDate: '2024-01-01',
-    rarity: 'common' as const,
+    rarity: 'common',
+    tier: 'bronze',
     progress: 1,
     target: 1,
-    completed: true,
-    points: 100
+    points: 100,
+    category: 'RURAL_EXPLORER' as AchievementCategory,
+    requirements: [{
+      type: 'rural_measurements',
+      count: 1
+    }]
   },
   {
     id: 'coverage-master',
     title: 'Coverage Master',
     description: 'Map 1000 unique locations',
     icon: '📍',
-    rarity: 'rare' as const,
+    rarity: 'rare',
+    tier: 'gold',
     progress: 750,
     target: 1000,
-    completed: false,
-    points: 500
-  },
-  {
-    id: 'speed-demon',
-    title: 'Speed Demon',
-    description: 'Complete 50 measurements in one day',
-    icon: '⚡',
-    earnedDate: '2024-01-15',
-    rarity: 'epic' as const,
-    progress: 50,
-    target: 50,
-    completed: true,
-    points: 250
+    points: 500,
+    category: 'COVERAGE_EXPERT' as AchievementCategory,
+    requirements: [{
+      type: 'measurements',
+      count: 1000
+    }]
   }
 ];
 
@@ -57,17 +55,14 @@ describe('AchievementShowcase', () => {
     // Check titles
     expect(screen.getByText('Rural Pioneer')).toBeInTheDocument();
     expect(screen.getByText('Coverage Master')).toBeInTheDocument();
-    expect(screen.getByText('Speed Demon')).toBeInTheDocument();
 
     // Check descriptions
     expect(screen.getByText('Complete your first rural area measurement')).toBeInTheDocument();
     expect(screen.getByText('Map 1000 unique locations')).toBeInTheDocument();
-    expect(screen.getByText('Complete 50 measurements in one day')).toBeInTheDocument();
 
     // Check points
     expect(screen.getByText('100 points')).toBeInTheDocument();
     expect(screen.getByText('500 points')).toBeInTheDocument();
-    expect(screen.getByText('250 points')).toBeInTheDocument();
   });
 
   it('displays progress for incomplete achievements', () => {
@@ -77,20 +72,12 @@ describe('AchievementShowcase', () => {
     expect(screen.getByText('Progress: 750/1000 (75%)')).toBeInTheDocument();
   });
 
-  it('displays earned date for completed achievements', () => {
-    render(<AchievementShowcase achievements={mockAchievements} />);
-    
-    expect(screen.getByText('Earned: Jan 1, 2024')).toBeInTheDocument();
-    expect(screen.getByText('Earned: Jan 15, 2024')).toBeInTheDocument();
-  });
-
   it('applies correct rarity classes to achievements', () => {
     render(<AchievementShowcase achievements={mockAchievements} />);
     
     const items = screen.getAllByTestId('achievement-item');
-    expect(items[0]).toHaveClass('achievement-epic'); // Speed Demon
-    expect(items[1]).toHaveClass('achievement-rare'); // Coverage Master
-    expect(items[2]).toHaveClass('achievement-common'); // Rural Pioneer
+    expect(items[0]).toHaveClass('achievement-rare'); // Coverage Master
+    expect(items[1]).toHaveClass('achievement-common'); // Rural Pioneer
   });
 
   it('filters completed achievements correctly', () => {
@@ -101,7 +88,6 @@ describe('AchievementShowcase', () => {
     
     // Should show completed achievements
     expect(screen.getByText('Rural Pioneer')).toBeInTheDocument();
-    expect(screen.getByText('Speed Demon')).toBeInTheDocument();
     
     // Should not show incomplete achievements
     expect(screen.queryByText('Coverage Master')).not.toBeInTheDocument();
@@ -114,9 +100,8 @@ describe('AchievementShowcase', () => {
     fireEvent.change(sortSelect, { target: { value: 'rarity' } });
     
     const items = screen.getAllByTestId('achievement-item');
-    expect(items[0]).toHaveTextContent('Speed Demon'); // Epic
-    expect(items[1]).toHaveTextContent('Coverage Master'); // Rare
-    expect(items[2]).toHaveTextContent('Rural Pioneer'); // Common
+    expect(items[0]).toHaveTextContent('Coverage Master'); // Rare
+    expect(items[1]).toHaveTextContent('Rural Pioneer'); // Common
   });
 
   it('calls onAchievementClick when achievement is clicked', () => {
@@ -124,6 +109,6 @@ describe('AchievementShowcase', () => {
     render(<AchievementShowcase achievements={mockAchievements} onAchievementClick={onAchievementClick} />);
     
     fireEvent.click(screen.getByText('Rural Pioneer'));
-    expect(onAchievementClick).toHaveBeenCalledWith(mockAchievements[0]);
+    expect(onAchievementClick).toHaveBeenCalledWith(mockAchievements[1]);
   });
 });

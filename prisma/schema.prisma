@@ -17,6 +17,9 @@ model User {
   measurements  Measurement[]
   progress      UserProgress?
   leaderboard   LeaderboardEntry[]
+  rankHistory   RankHistory[]
+  errorLogs     ErrorLog[]
+  performanceLogs PerformanceLog[]
 }
 
 model CoveragePoint {
@@ -35,6 +38,8 @@ model CoveragePoint {
   lastVerified   DateTime  @default(now())
   predictedArea  Json?     // Polygon of predicted coverage area
   metadata       Json?     // Additional metadata for coverage point
+
+  @@unique([provider, type, location], name: "provider_type_location_unique")
 }
 
 model CoverageHistory {
@@ -66,6 +71,7 @@ model Measurement {
   location  Json
   timestamp DateTime @default(now())
   device    Json
+  metadata  Json?    // Additional measurement metadata
   user      User     @relation(fields: [userId], references: [id])
 }
 
@@ -84,14 +90,20 @@ model UserProgress {
   user            User      @relation(fields: [userId], references: [id])
   totalPoints     Int       @default(0)
   level           Int       @default(1)
-  currentExp      Int       @default(0)
-  nextLevelExp    Int       @default(100)
+  currentXP       Int       @default(0)
+  totalXP         Int       @default(0)
+  nextLevelXP     Int       @default(100)
+  streak          Int       @default(0)
+  lastActive      DateTime  @default(now())
   achievements    UserAchievement[]
   stats          UserStats?
   streaks        UserStreak?
   badges         UserBadge[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  @@index([level])
+  @@index([currentXP])
 }
 
 model UserStats {
@@ -100,6 +112,9 @@ model UserStats {
   userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
   totalMeasurements Int       @default(0)
   ruralMeasurements Int       @default(0)
+  uniqueLocations   Int       @default(0)
+  totalDistance     Float     @default(0)
+  contributionScore Float     @default(0)
   verifiedSpots     Int       @default(0)
   helpfulActions    Int       @default(0)
   consecutiveDays   Int       @default(0)
@@ -108,6 +123,9 @@ model UserStats {
   accuracyRate     Float     @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  @@index([totalMeasurements])
+  @@index([contributionScore])
 }
 
 model Achievement {
@@ -185,4 +203,59 @@ model LeaderboardEntry {
   @@index([userId])
   @@index([timeframe])
   @@index([points])
+}
+
+model RankHistory {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id])
+  rank        Int
+  date        DateTime  @default(now())
+  timeframe   String    // daily, weekly, monthly, allTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, timeframe, date])
+  @@index([userId])
+  @@index([timeframe])
+  @@index([date])
+}
+
+model ErrorLog {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?   @db.ObjectId
+  user        User?     @relation(fields: [userId], references: [id])
+  errorType   String
+  message     String
+  stack       String?
+  metadata    Json?
+  severity    String    // info, warning, error, fatal
+  timestamp   DateTime  @default(now())
+  resolved    Boolean   @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([errorType])
+  @@index([severity])
+  @@index([timestamp])
+}
+
+model PerformanceLog {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?   @db.ObjectId
+  user        User?     @relation(fields: [userId], references: [id])
+  operation   String
+  duration    Int       // in milliseconds
+  success     Boolean   @default(true)
+  metadata    Json?
+  timestamp   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([operation])
+  @@index([timestamp])
+  @@index([duration])
 }

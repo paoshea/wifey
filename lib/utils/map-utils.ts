@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import type { LatLng } from 'leaflet';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
+import type { CarrierCoverage } from '@/lib/carriers/types';
 
 // Custom marker icons for different signal strengths
 export const getSignalIcon = (signalStrength: number): L.Icon => {
@@ -18,10 +19,13 @@ export const getSignalIcon = (signalStrength: number): L.Icon => {
 };
 
 // Convert coverage points to heatmap data format
-export const coverageToHeatmapData = (measurements: SignalMeasurement[]): Array<[number, number, number]> => {
+export const coverageToHeatmapData = (
+  measurements: SignalMeasurement[] | CarrierCoverage[]
+): Array<[number, number, number]> => {
   return measurements.map(measurement => {
-    const { lat, lng } = measurement.geolocation;
-    return [lat, lng, measurement.signalStrength];
+    // Handle both SignalMeasurement and CarrierCoverage types
+    const location = 'geolocation' in measurement ? measurement.geolocation : measurement.location;
+    return [location.lat, location.lng, measurement.signalStrength];
   });
 };
 

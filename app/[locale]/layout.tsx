@@ -9,8 +9,11 @@ import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const locales = ['en', 'es'] as const;
+type SupportedLocale = (typeof locales)[number];
+
 export function generateStaticParams() {
-  return [{ locale: 'en' }, { locale: 'es' }];
+  return locales.map((locale) => ({ locale }));
 }
 
 export const metadata = {
@@ -32,17 +35,24 @@ export const metadata = {
   },
 };
 
+type LocaleLayoutProps = {
+  children: React.ReactNode;
+  params: { locale: SupportedLocale };
+};
+
 export default async function LocaleLayout({
   children,
   params: { locale }
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
+}: LocaleLayoutProps) {
   let messages;
   try {
     messages = await getMessages(locale);
   } catch (error) {
+    notFound();
+  }
+
+  // Validate locale
+  if (!locales.includes(locale)) {
     notFound();
   }
 
@@ -57,7 +67,7 @@ export default async function LocaleLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <NextIntlClientProvider locale={locale} messages={messages}>
+          <NextIntlClientProvider messages={messages}>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
               <main className="flex-grow">{children}</main>

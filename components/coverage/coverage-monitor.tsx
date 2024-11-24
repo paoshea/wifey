@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useNotificationStore } from '@/lib/store/notification-store';
 import { useCoverageStore } from '@/lib/store/coverage-store';
-import { CarrierCoverage } from '@/lib/carriers/types';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
 
 const LOCATION_CHECK_INTERVAL = 30000; // 30 seconds
 const COVERAGE_CHECK_RADIUS = 100; // 100 meters
@@ -49,14 +49,14 @@ export default function CoverageMonitor() {
       setLastCheckedLocation(currentPosition);
 
       // Find historical coverage points near current position
-      const nearbyPoints = coveragePoints.filter((point: CarrierCoverage) => {
-        const distance = calculateDistance(currentPosition, point.location);
+      const nearbyPoints = coveragePoints.filter((point: SignalMeasurement) => {
+        const distance = calculateDistance(currentPosition, point.geolocation);
         return distance <= COVERAGE_CHECK_RADIUS;
       });
 
       if (nearbyPoints.length > 0) {
         // Group by provider
-        const providerGroups = nearbyPoints.reduce((acc: Record<string, CarrierCoverage[]>, point) => {
+        const providerGroups = nearbyPoints.reduce((acc: Record<string, SignalMeasurement[]>, point) => {
           if (!acc[point.provider]) {
             acc[point.provider] = [];
           }
@@ -79,7 +79,7 @@ export default function CoverageMonitor() {
             coverageData: {
               provider: latestPoint.provider,
               signalStrength: latestPoint.signalStrength,
-              timestamp: latestPoint.timestamp,
+              timestamp: new Date(latestPoint.timestamp).toISOString(),
             },
           });
         });

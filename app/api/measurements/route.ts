@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { detectCarrier } from '@/lib/carriers/detection';
 import { gamificationService } from '@/lib/services/gamification-service';
+import { Prisma } from '@prisma/client';
+import { SignalMeasurement } from '@/lib/types/monitoring';
 
 // Validation schema for measurements
 const MeasurementSchema = z.object({
@@ -23,112 +25,116 @@ const MeasurementSchema = z.object({
   }).optional(),
 });
 
+type MeasurementInput = z.infer<typeof MeasurementSchema>;
+type BatchMeasurementInput = MeasurementInput[];
+
 const BatchMeasurementsSchema = z.array(MeasurementSchema).max(100);
+
+// Helper function to convert MeasurementInput to SignalMeasurement
+function toSignalMeasurement(input: MeasurementInput): SignalMeasurement {
+  return {
+    timestamp: input.timestamp,
+    carrier: input.provider || 'unknown',
+    network: input.technology,
+    networkType: input.technology,
+    geolocation: input.location,
+    signalStrength: input.signalStrength,
+    technology: input.technology,
+    provider: input.provider || 'unknown',
+    connectionType: input.connectionType,
+  };
+}
 
 export async function POST(request: Request) {
   try {
     // Get authenticated user
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+    const authResult = await auth();
+    
+    if (!authResult.success) {
+      return authResult.response;
     }
+
+    const userId = authResult.session.user.id;
 
     // Parse and validate request body
     const rawData = await request.json();
     const measurements = Array.isArray(rawData) ? rawData : [rawData];
     
-    try {
-      BatchMeasurementsSchema.parse(measurements);
-    } catch (validationError) {
+    const validationResult = BatchMeasurementsSchema.safeParse(measurements);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Invalid measurement data', details: validationError },
+        { error: 'Invalid measurement data', details: validationResult.error },
         { status: 400 }
       );
     }
 
-    // Process measurements
-    const processedMeasurements = await Promise.all(
-      measurements.map(async (measurement) => {
-        // Detect carrier if not provided
-        const provider = measurement.provider || await detectCarrier(measurement);
+    const results = await Promise.all(
+      validationResult.data.map(async (measurement: MeasurementInput) => {
+        // Convert to SignalMeasurement type and detect carrier
+        const signalMeasurement = toSignalMeasurement(measurement);
+        const provider = measurement.provider || await detectCarrier(signalMeasurement);
 
         // Create measurement record
-        const dbMeasurement = await prisma.measurement.create({
+        const result = await prisma.measurement.create({
           data: {
             userId,
             type: 'signal',
             value: measurement.signalStrength,
             unit: 'level',
-            location: measurement.location,
+            location: measurement.location as Prisma.InputJsonValue,
             timestamp: new Date(measurement.timestamp),
-            device: measurement.device || {},
+            device: measurement.device || {} as Prisma.InputJsonValue,
             metadata: {
               technology: measurement.technology,
               provider,
               connectionType: measurement.connectionType,
-            },
+            } as Prisma.InputJsonValue,
           },
         });
 
         // Create or update coverage point
         const coveragePoint = await prisma.coveragePoint.upsert({
           where: {
-            location_provider_type: {
-              location: measurement.location,
+            provider_type_location_unique: {
               provider,
               type: 'cellular',
-            },
+              location: measurement.location as Prisma.InputJsonValue,
+            }
           },
           update: {
-            signalStrength: {
-              increment: measurement.signalStrength,
-            },
-            verifications: {
-              increment: 1,
-            },
+            signalStrength: measurement.signalStrength,
+            technology: measurement.technology,
+            reliability: 1.0,
             lastVerified: new Date(),
-            history: {
-              create: {
-                signalStrength: measurement.signalStrength,
-                userId,
-                metadata: {
-                  technology: measurement.technology,
-                  device: measurement.device,
-                },
-              },
+            verifications: {
+              increment: 1
             },
+            metadata: {
+              technology: measurement.technology,
+              provider,
+              connectionType: measurement.connectionType,
+            } as Prisma.InputJsonValue,
           },
           create: {
-            location: measurement.location,
+            location: measurement.location as Prisma.InputJsonValue,
             signalStrength: measurement.signalStrength,
             provider,
             type: 'cellular',
             technology: measurement.technology,
-            reliability: 1,
+            reliability: 1.0,
             userId,
-            verifications: 1,
-            history: {
-              create: {
-                signalStrength: measurement.signalStrength,
-                userId,
-                metadata: {
-                  technology: measurement.technology,
-                  device: measurement.device,
-                },
-              },
-            },
+            metadata: {
+              technology: measurement.technology,
+              provider,
+              connectionType: measurement.connectionType,
+            } as Prisma.InputJsonValue,
           },
         });
 
         // Process measurement for gamification
-        await gamificationService.processMeasurement(dbMeasurement, userId);
+        await gamificationService.processMeasurement(result, userId);
 
-        return { measurement: dbMeasurement, coveragePoint };
+        return { measurement: result, coveragePoint };
       })
     );
 
@@ -137,8 +143,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      processed: processedMeasurements.length,
-      measurements: processedMeasurements,
+      processed: results.length,
+      measurements: results,
       gamification: {
         progress: userProgress,
       },
@@ -154,15 +160,13 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+    const authResult = await auth();
+    
+    if (!authResult.success) {
+      return authResult.response;
     }
+
+    const userId = authResult.session.user.id;
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');

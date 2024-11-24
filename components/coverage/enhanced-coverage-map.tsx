@@ -18,6 +18,8 @@ import { useSignalMonitor } from '@/hooks/useSignalMonitor';
 import { measurementStore } from '@/lib/storage/measurement-store';
 import { measurementSync } from '@/lib/sync/measurement-sync';
 import { SignalInfoPanel } from './signal-info-panel';
+import HeatmapLayer from './heatmap-layer';
+import type { SignalMeasurement } from '@/lib/types/monitoring';
 
 interface EnhancedCoverageMapProps {
   onLocationSelect?: (location: { lat: number; lng: number }) => void;
@@ -117,7 +119,10 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
         provider: measurement.provider,
         signalStrength: measurement.signalStrength,
         technology: measurement.technology,
-        location: measurement.location,
+        location: {
+          lat: measurement.geolocation.lat,
+          lng: measurement.geolocation.lng
+        },
         reliability: 1,
       });
     },
@@ -148,10 +153,8 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
         location,
         signalStrength: 0, // Will be updated with actual signal strength
         provider: selectedProvider || 'unknown',
-        type: 'cellular',
         technology: '4G', // Default, can be updated later
         reliability: 1,
-        timestamp: new Date().toISOString(),
       };
 
       await onAddCoveragePoint(newPoint);
@@ -229,7 +232,7 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
         
         <XMarksSpotButton
           disabled={!selectedLocation}
-          onClick={handleMarkSpot}
+          onMarkSpot={handleMarkSpot}
         />
       </div>
 
