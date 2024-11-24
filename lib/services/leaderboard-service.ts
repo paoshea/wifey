@@ -9,7 +9,6 @@ export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 export interface LeaderboardUser {
   userId: string;
   username: string;
-  avatar?: string | null;
   points: number;
   contributions: number;
   badges: number;
@@ -69,10 +68,10 @@ export class LeaderboardService {
     includeStats = false
   ): Promise<LeaderboardResponse> {
     if (pageSize > this.MAX_PAGE_SIZE) {
-      throw createApiError('Page size exceeds maximum allowed', 400);
+      throw createApiError(400, 'Page size exceeds maximum allowed');
     }
 
-    const skip = (page - 1) * pageSize;
+    const skip = (Number(page) - 1) * pageSize;
     const cacheKey = `leaderboard_${timeframe}_${page}_${pageSize}_${includeStats}`;
     
     return apiCache.fetch(
@@ -119,10 +118,11 @@ export class LeaderboardService {
             rank: skip + index + 1,
             userId: user.userId,
             username: user.user.name ?? user.user.email.split('@')[0],
-            avatar: user.user.image,
             points: user.totalPoints,
             level: user.level,
-            streak: user.streaks ?? { current: 0, longest: 0 },
+            streak: user.streaks 
+              ? { current: user.streaks.currentStreak, longest: user.streaks.currentStreak } 
+              : { current: 0, longest: 0 },
             contributions: 0,  // TODO: Calculate from measurements
             badges: 0         // TODO: Calculate from achievements
           }));
@@ -243,7 +243,7 @@ export class LeaderboardService {
   }
 
   private async getLeaderboardStats(
-    tx: PrismaClient,
+    tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">,
     dateFilter: MeasurementDateFilter
   ): Promise<LeaderboardStats> {
     const statsKey = `leaderboard_stats_${JSON.stringify(dateFilter)}`;
@@ -287,8 +287,8 @@ export class LeaderboardService {
             }
           }),
           tx.userStreak.findFirst({
-            orderBy: { longestStreak: 'desc' },
-            select: { longestStreak: true }
+            orderBy: { currentStreak: 'desc' },
+            select: { currentStreak: true }
           }),
           tx.userProgress.findFirst({
             orderBy: { level: 'desc' },
@@ -301,7 +301,7 @@ export class LeaderboardService {
           totalContributions,
           topContributor: topContributor?.user.name ?? topContributor?.user.email?.split('@')[0] ?? 'N/A',
           mostBadges: mostBadges?.user.name ?? mostBadges?.user.email?.split('@')[0] ?? 'N/A',
-          longestStreak: longestStreak?.longestStreak ?? 0,
+          longestStreak: longestStreak?.currentStreak ?? 0,
           highestLevel: highestLevel?.level ?? 1
         };
       },

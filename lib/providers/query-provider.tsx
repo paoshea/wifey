@@ -1,13 +1,21 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
-import { get, set } from 'idb-keyval';
+import { get, set, del } from 'idb-keyval';
 
-const persister = createSyncStoragePersister({
-  idb: {
-    get,
-    set,
+const persister = createAsyncStoragePersister({
+  storage: {
+    getItem: async (key: string) => {
+      const value = await get(key);
+      return value ? JSON.stringify(value) : null;
+    },
+    setItem: async (key: string, value: string) => {
+      await set(key, JSON.parse(value));
+    },
+    removeItem: async (key: string) => {
+      await del(key);
+    },
   },
 });
 

@@ -1,4 +1,4 @@
-import { logError } from '@/lib/monitoring/sentry';
+import { trackError } from '@/lib/monitoring/sentry';
 
 interface PerformanceMetric {
   name: string;
@@ -104,7 +104,7 @@ export class PerformanceMonitor {
   endMark(name: string, metadata?: Record<string, any>): number {
     const startTime = this.marks.get(name);
     if (!startTime) {
-      logError(new Error(`No start mark found for: ${name}`));
+      trackError(new Error(`No start mark found for: ${name}`));
       return 0;
     }
 
@@ -130,7 +130,7 @@ export class PerformanceMonitor {
     const threshold = this.thresholds[name];
     if (threshold) {
       if (value >= threshold.critical) {
-        logError(new Error(`Critical performance threshold exceeded for ${name}`), {
+        trackError(new Error(`Critical performance threshold exceeded for ${name}`), {
           metric: name,
           value,
           threshold: threshold.critical,

@@ -1,6 +1,5 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
 import type { 
   Integration,
   Event,
@@ -9,26 +8,31 @@ import type {
   BreadcrumbHint,
   Span,
   EventProcessor,
-  Hub,
   StackFrame,
   Exception,
   User,
   SeverityLevel,
   SpanStatus,
-  TransactionContext
+  IntegrationFn,
+  Scope,
+  ErrorEvent,
+  SpanAttributes,
+  SpanAttributeValue,
 } from '@sentry/types';
 import type { BrowserClient } from '@sentry/browser';
 import {
   init,
   browserTracingIntegration,
   replayIntegration,
-  getCurrentHub,
   setUser,
   addBreadcrumb as addSentryBreadcrumb,
   captureException,
   captureMessage,
-  startTransaction
+  addEventProcessor,
+  getClient,
+  withScope,
 } from '@sentry/nextjs';
+import { startSpan } from '@sentry/core';
 import { ErrorBoundary } from '@sentry/react';
 import type { ErrorBoundaryProps } from '@sentry/react';
 import type { FC } from 'react';
@@ -86,51 +90,54 @@ export async function initializeSentry(): Promise<void> {
 
     init({
       ...config,
-      integrations: [
-        {
+      integrations: (defaultIntegrations: Integration[]) => {
+        const rewriteFrames: Integration = {
           name: 'RewriteFrames' as const,
-          setupOnce(addGlobalEventProcessor: (eventProcessor: EventProcessor) => void): void {
-            const processor = ((event: unknown): Event | null => {
+          setupOnce(): void {
+            const eventProcessor = (event: Event): Event | null => {
               if (!event || typeof event !== 'object') {
-                return null;
+                return event;
               }
               
-              const processedEvent = event as Event;
-              const frames = processedEvent.exception?.values?.flatMap(
-                (exception: Exception) => exception.stacktrace?.frames ?? []
+              const frames = event.exception?.values?.flatMap(
+                (exception) => exception.stacktrace?.frames ?? []
               );
               
-              frames?.forEach((frame: StackFrame) => {
-                if (frame.filename?.startsWith('app://')) {
-                  frame.filename = frame.filename.replace('app://', '~/');
-                }
-              });
+              if (frames) {
+                frames.forEach((frame) => {
+                  if (frame.filename?.startsWith('app://')) {
+                    frame.filename = frame.filename.replace('app://', '');
+                  }
+                });
+              }
               
-              return processedEvent;
-            });
-            
-            addGlobalEventProcessor(processor as EventProcessor);
-          },
-        } as const,
-        browserTracingIntegration({
-          traceFetch: true,
-          traceXHR: true,
-          tracingOrigins: ['localhost', /^\//, /^https?:\/\//] as const,
-        } as const),
-        replayIntegration({
-          maskAllText: true,
-          blockAllMedia: true,
-        } as const),
-      ] satisfies readonly Integration[],
-      beforeSend(event: Event, hint?: EventHint): Event | null {
+              return event;
+            };
+
+            addEventProcessor(eventProcessor);
+          }
+        };
+
+        return [
+          ...defaultIntegrations,
+          browserTracingIntegration(),
+          replayIntegration({
+            maskAllText: false,
+            blockAllMedia: false,
+          }),
+          rewriteFrames,
+        ] satisfies Integration[];
+      },
+      beforeSend(event: Event, hint?: EventHint): ErrorEvent | Promise<ErrorEvent | null> | null {
         if (process.env.NODE_ENV === 'development') {
           return null;
         }
 
         const error = hint?.originalException;
-        if (isError(error)) {
+        if (error instanceof Error) {
           const errorMessage = error.message.toLowerCase();
           
+          // Filter out common network-related errors
           if (
             errorMessage.includes('network request failed') ||
             errorMessage.includes('load failed') ||
@@ -141,7 +148,7 @@ export async function initializeSentry(): Promise<void> {
           }
         }
 
-        return event;
+        return event as unknown as ErrorEvent;
       },
       beforeBreadcrumb(breadcrumb: Breadcrumb, hint?: BreadcrumbHint): Breadcrumb | null {
         if (breadcrumb.category === 'xhr' || breadcrumb.category === 'fetch') {
@@ -211,44 +218,30 @@ export async function logError(
     return;
   }
 
-  const hub: Hub = getCurrentHub();
-  const scope = hub.getScope();
-  
-  if (!scope) return;
-
-  if (context) {
-    scope.setExtras(context);
-  }
-  
-  if (typeof error === 'string') {
-    scope.setLevel('error');
-    scope.addBreadcrumb({
-      category: 'error',
-      message: error,
-      level: 'error',
-    });
-    hub.captureMessage(error, 'error');
-  } else {
-    scope.setLevel('error');
-    scope.addBreadcrumb({
-      category: 'error',
-      message: error.message,
-      level: 'error',
-    });
-    hub.captureException(error);
-  }
+  withScope(scope => {
+    if (context) {
+      scope.setExtras(context);
+    }
+    
+    if (typeof error === 'string') {
+      captureMessage(error, 'error');
+    } else {
+      captureException(error);
+    }
+  });
 }
 
 // Performance monitoring
-interface PerformanceTracker {
-  finish: (status?: string) => Promise<void>;
-  addData: (data: Record<string, unknown>) => void;
+interface PerformanceSpan {
+  finish: (status?: SpanStatus) => Promise<void>;
+  addData: (data: Record<string, SpanAttributeValue>) => void;
 }
 
-export async function trackPerformance(
+export function trackPerformance(
   name: string,
-  data?: Record<string, unknown>
-): Promise<PerformanceTracker> {
+  op: string,
+  data?: Record<string, SpanAttributeValue>
+): PerformanceSpan {
   if (!sentryInitialized) {
     return {
       finish: async () => {},
@@ -256,53 +249,42 @@ export async function trackPerformance(
     };
   }
 
-  const hub: Hub = getCurrentHub();
-  const context: TransactionContext = {
-    name,
-    op: 'performance',
-    description: `Performance tracking for ${name}`
-  };
+  let finishSpan: (() => void) | undefined;
+  let setSpanData: ((data: Record<string, SpanAttributeValue>) => void) | undefined;
 
-  const transaction = Sentry.startTransaction(context);
+  startSpan(
+    {
+      name,
+      op,
+      attributes: data,
+    },
+    span => {
+      finishSpan = () => span.end();
+      setSpanData = (additionalData: Record<string, SpanAttributeValue>) => {
+        Object.entries(additionalData).forEach(([key, value]) => {
+          span.setAttribute(key, value);
+        });
+      };
 
-  if (!transaction) {
-    return {
-      finish: async () => {},
-      addData: () => {},
-    };
-  }
-
-  hub.configureScope((scope) => {
-    scope.setSpan(transaction);
-  });
-
-  const span = transaction.startChild({
-    op: name,
-    description: `Performance span for ${name}`
-  });
-  
-  if (!span) {
-    transaction.finish();
-    return {
-      finish: async () => {},
-      addData: () => {},
-    };
-  }
-
-  if (data) {
-    span.setData('initialData', data);
-  }
+      withScope(scope => {
+        scope.setSDKProcessingMetadata({
+          spanId: span.spanContext().spanId,
+          traceId: span.spanContext().traceId,
+        });
+      });
+    }
+  );
 
   return {
-    finish: async (status?: SpanStatus) => {
-      if (status) {
-        span.setStatus(status);
+    finish: async () => {
+      if (finishSpan) {
+        finishSpan();
       }
-      span.finish();
-      transaction.finish();
     },
-    addData: (additionalData: Record<string, unknown>) => {
-      span.setData('additionalData', additionalData);
+    addData: (additionalData: Record<string, SpanAttributeValue>) => {
+      if (setSpanData) {
+        setSpanData(additionalData);
+      }
     },
   };
 }
@@ -317,11 +299,13 @@ export async function setUserContext(
     return;
   }
 
-  setUser({
-    id,
-    ...(email && { email }),
-    ...(additionalData || {}),
-  } satisfies User);
+  withScope(scope => {
+    setUser({
+      id,
+      ...(email && { email }),
+      ...(additionalData || {}),
+    } satisfies User);
+  });
 }
 
 // Breadcrumb tracking for debugging
@@ -356,18 +340,22 @@ export const sentry = {
 } as const;
 
 // Export types
-export type { 
-  Integration,
+export type {
   Event,
   EventHint,
   Breadcrumb,
   BreadcrumbHint,
   Span,
+  EventProcessor,
+  StackFrame,
+  Exception,
   User,
   SeverityLevel,
   SpanStatus,
-  ErrorBoundaryProps 
+  SpanAttributes,
+  SpanAttributeValue,
 } from '@sentry/types';
+export type { BrowserClient } from '@sentry/browser';
 export type { SentryConfig };
 
 // Type export for the singleton

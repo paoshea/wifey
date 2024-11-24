@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import type { Prisma } from '@prisma/client/runtime/library';
+import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { captureException } from '@sentry/nextjs';
 import * as Sentry from '@sentry/nextjs';
 import { 
   validateErrorLog, 
@@ -78,11 +79,11 @@ export class MonitoringService {
     try {
       const data: Prisma.ErrorLogCreateInput = {
         ...errorData,
-        userId: userId ?? null,
+        user: userId ? { connect: { id: userId } } : undefined,
         resolved: false,
         timestamp: new Date()
       };
-      await (this.prisma as any).errorLog.create({ data });
+      await this.prisma.errorLog.create({ data });
     } catch (error: unknown) {
       console.error('Failed to log error to database:', error);
     }
@@ -127,10 +128,10 @@ export class MonitoringService {
     try {
       const data: Prisma.PerformanceLogCreateInput = {
         ...performanceData,
-        userId: userId ?? null,
+        user: userId ? { connect: { id: userId } } : undefined,
         timestamp: new Date()
       };
-      await (this.prisma as any).performanceLog.create({ data });
+      await this.prisma.performanceLog.create({ data });
     } catch (error: unknown) {
       console.error('Failed to log performance to database:', error);
     }
@@ -188,14 +189,14 @@ export class MonitoringService {
     };
 
     const [metrics, totalCount] = await Promise.all<[AggregateResult, number]>([
-      (this.prisma as any).performanceLog.aggregate({
+      this.prisma.performanceLog.aggregate({
         where,
         _avg: { duration: true },
         _max: { duration: true },
         _min: { duration: true },
         _count: { success: true }
       }),
-      (this.prisma as any).performanceLog.count({ where })
+      this.prisma.performanceLog.count({ where })
     ]);
 
     const successCount = metrics._count.success;
@@ -235,14 +236,14 @@ export class MonitoringService {
     };
 
     const [errorCount, resolvedCount, groupedErrors] = await Promise.all<[number, number, GroupByResult[]]>([
-      (this.prisma as any).errorLog.count({ where }),
-      (this.prisma as any).errorLog.count({
+      this.prisma.errorLog.count({ where }),
+      this.prisma.errorLog.count({
         where: {
           ...where,
           resolved: true
         }
       }),
-      (this.prisma as any).errorLog.groupBy({
+      this.prisma.errorLog.groupBy({
         by: ['errorType', 'severity'],
         where,
         _count: {
