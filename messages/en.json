@@ -84,5 +84,12 @@
     "success": "Success",
     "warning": "Warning",
     "info": "Information"
+  },
+  "SentryExample": {
+    "Sentry Example Page": "Sentry Example Page",
+    "Throw Frontend Error": "Throw Frontend Error",
+    "Throw API Error": "Throw API Error",
+    "Log Test Message": "Log Test Message",
+    "Count": "Count"
   }
 }
