@@ -2,6 +2,19 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { ONBOARDING_COOKIE } from '@/utils/onboarding';
 
+export async function GET() {
+  try {
+    const onboardingComplete = cookies().get(ONBOARDING_COOKIE)?.value === 'true';
+    return NextResponse.json({ onboardingComplete });
+  } catch (error) {
+    console.error('Error checking onboarding status:', error);
+    return NextResponse.json(
+      { error: 'Failed to check onboarding status' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST() {
   try {
     // Set cookie to expire in 1 year
