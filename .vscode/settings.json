@@ -1,0 +1,15 @@
+{
+  "css.validate": false,
+  "tailwindCSS.validate": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.formatOnSave": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative"
+}

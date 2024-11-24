@@ -1,5 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { captureException } from '@sentry/nextjs';
 import * as Sentry from '@sentry/nextjs';
 import { 
@@ -81,7 +80,8 @@ export class MonitoringService {
         ...errorData,
         user: userId ? { connect: { id: userId } } : undefined,
         resolved: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        metadata: metadata as Prisma.InputJsonValue
       };
       await this.prisma.errorLog.create({ data });
     } catch (error: unknown) {
@@ -127,7 +127,10 @@ export class MonitoringService {
     // Log to database
     try {
       const data: Prisma.PerformanceLogCreateInput = {
-        ...performanceData,
+        operation: performanceData.operation,
+        duration: performanceData.duration,
+        success: performanceData.success,
+        metadata: performanceData.metadata as Prisma.InputJsonValue,
         user: userId ? { connect: { id: userId } } : undefined,
         timestamp: new Date()
       };
@@ -181,14 +184,7 @@ export class MonitoringService {
       ...(operation && { operation })
     };
 
-    type AggregateResult = {
-      _avg: { duration: number | null };
-      _max: { duration: number | null };
-      _min: { duration: number | null };
-      _count: { success: number };
-    };
-
-    const [metrics, totalCount] = await Promise.all<[AggregateResult, number]>([
+    const [aggregateResult, totalCount] = await Promise.all([
       this.prisma.performanceLog.aggregate({
         where,
         _avg: { duration: true },
@@ -199,15 +195,15 @@ export class MonitoringService {
       this.prisma.performanceLog.count({ where })
     ]);
 
-    const successCount = metrics._count.success;
+    const successCount = aggregateResult._count.success;
 
     return {
-      averageDuration: metrics._avg.duration ?? 0,
-      maxDuration: metrics._max.duration ?? 0,
-      minDuration: metrics._min.duration ?? 0,
+      averageDuration: aggregateResult._avg.duration ?? 0,
+      maxDuration: aggregateResult._max.duration ?? 0,
+      minDuration: aggregateResult._min.duration ?? 0,
       successCount,
       totalCount,
-      successRate: totalCount > 0 ? successCount / totalCount : 1
+      successRate: totalCount > 0 ? (successCount / totalCount) * 100 : 0
     };
   }
 
@@ -235,7 +231,7 @@ export class MonitoringService {
       };
     };
 
-    const [errorCount, resolvedCount, groupedErrors] = await Promise.all<[number, number, GroupByResult[]]>([
+    const [totalCount, resolvedCount, groupedErrors] = await Promise.all([
       this.prisma.errorLog.count({ where }),
       this.prisma.errorLog.count({
         where: {
@@ -252,15 +248,17 @@ export class MonitoringService {
       })
     ]);
 
+    const errorsByType = groupedErrors.map(group => ({
+      type: group.errorType,
+      severity: group.severity,
+      count: group._count._all
+    }));
+
     return {
-      totalErrors: errorCount,
+      totalErrors: totalCount,
       resolvedErrors: resolvedCount,
-      resolutionRate: errorCount > 0 ? resolvedCount / errorCount : 1,
-      errorsByType: groupedErrors.map((group: GroupByResult) => ({
-        type: group.errorType,
-        severity: group.severity,
-        count: group._count._all
-      }))
+      resolutionRate: totalCount > 0 ? (resolvedCount / totalCount) * 100 : 0,
+      errorsByType
     };
   }
 }

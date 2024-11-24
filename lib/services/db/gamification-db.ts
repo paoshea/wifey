@@ -96,7 +96,11 @@ export class GamificationDB {
   // User Progress Methods
   async getUserProgress(userId: string): Promise<UserProgress & { 
     stats: UserStats; 
-    achievements: Achievement[];
+    achievements: Array<{
+      achievementId: string;
+      achievement: Achievement;
+      unlockedAt: Date | null;
+    }>;
   }> {
     try {
       userIdSchema.parse(userId);
@@ -136,16 +140,28 @@ export class GamificationDB {
         return { 
           ...progress, 
           stats,
-          achievements: progress.achievements.map(ua => ua.achievement)
+          achievements: progress.achievements.map(ua => ({
+            achievementId: ua.achievementId,
+            achievement: ua.achievement,
+            unlockedAt: ua.completedAt
+          }))
         };
       }
 
       return {
         ...progress,
-        achievements: progress.achievements.map(ua => ua.achievement)
+        achievements: progress.achievements.map(ua => ({
+          achievementId: ua.achievementId,
+          achievement: ua.achievement,
+          unlockedAt: ua.completedAt
+        }))
       } as UserProgress & { 
         stats: UserStats; 
-        achievements: Achievement[];
+        achievements: Array<{
+          achievementId: string;
+          achievement: Achievement;
+          unlockedAt: Date | null;
+        }>;
       };
     } catch (error) {
       handleValidationError(error);

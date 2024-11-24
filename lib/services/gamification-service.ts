@@ -1,5 +1,5 @@
 import { GamificationDB } from './db/gamification-db';
-import type { Measurement, UserProgress } from '@prisma/client';
+import type { Measurement, UserProgress, Achievement } from '@prisma/client';
 import type { JsonValue } from '@prisma/client/runtime/library';
 import { cache } from 'react';
 
@@ -14,6 +14,11 @@ interface UserStats {
 
 interface UserProgressWithStats extends UserProgress {
   stats: UserStats;
+  achievements: Array<{
+    achievementId: string;
+    achievement: Achievement;
+    unlockedAt: Date | null;
+  }>;
 }
 
 interface MeasurementData {

@@ -15,7 +15,38 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { ACHIEVEMENT_TIERS, TIER_COLORS, type AchievementTier } from '@/lib/gamification/constants';
 import { ACHIEVEMENTS } from '@/lib/gamification/achievements';
+
+// Helper function to calculate achievement progress
+function getAchievementProgress(achievement: any, stats: any): number {
+  if (!achievement?.achievement?.requirements || !stats) return 0;
+  
+  const requirements = achievement.achievement.requirements as { type: string; count: number };
+  let currentValue = 0;
+
+  switch (requirements.type) {
+    case 'rural_measurements':
+      currentValue = stats.ruralMeasurements || 0;
+      break;
+    case 'unique_locations':
+      currentValue = stats.uniqueLocations || 0;
+      break;
+    case 'measurements':
+      currentValue = stats.totalMeasurements || 0;
+      break;
+    case 'helping_others':
+      currentValue = stats.helpfulActions || 0;
+      break;
+    case 'consistency':
+      currentValue = stats.consecutiveDays || 0;
+      break;
+    default:
+      return 0;
+  }
+
+  return Math.min(100, Math.round((currentValue / requirements.count) * 100));
+}
 
 const tabs = [
   { id: 'progress', label: 'Progress', icon: '📈' },
@@ -152,10 +183,10 @@ export default function ProfilePage() {
                   <Card key={achievement.achievementId} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">
-                        {achievement.achievement.rarity === 'epic' ? (
-                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        {achievement.achievement.tier === ACHIEVEMENT_TIERS.PLATINUM ? (
+                          <Trophy className={`h-5 w-5 ${TIER_COLORS[achievement.achievement.tier as AchievementTier]}`} />
                         ) : (
-                          <Medal className="h-5 w-5 text-blue-500" />
+                          <Medal className={`h-5 w-5 ${TIER_COLORS[achievement.achievement.tier as AchievementTier]}`} />
                         )}
                         <CardTitle className="text-lg">{achievement.achievement.title}</CardTitle>
                       </div>
@@ -163,9 +194,9 @@ export default function ProfilePage() {
                     <CardContent>
                       <p className="text-sm text-gray-600">{achievement.achievement.description}</p>
                       <div className="mt-2">
-                        <Progress value={achievement.progress || 0} className="h-2" />
+                        <Progress value={getAchievementProgress(achievement, progress?.stats)} className="h-2" />
                         <p className="text-xs text-gray-500 mt-1">
-                          Progress: {achievement.progress || 0}%
+                          Progress: {getAchievementProgress(achievement, progress?.stats)}%
                         </p>
                       </div>
                     </CardContent>

@@ -67,7 +67,7 @@ export default async function LocaleLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <NextIntlClientProvider messages={messages}>
+          <NextIntlClientProvider messages={messages} locale={locale}>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
               <main className="flex-grow">{children}</main>
