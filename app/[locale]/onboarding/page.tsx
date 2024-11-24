@@ -145,6 +145,26 @@ export default function OnboardingPage() {
     setContactForm({ name: '', email: '', message: '' });
   };
 
+  const FeaturesStep = () => {
+    const t = useTranslations('onboarding');
+    
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-3xl font-bold mb-4">{t('features.title')}</h2>
+          <p className="text-gray-600">{t('features.subtitle')}</p>
+        </motion.div>
+
+        <FeatureShowcase />
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Feature Modal */}
@@ -247,34 +267,7 @@ export default function OnboardingPage() {
 
       {/* Features Section */}
       <div ref={featuresRef} className="min-h-screen bg-white py-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="space-y-12"
-          >
-            <h2 className="text-4xl font-bold text-center text-gray-900">{t('features.title')}</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              {Object.entries(featureDetails).map(([key, feature]) => (
-                <div
-                  key={key}
-                  onClick={() => setSelectedFeature(key)}
-                  className="group relative p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-100 rounded-xl transition-opacity`} />
-                  <div className="relative z-10 space-y-4">
-                    <div className="bg-blue-100 p-3 rounded-lg w-12 h-12 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-white">{feature.title}</h3>
-                    <p className="text-gray-600 group-hover:text-white/90">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+        <FeaturesStep />
       </div>
 
       {/* Testimonials Section */}

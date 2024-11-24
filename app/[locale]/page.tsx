@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
 
 export default function Home() {
   const t = useTranslations('home');
@@ -34,27 +35,24 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900">
-            <span className="block mb-2">{t('title')}</span>
-            <span className="block text-blue-600 hover:text-blue-700 transition-colors duration-300">
-              {t('subtitle')}
-            </span>
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            {t('title')}
           </h1>
-          <p className="mt-3 max-w-md mx-auto text-sm sm:text-base md:text-lg lg:text-xl text-gray-500 md:mt-5 md:max-w-3xl">
-            {t('description')}
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            {t('subtitle')}
           </p>
-          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-            <Link href="/coverage-finder" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
-              >
-                <Signal className="w-4 h-4 mr-2" />
-                {t('findCoverageButton')}
-              </Button>
-            </Link>
+          <div className="flex justify-center gap-4">
+            <Button asChild size="lg">
+              <Link href="/onboarding">{t('getStarted')}</Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/map">{t('exploreMap')}</Link>
+            </Button>
           </div>
         </motion.div>
+
+        {/* Feature Showcase Section */}
+        <FeatureShowcase />
 
         <motion.div 
           className="mt-12 sm:mt-16 grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
