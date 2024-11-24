@@ -96,5 +96,36 @@
     "Test Message": "Mensaje de prueba desde la página de Sentry",
     "Message Sent": "¡Mensaje enviado a Sentry!",
     "Error Fallback": "¡Se produjo un error! Consulte Sentry para más detalles."
+  },
+  "WifiFinder": {
+    "title": "Buscador de WiFi",
+    "listView": "Vista de Lista",
+    "mapView": "Vista de Mapa",
+    "searchPlaceholder": "Buscar por nombre o ubicación...",
+    "filter": "Filtrar",
+    "allTypes": "Todos los Tipos",
+    "freeOnly": "Solo Gratis",
+    "paidOnly": "Solo de Pago",
+    "free": "Gratis",
+    "paid": "De Pago",
+    "restricted": "Restringido",
+    "getDirections": "Obtener Direcciones",
+    "mapComingSoon": "Vista de mapa próximamente..."
+  },
+  "Map": {
+    "title": "Mapa Interactivo",
+    "layers": "Capas",
+    "showOnMap": "Mostrar en el Mapa",
+    "allPoints": "Todos los Puntos",
+    "wifiOnly": "Solo Puntos WiFi",
+    "coverageOnly": "Solo Puntos de Cobertura",
+    "searchPlaceholder": "Buscar ubicaciones...",
+    "legend": "Leyenda",
+    "mapLegend": "Leyenda del Mapa",
+    "wifiPoint": "Punto de WiFi",
+    "coveragePoint": "Punto de Cobertura",
+    "getDirections": "Obtener Direcciones",
+    "centerOnMe": "Centrar en mi ubicación",
+    "mapImplementation": "Implementación del mapa próximamente..."
   }
 }

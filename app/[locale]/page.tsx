@@ -63,45 +63,51 @@ export default function Home() {
           animate="show"
         >
           <motion.div variants={item}>
-            <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
-              <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-                <Signal className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
-              </div>
-              <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                {t('features.cellular.title')}
-              </h3>
-              <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-                {t('features.cellular.description')}
-              </p>
-            </Card>
+            <Link href="/coverage-finder">
+              <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
+                <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
+                  <Signal className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
+                </div>
+                <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                  {t('features.cellular.title')}
+                </h3>
+                <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
+                  {t('features.cellular.description')}
+                </p>
+              </Card>
+            </Link>
           </motion.div>
 
           <motion.div variants={item}>
-            <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
-              <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-                <Wifi className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
-              </div>
-              <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                {t('features.wifi.title')}
-              </h3>
-              <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-                {t('features.wifi.description')}
-              </p>
-            </Card>
+            <Link href="/wifi-finder">
+              <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
+                <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
+                  <Wifi className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
+                </div>
+                <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                  {t('features.wifi.title')}
+                </h3>
+                <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
+                  {t('features.wifi.description')}
+                </p>
+              </Card>
+            </Link>
           </motion.div>
 
           <motion.div variants={item}>
-            <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
-              <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
-                <MapPin className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
-              </div>
-              <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                {t('features.navigation.title')}
-              </h3>
-              <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
-                {t('features.navigation.description')}
-              </p>
-            </Card>
+            <Link href="/map">
+              <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white rounded-lg p-4 sm:p-6 cursor-pointer h-full">
+                <div className="flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12 rounded-md bg-blue-500 group-hover:bg-blue-600 transition-colors duration-200 text-white">
+                  <MapPin className="w-5 sm:w-6 h-5 sm:h-6 group-hover:scale-110 transition-transform duration-200" />
+                </div>
+                <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                  {t('features.navigation.title')}
+                </h3>
+                <p className="mt-2 text-sm sm:text-base text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
+                  {t('features.navigation.description')}
+                </p>
+              </Card>
+            </Link>
           </motion.div>
         </motion.div>
       </div>

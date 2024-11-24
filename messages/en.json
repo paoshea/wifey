@@ -52,6 +52,22 @@
       }
     }
   },
+  "Map": {
+    "title": "Interactive Map",
+    "layers": "Layers",
+    "showOnMap": "Show on Map",
+    "allPoints": "All Points",
+    "wifiOnly": "WiFi Points Only",
+    "coverageOnly": "Coverage Points Only",
+    "searchPlaceholder": "Search locations...",
+    "legend": "Legend",
+    "mapLegend": "Map Legend",
+    "wifiPoint": "WiFi Hotspot",
+    "coveragePoint": "Coverage Point",
+    "getDirections": "Get Directions",
+    "centerOnMe": "Center on my location",
+    "mapImplementation": "Map implementation coming soon..."
+  },
   "auth": {
     "register": {
       "title": "Create your account",
@@ -96,5 +112,20 @@
     "Test Message": "Test message from Sentry example page",
     "Message Sent": "Message sent to Sentry!",
     "Error Fallback": "Error occurred! Check Sentry for details."
+  },
+  "WifiFinder": {
+    "title": "WiFi Finder",
+    "listView": "List View",
+    "mapView": "Map View",
+    "searchPlaceholder": "Search by name or location...",
+    "filter": "Filter",
+    "allTypes": "All Types",
+    "freeOnly": "Free Only",
+    "paidOnly": "Paid Only",
+    "free": "Free",
+    "paid": "Paid",
+    "restricted": "Restricted",
+    "getDirections": "Get Directions",
+    "mapComingSoon": "Map view coming soon..."
   }
 }

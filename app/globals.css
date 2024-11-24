@@ -57,3 +57,34 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+.leaflet-popup-close-button {
+  display: none;
+}
+
+.custom-div-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
