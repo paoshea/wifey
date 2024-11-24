@@ -2,13 +2,13 @@
   "navigation": {
     "home": "Home",
     "coverageFinder": "Coverage Finder",
-    "register": "Sign Up",
-    "login": "Sign In"
+    "register": "Register",
+    "login": "Login"
   },
   "home": {
     "title": "Find Coverage",
     "subtitle": "Anywhere",
-    "description": "Locate cellular coverage points and free WiFi hotspots near you. Never be out of touch again.",
+    "description": "Locate cellular coverage points and free WiFi hotspots near you. Never be disconnected again.",
     "findCoverageButton": "Find Coverage Now",
     "features": {
       "cellular": {
@@ -21,7 +21,7 @@
       },
       "navigation": {
         "title": "Navigation",
-        "description": "Get turn-by-turn directions to the nearest connection point"
+        "description": "Get step-by-step directions to the nearest connection point"
       }
     }
   },
@@ -29,21 +29,21 @@
     "title": "Coverage Finder",
     "tabs": {
       "coverageRoute": "Find Coverage Route",
-      "freeWifi": "Free WiFi Hotspots"
+      "freeWifi": "Free WiFi Points"
     },
     "findRoute": {
       "title": "Find Route to Coverage",
-      "button": "Find Route to Coverage",
+      "button": "Find Coverage Route",
       "loading": "Finding Coverage...",
       "gettingLocation": "Getting your location...",
-      "noLocation": "Location access is required to find coverage",
+      "noLocation": "Location access required to find coverage",
       "error": "Error finding coverage. Please try again."
     },
     "wifi": {
-      "title": "Nearby Free WiFi Hotspots",
-      "refreshButton": "Refresh Nearby Hotspots",
-      "loading": "Finding WiFi hotspots...",
-      "noHotspots": "No WiFi hotspots found nearby",
+      "title": "Nearby Free WiFi Points",
+      "refreshButton": "Refresh Nearby Points",
+      "loading": "Finding WiFi points...",
+      "noHotspots": "No WiFi points found nearby",
       "details": {
         "provider": "Provider",
         "speed": "Speed",
@@ -62,7 +62,7 @@
     "searchPlaceholder": "Search locations...",
     "legend": "Legend",
     "mapLegend": "Map Legend",
-    "wifiPoint": "WiFi Hotspot",
+    "wifiPoint": "WiFi Point",
     "coveragePoint": "Coverage Point",
     "getDirections": "Get Directions",
     "centerOnMe": "Center on my location",
@@ -71,18 +71,19 @@
   "onboarding": {
     "welcome": {
       "title": "Welcome to Wifey",
-      "description": "Your ultimate companion for finding WiFi and cellular coverage anywhere. Let's get you started!",
-      "getStarted": "Get Started"
+      "description": "Your ultimate companion for finding WiFi and cellular coverage anywhere. Let's get started!",
+      "getStarted": "Get Started",
+      "explore": "Explore Features"
     },
     "features": {
-      "title": "Everything you need",
+      "title": "Everything You Need",
       "wifi": {
         "title": "WiFi Finder",
-        "description": "Find free and reliable WiFi hotspots wherever you go"
+        "description": "Find reliable and free WiFi points wherever you go"
       },
       "coverage": {
         "title": "Coverage Map",
-        "description": "View cellular coverage areas and dead zones"
+        "description": "Visualize cellular coverage areas and dead zones"
       },
       "navigation": {
         "title": "Smart Navigation",
@@ -98,6 +99,22 @@
     "language": {
       "title": "Choose Your Language",
       "description": "Select your preferred language for the best experience"
+    }
+  },
+  "testimonials": {
+    "title": "What Our Users Say",
+    "subtitle": "Real stories from real users"
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "description": "Have questions? We're here to help!",
+    "email": "Email Us",
+    "phone": "Call Us",
+    "form": {
+      "name": "Your Name",
+      "email": "Your Email",
+      "message": "Your Message",
+      "submit": "Send Message"
     }
   },
   "auth": {
@@ -116,16 +133,16 @@
       "loading": "Creating account...",
       "successTitle": "Registration successful!",
       "successMessage": "Your account has been created. Welcome to Wifey!",
-      "errorTitle": "Registration failed",
+      "errorTitle": "Registration error",
       "errorMessage": "There was a problem creating your account. Please try again.",
       "alreadyHaveAccount": "Already have an account?",
-      "loginLink": "Sign in here"
+      "loginLink": "Login here"
     }
   },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
-    "retry": "Try Again",
+    "retry": "Try again",
     "close": "Close",
     "save": "Save",
     "cancel": "Cancel",

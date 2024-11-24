@@ -72,7 +72,8 @@
     "welcome": {
       "title": "Bienvenido a Wifey",
       "description": "Tu compañero definitivo para encontrar WiFi y cobertura celular en cualquier lugar. ¡Comencemos!",
-      "getStarted": "Comenzar"
+      "getStarted": "Comenzar",
+      "explore": "Explorar Funciones"
     },
     "features": {
       "title": "Todo lo que necesitas",
@@ -98,6 +99,22 @@
     "language": {
       "title": "Elige tu Idioma",
       "description": "Selecciona tu idioma preferido para la mejor experiencia"
+    }
+  },
+  "testimonials": {
+    "title": "Lo que Dicen Nuestros Usuarios",
+    "subtitle": "Historias reales de usuarios reales"
+  },
+  "contact": {
+    "title": "Contáctanos",
+    "description": "¿Tienes preguntas? ¡Estamos aquí para ayudarte!",
+    "email": "Envíanos un Email",
+    "phone": "Llámanos",
+    "form": {
+      "name": "Tu Nombre",
+      "email": "Tu Email",
+      "message": "Tu Mensaje",
+      "submit": "Enviar Mensaje"
     }
   },
   "auth": {
