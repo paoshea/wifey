@@ -31,28 +31,30 @@ export default function Navbar() {
     }, 2000);
   };
 
-  const navItems = [
-    { href: '', label: t('navigation.home'), icon: Home },
-    { href: 'coverage', label: t('navigation.coverage'), icon: Signal },
-    { href: 'wifi', label: t('navigation.wifi'), icon: Wifi },
-    { href: 'explore', label: t('navigation.explore'), icon: MapPin },
-  ];
-
   // Extract locale from pathname
-  const locale = pathname.split('/')[1];
+  const locale = pathname?.split('/')[1] || 'en';
+
+  const navItems = [
+    { href: `/${locale}`, label: t('navigation.home'), icon: Home },
+    { href: `/${locale}/coverage`, label: t('navigation.coverage'), icon: Signal },
+    { href: `/${locale}/wifi`, label: t('navigation.wifi'), icon: Wifi },
+    { href: `/${locale}/explore`, label: t('navigation.explore'), icon: MapPin },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex items-center">
           <Link href={`/${locale}`} className="flex items-center space-x-2">
-            <Image
-              src="/branding/logo.svg"
-              alt="Wifey Logo"
-              width={32}
-              height={32}
-              className="h-8 w-auto"
-            />
+            <div className="relative w-8 h-8">
+              <Image
+                src="/branding/logo.svg"
+                alt="Wifey Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
             <span className="hidden font-bold sm:inline-block">Wifey</span>
           </Link>
         </div>
@@ -61,13 +63,12 @@ export default function Navbar() {
         <div className="flex-1 hidden md:flex">
           <nav className="flex items-center justify-center w-full max-w-2xl mx-auto">
             {navItems.map((item) => {
-              const href = `/${locale}/${item.href}`;
-              const isActive = pathname === href;
+              const isActive = pathname === item.href;
               
               return (
                 <Link
-                  key={href}
-                  href={href}
+                  key={item.href}
+                  href={item.href}
                   className={cn(
                     "flex items-center justify-center flex-1 py-2 transition-colors hover:text-foreground/80",
                     isActive ? "text-foreground" : "text-foreground/60"
@@ -108,17 +109,17 @@ export default function Navbar() {
             <div className="relative z-20 grid gap-6 rounded-md bg-popover p-4 text-popover-foreground shadow-md">
               <nav className="grid grid-flow-row auto-rows-max text-sm">
                 {navItems.map((item) => {
-                  const href = `/${locale}/${item.href}`;
-                  const isActive = pathname === href;
+                  const isActive = pathname === item.href;
                   
                   return (
                     <Link
-                      key={href}
-                      href={href}
+                      key={item.href}
+                      href={item.href}
                       className={cn(
                         "flex items-center py-2 transition-colors hover:text-foreground/80",
                         isActive ? "text-foreground" : "text-foreground/60"
                       )}
+                      onClick={() => setIsMenuOpen(false)}
                     >
                       <item.icon className="w-4 h-4 mr-2" />
                       {item.label}
