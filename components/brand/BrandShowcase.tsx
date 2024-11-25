@@ -1,167 +1,137 @@
-import React from 'react';
-import Image from 'next/image';
-import { brandConfig } from '@/lib/branding';
+'use client';
 
-export const BrandShowcase: React.FC = () => {
+import { brandConfig } from '@/lib/branding/config';
+import { getBrandColor, getBrandGradient } from '@/lib/branding/utils';
+
+function ColorSwatch({ color, shade }: { color: string; shade: number }) {
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-12">
-      {/* Logo Section */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold">Brand Identity</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="p-6 bg-white rounded-xl shadow-md">
-            <h3 className="font-semibold mb-4">Primary Logo</h3>
-            <Image
-              src={brandConfig.assets.logo}
-              alt="Wifey Logo"
-              width={180}
-              height={48}
-              className="dark:invert"
-            />
-          </div>
-          <div className="p-6 bg-white rounded-xl shadow-md">
-            <h3 className="font-semibold mb-4">App Icon</h3>
-            <Image
-              src={brandConfig.assets.appIcon}
-              alt="Wifey App Icon"
-              width={64}
-              height={64}
-            />
-          </div>
-          <div className="p-6 bg-white rounded-xl shadow-md">
-            <h3 className="font-semibold mb-4">Favicon</h3>
-            <Image
-              src={brandConfig.assets.favicon}
-              alt="Wifey Favicon"
-              width={32}
-              height={32}
-            />
-          </div>
-        </div>
-      </section>
+    <div className="flex flex-col items-center">
+      <div
+        className="w-16 h-16 rounded-lg shadow-md"
+        style={{ backgroundColor: color }}
+      />
+      <span className="mt-1 text-sm text-gray-600">{shade}</span>
+    </div>
+  );
+}
 
-      {/* Color Palette */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold">Color Palette</h2>
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-4">Primary Colors</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {Object.entries(brandConfig.colors.primary).map(([shade, color]) => (
-                <div key={shade} className="space-y-2">
-                  <div
-                    className="w-full h-20 rounded-lg"
-                    style={{ backgroundColor: color }}
-                  />
-                  <p className="text-sm font-mono">{color}</p>
-                  <p className="text-sm text-gray-600">{shade}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">Secondary Colors</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {Object.entries(brandConfig.colors.secondary).map(([shade, color]) => (
-                <div key={shade} className="space-y-2">
-                  <div
-                    className="w-full h-20 rounded-lg"
-                    style={{ backgroundColor: color }}
-                  />
-                  <p className="text-sm font-mono">{color}</p>
-                  <p className="text-sm text-gray-600">{shade}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+function GradientSwatch({ name, gradient }: { name: string; gradient: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div
+        className="w-32 h-16 rounded-lg shadow-md"
+        style={{ background: gradient }}
+      />
+      <span className="mt-1 text-sm text-gray-600">{name}</span>
+    </div>
+  );
+}
 
-          <div>
-            <h3 className="font-semibold mb-4">Accent Colors</h3>
-            <div className="grid grid-cols-3 gap-4">
-              {['success', 'warning', 'error'].map((type) => (
-                <div key={type} className="space-y-2">
-                  <div
-                    className="w-full h-20 rounded-lg"
-                    style={{ backgroundColor: brandConfig.colors[type] }}
-                  />
-                  <p className="text-sm font-mono">{brandConfig.colors[type]}</p>
-                  <p className="text-sm text-gray-600">{type}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+export function BrandShowcase() {
+  return (
+    <div className="max-w-7xl mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-8">Brand Guidelines</h1>
 
-      {/* Typography */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold">Typography</h2>
+      {/* Colors */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Colors</h2>
+        
         <div className="space-y-8">
-          <div>
-            <h3 className="font-semibold mb-4">Font Families</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <p className="font-semibold">Sans Serif</p>
-                <p style={{ fontFamily: brandConfig.typography.fontFamily.sans.join(', ') }}>
-                  The quick brown fox jumps over the lazy dog
-                </p>
+          {Object.entries(brandConfig.colors).map(([name, shades]) => (
+            <div key={name}>
+              <h3 className="text-xl font-medium mb-4 capitalize">{name}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-4">
+                {Object.entries(shades).map(([shade, color]) => (
+                  <ColorSwatch
+                    key={shade}
+                    color={color}
+                    shade={Number(shade)}
+                  />
+                ))}
               </div>
-              <div className="space-y-4">
-                <p className="font-semibold">Monospace</p>
-                <p style={{ fontFamily: brandConfig.typography.fontFamily.mono.join(', ') }}>
-                  The quick brown fox jumps over the lazy dog
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4">Font Sizes</h3>
-            <div className="space-y-4">
-              {Object.entries(brandConfig.typography.fontSize).map(([name, size]) => (
-                <div key={name} className="flex items-center space-x-4">
-                  <p className="w-20 text-sm text-gray-600">{name}</p>
-                  <p style={{ fontSize: size }}>
-                    The quick brown fox jumps over the lazy dog
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Spacing */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold">Spacing</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {Object.entries(brandConfig.spacing).map(([name, space]) => (
-            <div key={name} className="space-y-2">
-              <div className="bg-blue-100 rounded" style={{ width: space, height: space }} />
-              <p className="text-sm font-mono">{space}</p>
-              <p className="text-sm text-gray-600">{name}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Gradients */}
-      <section className="space-y-6">
-        <h2 className="text-2xl font-bold">Gradients</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Gradients</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {Object.entries(brandConfig.gradients).map(([name, gradient]) => (
-            <div key={name} className="space-y-2">
+            <GradientSwatch key={name} name={name} gradient={gradient} />
+          ))}
+        </div>
+      </section>
+
+      {/* Typography */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Typography</h2>
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-medium mb-2">Heading Font</h3>
+            <p style={{ fontFamily: brandConfig.fonts.heading }}>
+              The quick brown fox jumps over the lazy dog
+            </p>
+          </div>
+          <div>
+            <h3 className="text-xl font-medium mb-2">Body Font</h3>
+            <p style={{ fontFamily: brandConfig.fonts.body }}>
+              The quick brown fox jumps over the lazy dog
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Spacing */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Container Widths</h2>
+        <div className="space-y-4">
+          {Object.entries(brandConfig.spacing.container).map(([size, width]) => (
+            <div key={size} className="flex items-center space-x-4">
+              <span className="w-20 text-sm text-gray-600 capitalize">{size}:</span>
               <div
-                className="w-full h-32 rounded-lg"
-                style={{ background: gradient }}
+                className="h-8 bg-blue-100 rounded"
+                style={{ width: width }}
               />
-              <p className="text-sm font-mono">{gradient}</p>
-              <p className="text-sm text-gray-600">{name}</p>
+              <span className="text-sm text-gray-600">{width}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Border Radius */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-4">Border Radius</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+          {Object.entries(brandConfig.borderRadius).map(([size, radius]) => (
+            <div key={size} className="flex flex-col items-center">
+              <div
+                className="w-16 h-16 bg-blue-500"
+                style={{ borderRadius: radius }}
+              />
+              <span className="mt-2 text-sm text-gray-600 capitalize">{size}</span>
+              <span className="text-xs text-gray-500">{radius}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Shadows */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Shadows</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {Object.entries(brandConfig.shadows).map(([size, shadow]) => (
+            <div key={size} className="flex flex-col items-center">
+              <div
+                className="w-24 h-24 bg-white rounded-lg"
+                style={{ boxShadow: shadow }}
+              />
+              <span className="mt-2 text-sm text-gray-600 capitalize">{size}</span>
             </div>
           ))}
         </div>
       </section>
     </div>
   );
-};
+}

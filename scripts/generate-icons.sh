@@ -1,28 +1,54 @@
 #!/bin/bash
 
-# Required sizes for various platforms
-SIZES=(16 32 48 72 96 128 144 152 192 384 512)
+# Ensure the public directory exists
+mkdir -p public/icons
 
 # Source SVG file
-SOURCE="public/branding/app-icon.svg"
+SOURCE_SVG="public/branding/logo.svg"
 
-# Create necessary directories
-mkdir -p public/branding/icons
-
-# Generate PNG files for each size
-for size in "${SIZES[@]}"; do
-  # Using ImageMagick to convert SVG to PNG
-  convert -background none -size ${size}x${size} "$SOURCE" "public/branding/app-icon-${size}.png"
+# Generate various sizes of PNG icons
+for size in 16 32 48 64 96 128 192 256 384 512; do
+  convert "$SOURCE_SVG" -resize ${size}x${size} "public/icons/icon-${size}x${size}.png"
 done
 
 # Generate favicon.ico (multi-size)
-convert "public/branding/app-icon-16.png" "public/branding/app-icon-32.png" "public/branding/app-icon-48.png" "public/favicon.ico"
+convert "$SOURCE_SVG" -resize 16x16 "$SOURCE_SVG" -resize 32x32 "$SOURCE_SVG" -resize 48x48 public/favicon.ico
 
-# Generate Apple Touch Icons
-convert -background none -size 180x180 "$SOURCE" "public/apple-touch-icon.png"
+# Generate Apple Touch Icon
+convert "$SOURCE_SVG" -resize 180x180 public/apple-touch-icon.png
 
-# Generate shortcut icons
-convert -background none -size 192x192 "public/branding/icons/wifi.svg" "public/branding/wifi-shortcut.png"
-convert -background none -size 192x192 "public/branding/icons/coverage.svg" "public/branding/coverage-shortcut.png"
+# Generate Android maskable icon
+convert "$SOURCE_SVG" -resize 512x512 -gravity center -extent 512x512 public/maskable-icon.png
+
+# Generate manifest.json
+cat > public/manifest.json << EOL
+{
+  "name": "Wifey",
+  "short_name": "Wifey",
+  "description": "Find WiFi and cellular coverage anywhere",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
+EOL
 
 echo "Icon generation complete!"
