@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Wifi, Signal, MapPin, Menu, Home } from 'lucide-react';
+import { Wifi, Signal, MapPin, Menu, Home, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
@@ -39,6 +39,7 @@ export default function Navbar() {
     { href: `/${locale}/coverage`, label: t('navigation.coverage'), icon: Signal },
     { href: `/${locale}/wifi`, label: t('navigation.wifi'), icon: Wifi },
     { href: `/${locale}/explore`, label: t('navigation.explore'), icon: MapPin },
+    { href: `/${locale}/community`, label: t('navigation.community'), icon: Users },
   ];
 
   return (
