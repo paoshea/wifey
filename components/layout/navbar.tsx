@@ -28,7 +28,7 @@ export default function Navbar() {
                 className="relative mr-2"
               >
                 <Image
-                  src="/branding/logo.svg"
+                  src="/logo.svg"
                   alt="Wifey Logo"
                   width={32}
                   height={32}
