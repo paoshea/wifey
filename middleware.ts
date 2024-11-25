@@ -11,6 +11,7 @@ const publicPaths = [
   '/api/auth/signin',
   '/api/auth/signup',
   '/onboarding',
+  '/api/onboarding',
 ];
 
 // Paths that require specific roles
