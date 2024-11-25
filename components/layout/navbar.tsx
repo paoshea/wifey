@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Signal, Home } from 'lucide-react';
@@ -22,14 +21,20 @@ export default function Navbar() {
               href="/"
               className="flex items-center gap-2"
             >
-              <div className="relative w-8 h-8">
-                <Image
-                  alt="Wifey"
-                  fill
-                  src="/branding/logo.svg"
-                  className="object-contain"
-                  priority
-                />
+              <div className="w-8 h-8 relative flex items-center justify-center">
+                <svg 
+                  width="32" 
+                  height="32" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-blue-500 dark:text-white"
+                >
+                  <circle cx="12" cy="12" r="11" className="fill-current" />
+                  <path d="M6 15L12 9L18 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6 19L12 13L18 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+                  <path d="M6 11L12 5L18 11" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.25"/>
+                </svg>
               </div>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 font-semibold">
                 Wifey

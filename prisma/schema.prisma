@@ -8,18 +8,21 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
-  email         String         @unique
-  name          String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  contributions CoveragePoint[]
-  measurements  Measurement[]
-  progress      UserProgress?
-  leaderboard   LeaderboardEntry[]
-  rankHistory   RankHistory[]
-  errorLogs     ErrorLog[]
-  performanceLogs PerformanceLog[]
+  id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  email             String         @unique
+  name              String?
+  password          String
+  role              String         @default("user")
+  preferredLanguage String         @default("en")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  contributions     CoveragePoint[]
+  measurements      Measurement[]
+  progress          UserProgress?
+  leaderboard       LeaderboardEntry[]
+  rankHistory       RankHistory[]
+  errorLogs         ErrorLog[]
+  performanceLogs   PerformanceLog[]
 }
 
 model CoveragePoint {

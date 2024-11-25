@@ -255,14 +255,18 @@ async function sendToAnalyticsServer(events: any) {
         return;
     }
 
-    // TODO: Implement actual analytics server endpoint
-    // const response = await fetch('/api/analytics', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(events),
-    // });
-    
-    // if (!response.ok) {
-    //     throw new Error('Failed to send analytics');
-    // }
+    try {
+        const response = await fetch('/api/monitoring', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(events),
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to send analytics:', await response.text());
+            return;
+        }
+    } catch (error) {
+        console.error('Error sending analytics:', error);
+    }
 }

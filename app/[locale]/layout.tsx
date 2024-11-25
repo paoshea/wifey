@@ -1,4 +1,5 @@
 import { Inter } from 'next/font/google';
+import { GeistSans, GeistMono } from 'geist/font';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -48,7 +49,11 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} className="light" suppressHydrationWarning>
+    <html 
+      lang={locale} 
+      className={`light ${GeistSans.variable} ${GeistMono.variable}`} 
+      suppressHydrationWarning
+    >
       <head>
         <link rel="icon" type="image/svg+xml" href="/branding/logo.svg" />
         <link rel="apple-touch-icon" href="/branding/logo.svg" />

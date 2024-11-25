@@ -5,24 +5,30 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://94ff05d5c116e915c0bb0a20245d754e@o4508351685328896.ingest.us.sentry.io/4508351720652801",
-
-  // Add optional integrations for additional features
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  enabled: process.env.NODE_ENV === 'production',
+  tracesSampleRate: 1.0,
+  
+  // Configure tunneling
+  tunnel: '/_sentry',
+  
+  // Configure integrations
   integrations: [
-    Sentry.replayIntegration(),
+    Sentry.replayIntegration({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
   ],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
+  // Configure sampling rates
+  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   replaysOnErrorSampleRate: 1.0,
 
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+  // Ignore specific errors
+  ignoreErrors: [
+    'ResizeObserver loop limit exceeded',
+    'Network request failed',
+    'Failed to fetch',
+    'Load failed',
+  ],
 });

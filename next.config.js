@@ -13,10 +13,26 @@ const nextConfig = {
   trailingSlash: true,
   // Configure image optimization
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
     dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     domains: ['localhost'],
-    unoptimized: true
+    unoptimized: true,
+    disableStaticImages: false // Add this to ensure static images work
+  },
+  // Add static file serving configuration
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack']
+    });
+    return config;
   }
 };
 
@@ -34,7 +50,7 @@ config = withSentryConfig(
     reactComponentAnnotation: {
       enabled: true,
     },
-    tunnelRoute: "/monitoring",
+    tunnelRoute: "/_sentry",
     hideSourceMaps: true,
     disableLogger: true,
     automaticVercelMonitors: true,

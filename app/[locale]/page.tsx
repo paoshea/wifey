@@ -43,7 +43,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
             <Button asChild size="lg" className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600">
-              <Link href="/onboarding">{t('home.getStarted')}</Link>
+              <Link href="/register">{t('home.getStarted')}</Link>
             </Button>
             <Button 
               variant="outline" 

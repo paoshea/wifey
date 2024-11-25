@@ -101,69 +101,101 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Find the Best WiFi & Coverage",
-      "description": "Never worry about connectivity again. Get real-time coverage maps, WiFi hotspots, and navigation all in one place.",
-      "explore": "Explore Map",
+      "title": "Welcome to Wifey",
+      "description": "Help others stay connected by sharing coverage spots and finding reliable connections anywhere.",
       "getStarted": "Get Started"
+    },
+    "coverage": {
+      "intro": {
+        "title": "Mark Coverage Spots",
+        "description": "Help build a better coverage map by marking spots with good signal strength.",
+        "step1": {
+          "title": "Drop a Pin",
+          "description": "Tap the map to mark a spot where you have good coverage"
+        },
+        "step2": {
+          "title": "Add Signal Details",
+          "description": "Rate the signal strength and add your carrier information"
+        },
+        "step3": {
+          "title": "Share with Others",
+          "description": "Your contribution helps others find reliable connections"
+        },
+        "tryItOut": "Try It Out"
+      },
+      "demo": {
+        "title": "Add Your First Coverage Spot",
+        "description": "Let's practice adding a coverage spot to the map",
+        "tapToMark": "Tap anywhere to mark a spot",
+        "signalStrength": "How's the signal here?",
+        "carrier": "Select your carrier",
+        "selectCarrier": "Choose your carrier",
+        "continue": "Continue"
+      }
     },
     "features": {
       "title": "Powerful Features",
-      "subtitle": "Everything you need to stay connected",
+      "subtitle": "Discover what Wifey can do for you",
       "wifi": {
         "title": "WiFi Finder",
-        "description": "Locate free WiFi hotspots near you",
+        "description": "Locate free and secure WiFi hotspots anywhere",
         "benefits": {
           "security": "Verified secure networks",
-          "reliability": "Consistent and stable connections",
+          "reliability": "Connection quality ratings",
           "updates": "Real-time availability updates",
-          "speed": "Network speed information"
+          "speed": "Check connection speeds"
         }
       },
       "coverage": {
         "title": "Coverage Map",
-        "description": "Find cellular coverage in your area",
+        "description": "Track and monitor cellular signal strength",
         "benefits": {
-          "realtime": "Real-time coverage data",
-          "accuracy": "Precise signal strength mapping",
-          "predictions": "Coverage predictions",
-          "alerts": "Dead zone notifications"
+          "realtime": "Real-time signal monitoring",
+          "accuracy": "Precise coverage mapping",
+          "alerts": "Low signal alerts",
+          "predictions": "Coverage predictions"
         }
       },
       "navigation": {
         "title": "Smart Navigation",
-        "description": "Get to connectivity quickly",
+        "description": "Get guided to the best connection spots",
         "benefits": {
           "routing": "Optimal route planning",
           "offline": "Offline map support",
-          "alternatives": "Alternative route suggestions",
-          "eta": "Accurate arrival estimates"
+          "alternatives": "Multiple route options",
+          "eta": "Accurate arrival times"
         }
       }
     },
-    "location": {
-      "title": "Enable Location",
-      "description": "Allow location access to find the best coverage near you",
-      "button": "Enable Location"
-    },
-    "language": {
-      "title": "Choose Language",
-      "description": "Select your preferred language"
-    },
     "testimonials": {
-      "title": "What Users Say",
-      "description": "Join thousands of satisfied users worldwide"
+      "title": "What Our Users Say",
+      "subtitle": "Join thousands of satisfied users who stay connected"
     },
     "contact": {
       "title": "Get in Touch",
-      "description": "Have questions? We're here to help",
+      "description": "Have questions? We're here to help!",
+      "email": "Email Us",
+      "phone": "Call Support",
       "form": {
         "name": "Your Name",
         "email": "Email Address",
-        "message": "Message",
+        "message": "Your Message",
         "submit": "Send Message"
+      }
+    },
+    "registration": {
+      "title": "Tell Us About Yourself",
+      "description": "Help us personalize your experience",
+      "nameLabel": "Your Name",
+      "emailLabel": "Email Address",
+      "interests": "What interests you most?",
+      "interestOptions": {
+        "wifi": "Finding WiFi Spots",
+        "coverage": "Coverage Mapping",
+        "navigation": "Navigation Features"
       },
-      "email": "support@wifey.app",
-      "phone": "+1 (555) 123-4567"
+      "submit": "Complete Setup",
+      "skip": "Skip for now"
     }
   },
   "testimonials": {
@@ -187,24 +219,22 @@
       "nameLabel": "Full Name",
       "emailLabel": "Email",
       "passwordLabel": "Password",
-      "confirmPasswordLabel": "Confirm Password",
       "languageLabel": "Preferred Language",
-      "languages": {
-        "en": "English",
-        "es": "Español"
-      },
       "submit": "Create Account",
       "alreadyHaveAccount": "Already have an account?",
       "loginLink": "Sign in",
       "success": "Account created successfully!",
       "error": "Error creating account",
+      "languages": {
+        "en": "English",
+        "es": "Español"
+      },
       "validation": {
         "nameRequired": "Name is required",
         "emailRequired": "Email is required",
         "emailInvalid": "Please enter a valid email",
         "passwordRequired": "Password is required",
         "passwordMinLength": "Password must be at least 8 characters",
-        "passwordMismatch": "Passwords do not match",
         "languageRequired": "Please select a language"
       }
     },
@@ -264,5 +294,15 @@
     "restricted": "Restricted",
     "getDirections": "Get Directions",
     "mapComingSoon": "Map view coming soon..."
+  },
+  "Welcome": {
+    "title": "Welcome to Wifey! 👋",
+    "description": "Thank you for joining our community. Let's get you started on your journey to better connectivity.",
+    "nextSteps": "Here's what you can do next:",
+    "step1": "Complete your profile to personalize your experience",
+    "step2": "Start exploring WiFi and cellular coverage points in your area",
+    "step3": "Contribute by adding new coverage points and helping others",
+    "startExploring": "Start Exploring",
+    "setupProfile": "Setup Profile"
   }
 }

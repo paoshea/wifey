@@ -1,18 +1,48 @@
 import { NextResponse } from 'next/server';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
-    const measurement: SignalMeasurement = await request.json();
+    const data = await request.json();
     
-    // TODO: Store measurement in database
-    // For now, we'll just return the measurement
+    if ('type' in data && data.type === 'analytics') {
+      // Handle analytics events
+      console.log('Analytics event:', data);
+      return NextResponse.json(
+        { success: true, type: 'analytics' },
+        { headers: corsHeaders }
+      );
+    } else if ('timestamp' in data) {
+      // Handle signal measurements
+      const measurement = data as SignalMeasurement;
+      console.log('Signal measurement:', measurement);
+      return NextResponse.json(
+        { success: true, type: 'measurement', measurement },
+        { headers: corsHeaders }
+      );
+    }
     
-    return NextResponse.json({ success: true, measurement });
-  } catch (error) {
     return NextResponse.json(
-      { success: false, error: 'Invalid measurement data' },
-      { status: 400 }
+      { success: false, error: 'Invalid data format' },
+      { status: 400, headers: corsHeaders }
+    );
+  } catch (error) {
+    console.error('Monitoring API error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Invalid request data' },
+      { status: 400, headers: corsHeaders }
     );
   }
 }
@@ -37,5 +67,8 @@ export async function GET() {
     }
   ];
   
-  return NextResponse.json({ success: true, measurements: mockMeasurements });
+  return NextResponse.json(
+    { success: true, measurements: mockMeasurements },
+    { headers: corsHeaders }
+  );
 }

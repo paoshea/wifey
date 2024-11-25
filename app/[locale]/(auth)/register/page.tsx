@@ -28,24 +28,24 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: t('validation.nameRequired'),
-  }),
-  email: z.string().email({
-    message: t('validation.emailInvalid'),
-  }),
-  password: z.string().min(8, {
-    message: t('validation.passwordMinLength'),
-  }),
-  language: z.string(),
-});
-
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations('auth.register');
+
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: t('validation.nameRequired'),
+    }),
+    email: z.string().email({
+      message: t('validation.emailInvalid'),
+    }),
+    password: z.string().min(8, {
+      message: t('validation.passwordMinLength'),
+    }),
+    language: z.string(),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,17 +72,29 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle validation errors
+        if (response.status === 400 && data.details) {
+          const errorMessage = data.details
+            .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+            .join(', ');
+          throw new Error(errorMessage);
+        }
+        
+        // Handle other errors
         throw new Error(data.error || t('error'));
       }
 
+      // Show success message
       toast({
         title: t('success'),
         description: t('successMessage'),
       });
 
-      // Redirect to sign in page with success message
-      router.push(`/${values.language}/signin?registered=true`);
+      // Redirect to welcome page
+      router.push(`/${values.language}/welcome`);
     } catch (error) {
+      console.error('Registration error:', error);
+      
       toast({
         title: t('error'),
         description: error instanceof Error ? error.message : t('error'),

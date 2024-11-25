@@ -4,10 +4,10 @@ import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X } from 'lucide-react';
+import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X, Signal, Share, Check } from 'lucide-react';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
 
-const steps = ['welcome', 'features', 'location', 'language'] as const;
+const steps = ['welcome', 'coverage-intro', 'coverage-demo', 'features', 'registration'] as const;
 type Step = typeof steps[number];
 
 type FeatureDetails = {
@@ -48,11 +48,11 @@ export default function OnboardingPage({
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
-  const [contactForm, setContactForm] = useState({
+  const [userDetails, setUserDetails] = useState({
     name: '',
     email: '',
-    message: ''
+    preferredLanguage: locale,
+    interests: [] as string[]
   });
 
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -151,12 +151,12 @@ export default function OnboardingPage({
     }
   };
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
+  const handleRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle contact form submission
-    console.log('Contact form submitted:', contactForm);
+    // Handle registration form submission
+    console.log('Registration form submitted:', userDetails);
     // Reset form
-    setContactForm({ name: '', email: '', message: '' });
+    setUserDetails({ name: '', email: '', preferredLanguage: locale, interests: [] });
   };
 
   const renderStep = () => {
@@ -174,14 +174,8 @@ export default function OnboardingPage({
                 <p className="text-xl text-gray-600">{t('welcome.description')}</p>
                 <div className="flex justify-center space-x-4">
                   <button
-                    onClick={() => router.push('/map')}
+                    onClick={handleNext}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    {t('welcome.explore')}
-                  </button>
-                  <button
-                    onClick={() => requestLocationPermission()}
-                    className="bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors"
                   >
                     {t('welcome.getStarted')}
                   </button>
@@ -190,62 +184,267 @@ export default function OnboardingPage({
             </div>
           </div>
         );
-      case 'features':
-        return <FeatureShowcase />;
-      case 'location':
+
+      case 'coverage-intro':
         return (
-          <div className="min-h-screen bg-white py-20">
-            <div className="max-w-4xl mx-auto px-4">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="max-w-4xl w-full">
               <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="space-y-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
               >
-                <h2 className="text-4xl font-bold text-center text-gray-900">{t('location.title')}</h2>
-                <p className="text-gray-600">{t('location.description')}</p>
-                <div className="flex justify-center">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('coverage.intro.title')}</h2>
+                  <p className="text-xl text-gray-600">{t('coverage.intro.description')}</p>
+                </div>
+                
+                <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      <MapPin className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{t('coverage.intro.step1.title')}</h3>
+                      <p className="text-gray-600">{t('coverage.intro.step1.description')}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      <Signal className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{t('coverage.intro.step2.title')}</h3>
+                      <p className="text-gray-600">{t('coverage.intro.step2.description')}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      <Share className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{t('coverage.intro.step3.title')}</h3>
+                      <p className="text-gray-600">{t('coverage.intro.step3.description')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-4">
                   <button
                     onClick={handleNext}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {t('location.next')}
+                    {t('coverage.intro.tryItOut')}
                   </button>
                 </div>
               </motion.div>
             </div>
           </div>
         );
-      case 'language':
+
+      case 'coverage-demo':
         return (
-          <div className="min-h-screen bg-white py-20">
-            <div className="max-w-4xl mx-auto px-4">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="max-w-4xl w-full">
               <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="space-y-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
               >
-                <h2 className="text-4xl font-bold text-center text-gray-900">{t('language.title')}</h2>
-                <p className="text-gray-600">{t('language.description')}</p>
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('coverage.demo.title')}</h2>
+                  <p className="text-xl text-gray-600">{t('coverage.demo.description')}</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
+                    {/* Interactive demo map here */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center space-y-4">
+                        <X className="w-12 h-12 text-blue-600 mx-auto animate-pulse" />
+                        <p className="text-lg font-medium">{t('coverage.demo.tapToMark')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t('coverage.demo.signalStrength')}
+                      </label>
+                      <div className="flex space-x-2">
+                        {[1, 2, 3, 4, 5].map((strength) => (
+                          <button
+                            key={strength}
+                            className="p-2 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+                          >
+                            <Signal className={`w-5 h-5 ${strength <= 3 ? 'text-gray-400' : 'text-blue-600'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {t('coverage.demo.carrier')}
+                      </label>
+                      <select className="w-full rounded-lg border border-gray-200 p-2">
+                        <option value="">{t('coverage.demo.selectCarrier')}</option>
+                        <option value="verizon">Verizon</option>
+                        <option value="att">AT&T</option>
+                        <option value="tmobile">T-Mobile</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-center space-x-4">
                   <button
-                    onClick={() => router.push('/en/map')}
+                    onClick={handleNext}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    English
-                  </button>
-                  <button
-                    onClick={() => router.push('/es/map')}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Español
+                    {t('coverage.demo.continue')}
                   </button>
                 </div>
               </motion.div>
             </div>
           </div>
         );
+
+      case 'features':
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="max-w-4xl w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('features.title')}</h2>
+                  <p className="text-xl text-gray-600">{t('features.description')}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(featureDetails).map(([key, feature]) => (
+                    <motion.div
+                      key={key}
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-white rounded-xl shadow-lg p-6"
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-r ${feature.color} mb-4`}>
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                      <p className="text-gray-600 mb-4">{feature.description}</p>
+                      <ul className="space-y-2">
+                        {feature.benefits.map((benefit, index) => (
+                          <li key={index} className="flex items-center text-sm text-gray-600">
+                            <Check className="w-4 h-4 text-green-500 mr-2" />
+                            {benefit}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={handleNext}
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {t('features.continue')}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        );
+
+      case 'registration':
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="max-w-4xl w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('registration.title')}</h2>
+                  <p className="text-xl text-gray-600">{t('registration.description')}</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <form className="space-y-6" onSubmit={handleRegistration}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('registration.nameLabel')}
+                        </label>
+                        <input
+                          type="text"
+                          value={userDetails.name}
+                          onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+                          className="w-full rounded-lg border border-gray-200 p-2"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('registration.emailLabel')}
+                        </label>
+                        <input
+                          type="email"
+                          value={userDetails.email}
+                          onChange={(e) => setUserDetails({ ...userDetails, email: e.target.value })}
+                          className="w-full rounded-lg border border-gray-200 p-2"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('registration.interests')}
+                        </label>
+                        <div className="space-y-2">
+                          {['wifi', 'coverage', 'navigation'].map((interest) => (
+                            <label key={interest} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={userDetails.interests.includes(interest)}
+                                onChange={(e) => {
+                                  const newInterests = e.target.checked
+                                    ? [...userDetails.interests, interest]
+                                    : userDetails.interests.filter(i => i !== interest);
+                                  setUserDetails({ ...userDetails, interests: newInterests });
+                                }}
+                                className="rounded border-gray-300 text-blue-600 mr-2"
+                              />
+                              {t(`registration.interestOptions.${interest}`)}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center space-x-4">
+                      <button
+                        type="submit"
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        {t('registration.submit')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -253,76 +452,6 @@ export default function OnboardingPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Feature Modal */}
-      <AnimatePresence>
-        {selectedFeature && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedFeature(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-6 max-w-lg w-full space-y-4"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg bg-gradient-to-r ${featureDetails[selectedFeature].color}`}>
-                    {featureDetails[selectedFeature].icon}
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {featureDetails[selectedFeature].title}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setSelectedFeature(null)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              <p className="text-gray-600">
-                {featureDetails[selectedFeature].description}
-              </p>
-
-              <div className="space-y-2">
-                <h4 className="font-semibold text-gray-900">{t('features.keyBenefits')}</h4>
-                <ul className="space-y-2">
-                  {featureDetails[selectedFeature].benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 mt-1">
-                        <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-gray-600">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pt-4">
-                <button
-                  onClick={() => {
-                    setSelectedFeature(null);
-                    router.push('/map');
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg px-4 py-2 hover:from-blue-600 hover:to-blue-700 transition-all"
-                >
-                  {t('features.tryNow')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Hero Section */}
       {renderStep()}
 
@@ -392,13 +521,11 @@ export default function OnboardingPage({
                   </div>
                 </div>
               </div>
-              <form onSubmit={handleContactSubmit} className="space-y-6">
+              <form className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('contact.form.name')}</label>
                   <input
                     type="text"
-                    value={contactForm.name}
-                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
@@ -407,8 +534,6 @@ export default function OnboardingPage({
                   <label className="block text-sm font-medium text-gray-700">{t('contact.form.email')}</label>
                   <input
                     type="email"
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
@@ -416,8 +541,6 @@ export default function OnboardingPage({
                 <div>
                   <label className="block text-sm font-medium text-gray-700">{t('contact.form.message')}</label>
                   <textarea
-                    value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                     rows={4}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
