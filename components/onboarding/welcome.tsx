@@ -17,7 +17,7 @@ export function Welcome({ onNext }: WelcomeProps) {
     >
       <div className="mb-8">
         <Image
-          src="/branding/logo.svg"
+          src="/logo.svg"
           alt="Wifey Logo"
           width={120}
           height={120}

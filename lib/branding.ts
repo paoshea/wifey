@@ -111,7 +111,7 @@ export const brandConfig = {
   
   // Asset paths
   assets: {
-    logo: '/branding/logo.svg',
+    logo: '/logo.svg',
     favicon: '/favicon.svg',
     appIcon: '/app-icon.svg',
     icons: {
