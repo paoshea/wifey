@@ -25,6 +25,20 @@
         "title": "Navegación",
         "description": "Obtén indicaciones paso a paso al punto de conexión más cercano"
       }
+    },
+    "testimonials": {
+      "title": "Lo Que Dicen Nuestros Usuarios",
+      "subtitle": "Únete a miles de usuarios satisfechos que se mantienen conectados con Wifey",
+      "quotes": {
+        "1": "Wifey ha cambiado mi forma de trabajar remotamente. ¡Ya no me preocupo por encontrar conexiones confiables!",
+        "2": "La función del mapa de cobertura me ha salvado innumerables veces durante llamadas importantes de negocios.",
+        "3": "¡App perfecta para nómadas digitales! Siempre me ayuda a encontrar los mejores puntos de WiFi."
+      },
+      "authors": {
+        "1": "Sarah J., Nómada Digital",
+        "2": "David C., Viajero de Negocios",
+        "3": "Miguel R., Blogger de Viajes"
+      }
     }
   },
   "coverage": {
@@ -136,20 +150,18 @@
     }
   },
   "testimonials": {
-    "title": "Lo que Dicen Nuestros Usuarios",
+    "title": "Lo Que Dicen Nuestros Usuarios",
     "subtitle": "Historias reales de usuarios reales"
   },
   "contact": {
     "title": "Contáctanos",
     "description": "¿Tienes preguntas? ¡Estamos aquí para ayudarte!",
     "email": "Envíanos un Email",
-    "phone": "Llámanos",
-    "form": {
-      "name": "Tu Nombre",
-      "email": "Tu Email",
-      "message": "Tu Mensaje",
-      "submit": "Enviar Mensaje"
-    }
+    "phone": "Llama al Soporte",
+    "emailAddress": "soporte@wifey.app",
+    "phoneNumber": "+1 (555) 123-4567",
+    "hours": "Disponible 24/7",
+    "response": "Típicamente respondemos en 1 hora"
   },
   "auth": {
     "register": {
