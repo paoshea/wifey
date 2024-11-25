@@ -55,7 +55,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className="light" suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/svg+xml" href="/branding/favicon.svg" />
         <link rel="apple-touch-icon" href="/branding/logo.svg" />
@@ -63,7 +63,7 @@ export default async function LocaleLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={`${inter.className} antialiased`} suppressHydrationWarning>
+      <body className={`${inter.className} antialiased bg-background`} suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages} suppressHydrationWarning>
           <ThemeProvider>
             <div className="relative min-h-screen flex flex-col">
