@@ -48,6 +48,14 @@
     "startMonitoring": "Iniciar Monitoreo",
     "stopMonitoring": "Detener Monitoreo",
     "latestMeasurements": "Últimas Mediciones",
+    "errors": {
+      "unsupportedBrowser": "Tu navegador no es compatible con el monitoreo de señal",
+      "locationDenied": "Se requiere acceso a la ubicación para el monitoreo de señal. Por favor, habilita el acceso a la ubicación en la configuración de tu navegador.",
+      "locationUnavailable": "No se puede determinar tu ubicación",
+      "locationTimeout": "La solicitud de ubicación expiró",
+      "locationError": "Error al obtener la ubicación",
+      "permissionError": "No se pueden solicitar permisos de ubicación"
+    },
     "tabs": {
       "coverageRoute": "Encontrar Ruta de Cobertura",
       "freeWifi": "Puntos de WiFi Gratuitos"

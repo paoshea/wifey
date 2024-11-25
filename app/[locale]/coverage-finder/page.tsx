@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Signal } from 'lucide-react';
+import { Signal, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSignalMonitor } from '@/hooks/useSignalMonitor';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CoverageFinder() {
   const t = useTranslations('coverage');
@@ -31,6 +32,22 @@ export default function CoverageFinder() {
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">{t('description')}</p>
       </motion.div>
 
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6"
+          >
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="p-6">
           <div className="flex items-center mb-4">
@@ -45,29 +62,40 @@ export default function CoverageFinder() {
             >
               {isMonitoring ? t('stopMonitoring') : t('startMonitoring')}
             </Button>
-            {error && (
-              <p className="text-red-500 text-sm">{error.message}</p>
-            )}
           </div>
         </Card>
 
-        {measurements.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">{t('latestMeasurements')}</h2>
-            <div className="space-y-2">
-              {measurements.slice(-5).map((measurement, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-gray-600">
-                    {new Date(measurement.timestamp).toLocaleTimeString()}
-                  </span>
-                  <span className="font-medium">
-                    {measurement.signalStrength}dBm
-                  </span>
+        <AnimatePresence>
+          {measurements.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <Card className="p-6 h-full">
+                <h2 className="text-xl font-semibold mb-4">{t('latestMeasurements')}</h2>
+                <div className="space-y-2">
+                  {measurements.slice(-5).map((measurement, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50"
+                    >
+                      <span className="text-gray-600">
+                        {new Date(measurement.timestamp).toLocaleTimeString()}
+                      </span>
+                      <span className="font-medium">
+                        {measurement.signalStrength}dBm
+                      </span>
+                    </motion.div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Card>
-        )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
