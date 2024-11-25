@@ -20,6 +20,11 @@ export default function CoverageFinder() {
     interval: 2000, // Update every 2 seconds
   });
 
+  const getErrorMessage = (error: Error) => {
+    const errorCode = error.message as keyof typeof SignalMonitorError;
+    return t(`errors.${errorCode.toLowerCase()}`);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -42,7 +47,7 @@ export default function CoverageFinder() {
           >
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error.message}</AlertDescription>
+              <AlertDescription>{getErrorMessage(error)}</AlertDescription>
             </Alert>
           </motion.div>
         )}

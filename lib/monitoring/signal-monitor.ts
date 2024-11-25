@@ -1,18 +1,25 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { SignalMeasurement } from '../types/monitoring';
+
+export enum SignalMonitorError {
+  UNSUPPORTED_BROWSER = 'UNSUPPORTED_BROWSER',
+  LOCATION_DENIED = 'LOCATION_DENIED',
+  PERMISSION_ERROR = 'PERMISSION_ERROR',
+  LOCATION_UNAVAILABLE = 'LOCATION_UNAVAILABLE',
+  LOCATION_TIMEOUT = 'LOCATION_TIMEOUT',
+  LOCATION_ERROR = 'LOCATION_ERROR'
+}
 
 export class SignalMonitor {
   private isMonitoring: boolean = false;
   private monitoringInterval: number | null = null;
   private callback: ((measurement: SignalMeasurement) => void) | null = null;
-  private t = useTranslations('coverage.errors');
 
   constructor() {
     if (!this.checkBrowserSupport()) {
-      console.warn(this.t('unsupportedBrowser'));
-      throw new Error(this.t('unsupportedBrowser'));
+      console.warn('Browser does not support required features');
+      throw new Error(SignalMonitorError.UNSUPPORTED_BROWSER);
     }
   }
 
@@ -29,7 +36,7 @@ export class SignalMonitor {
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
       
       if (permissionStatus.state === 'denied') {
-        throw new Error(this.t('locationDenied'));
+        throw new Error(SignalMonitorError.LOCATION_DENIED);
       }
       
       return true;
@@ -37,14 +44,14 @@ export class SignalMonitor {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error(this.t('permissionError'));
+      throw new Error(SignalMonitorError.PERMISSION_ERROR);
     }
   }
 
   private async getCurrentPosition(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error(this.t('unsupportedBrowser')));
+        reject(new Error(SignalMonitorError.UNSUPPORTED_BROWSER));
         return;
       }
 
@@ -53,16 +60,16 @@ export class SignalMonitor {
         (error) => {
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              reject(new Error(this.t('locationDenied')));
+              reject(new Error(SignalMonitorError.LOCATION_DENIED));
               break;
             case error.POSITION_UNAVAILABLE:
-              reject(new Error(this.t('locationUnavailable')));
+              reject(new Error(SignalMonitorError.LOCATION_UNAVAILABLE));
               break;
             case error.TIMEOUT:
-              reject(new Error(this.t('locationTimeout')));
+              reject(new Error(SignalMonitorError.LOCATION_TIMEOUT));
               break;
             default:
-              reject(new Error(this.t('locationError')));
+              reject(new Error(SignalMonitorError.LOCATION_ERROR));
           }
         },
         {
@@ -116,26 +123,34 @@ export class SignalMonitor {
       throw error;
     }
 
+    // Start interval
     this.monitoringInterval = window.setInterval(async () => {
-      if (this.isMonitoring && this.callback) {
-        try {
-          const measurement = await this.getMeasurement();
+      try {
+        const measurement = await this.getMeasurement();
+        if (this.callback) {
           this.callback(measurement);
-        } catch (error) {
-          this.stopMonitoring();
+        }
+      } catch (error) {
+        this.stopMonitoring();
+        if (error instanceof Error) {
           throw error;
         }
+        throw new Error(SignalMonitorError.LOCATION_ERROR);
       }
     }, interval);
   }
 
   public stopMonitoring(): void {
-    this.isMonitoring = false;
     if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
+      window.clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
     }
+    this.isMonitoring = false;
     this.callback = null;
+  }
+
+  public clearMeasurements(): void {
+    // No-op since we don't store measurements
   }
 }
 
