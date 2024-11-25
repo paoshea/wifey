@@ -111,13 +111,13 @@ export const brandConfig = {
   
   // Asset paths
   assets: {
-    logo: '/branding/logo.svg',
-    favicon: '/branding/favicon.svg',
-    appIcon: '/branding/app-icon.svg',
+    logo: '/logo.svg',
+    favicon: '/favicon.svg',
+    appIcon: '/app-icon.svg',
     icons: {
-      wifi: '/branding/icons/wifi.svg',
-      coverage: '/branding/icons/coverage.svg',
-      navigation: '/branding/icons/navigation.svg',
+      wifi: '/icons/wifi.svg',
+      coverage: '/icons/coverage.svg',
+      navigation: '/icons/navigation.svg',
     },
   },
 } as const;

@@ -57,8 +57,8 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className="light" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/branding/favicon.svg" />
-        <link rel="apple-touch-icon" href="/branding/logo.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/logo.svg" />
         <meta name="theme-color" content="#3B82F6" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
