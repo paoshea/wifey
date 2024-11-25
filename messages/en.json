@@ -6,14 +6,17 @@
     "login": "Login"
   },
   "home": {
-    "title": "Find Coverage",
-    "subtitle": "Anywhere",
+    "title": "Find the Best Connection Anywhere",
+    "subtitle": "Track WiFi and cellular coverage points to stay connected wherever you go",
     "description": "Locate cellular coverage points and free WiFi hotspots near you. Never be disconnected again.",
     "findCoverageButton": "Find Coverage Now",
     "getStarted": "Get Started",
-    "exploreMap": "Explore Map",
+    "tellUsAboutYourself": "Tell us about yourself",
+    "exploreMap": "Explore Coverage Map",
     "explore": "Explore Map",
     "features": {
+      "title": "Powerful Features",
+      "subtitle": "Everything you need to stay connected on the go",
       "cellular": {
         "title": "Cellular Coverage",
         "description": "Find the nearest coverage point when you're in a dead zone"
@@ -25,6 +28,22 @@
       "navigation": {
         "title": "Navigation",
         "description": "Get step-by-step directions to the nearest connection point"
+      }
+    },
+    "gamification": {
+      "title": "Level Up Your Experience",
+      "subtitle": "Join our community and earn rewards for helping others stay connected",
+      "points": {
+        "title": "Earn Points",
+        "description": "Get points for adding new coverage spots and verifying existing ones"
+      },
+      "badges": {
+        "title": "Unlock Badges",
+        "description": "Collect unique badges for your contributions and achievements"
+      },
+      "leaderboard": {
+        "title": "Top Contributors",
+        "description": "Compete with others and become a top contributor in your area"
       }
     },
     "testimonials": {
@@ -328,5 +347,63 @@
     "nearbyTitle": "Nearby Points",
     "nearbyDescription": "Discover connection points around you",
     "exploreNearby": "Explore Nearby"
+  },
+  "coverage": {
+    "title": "Cellular Coverage",
+    "subtitle": "Find and track cellular coverage points in your area",
+    "map": {
+      "title": "Coverage Map",
+      "loading": "Loading coverage map..."
+    },
+    "stats": {
+      "title": "Coverage Statistics",
+      "coverage": "Area Coverage",
+      "points": "Coverage Points",
+      "contributors": "Contributors"
+    }
+  },
+  "wifi": {
+    "title": "WiFi Hotspots",
+    "subtitle": "Discover free and secure WiFi hotspots near you",
+    "map": {
+      "title": "WiFi Map",
+      "loading": "Loading WiFi hotspots..."
+    },
+    "nearby": {
+      "title": "Nearby Hotspots",
+      "viewMore": "View More Hotspots"
+    },
+    "stats": {
+      "title": "WiFi Statistics",
+      "hotspots": "Total Hotspots",
+      "secure": "Secure Networks",
+      "speed": "Average Speed"
+    }
+  },
+  "explore": {
+    "title": "Explore Coverage",
+    "subtitle": "Find the best connection points around you",
+    "search": {
+      "placeholder": "Enter a location or landmark",
+      "button": "Search"
+    },
+    "map": {
+      "title": "Coverage Map",
+      "loading": "Loading map..."
+    },
+    "filters": {
+      "title": "Filters",
+      "cellular": "Cellular Coverage",
+      "wifi": "WiFi Hotspots",
+      "landmarks": "Landmarks",
+      "range": {
+        "title": "Search Range"
+      }
+    },
+    "contribute": {
+      "title": "Add New Points",
+      "description": "Help others stay connected by adding new coverage points",
+      "button": "Add Coverage Point"
+    }
   }
 }

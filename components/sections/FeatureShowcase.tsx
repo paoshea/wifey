@@ -1,100 +1,94 @@
-import React from 'react'
-import { useTranslations } from 'next-intl'
-import { Wifi, Signal, Navigation2 } from 'lucide-react'
-import { motion } from 'framer-motion'
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu'
-
-const features = [
-  {
-    icon: Signal,
-    titleKey: 'features.cellular.title',
-    descriptionKey: 'features.cellular.description',
-    benefits: [
-      'features.cellular.benefits.deadzone',
-      'features.cellular.benefits.coverage',
-      'features.cellular.benefits.alerts'
-    ]
-  },
-  {
-    icon: Wifi,
-    titleKey: 'features.wifi.title',
-    descriptionKey: 'features.wifi.description',
-    benefits: [
-      'features.wifi.benefits.discovery',
-      'features.wifi.benefits.security',
-      'features.wifi.benefits.updates'
-    ]
-  },
-  {
-    icon: Navigation2,
-    titleKey: 'features.navigation.title',
-    descriptionKey: 'features.navigation.description',
-    benefits: [
-      'features.navigation.benefits.directions',
-      'features.navigation.benefits.offline',
-      'features.navigation.benefits.alternatives'
-    ]
-  },
-]
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
-}
+import { MapPin, Wifi, Signal } from 'lucide-react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
 
 export function FeatureShowcase() {
-  const t = useTranslations('onboarding')
+  const t = useTranslations('home.features');
+  const { locale } = useTranslations();
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  const features = [
+    {
+      icon: Signal,
+      title: 'cellular.title',
+      description: 'cellular.description',
+      href: '/coverage',
+      color: 'from-blue-500 to-blue-600'
+    },
+    {
+      icon: Wifi,
+      title: 'wifi.title',
+      description: 'wifi.description',
+      href: '/wifi',
+      color: 'from-indigo-500 to-indigo-600'
+    },
+    {
+      icon: MapPin,
+      title: 'navigation.title',
+      description: 'navigation.description',
+      href: '/explore',
+      color: 'from-purple-500 to-purple-600'
+    }
+  ];
 
   return (
-    <section className="py-16 px-4 md:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">{t('features.title')}</h2>
-          <p className="text-gray-600">{t('features.subtitle')}</p>
-        </div>
-
-        {/* Feature Cards */}
-        <motion.div 
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {features.map((feature) => (
-            <motion.div key={feature.titleKey} variants={item}>
-              <Card variant="feature" className="h-full">
-                <CardHeader>
-                  <feature.icon className="w-8 h-8 mb-4 text-primary transition-colors duration-200" />
-                  <CardTitle className="text-lg font-semibold">{t(feature.titleKey)}</CardTitle>
-                  <CardDescription className="mt-2">{t(feature.descriptionKey)}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {feature.benefits.map((benefitKey: string, index: number) => (
-                      <li key={index} className="flex items-center text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2" />
-                        {t(benefitKey)}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
+    <motion.div 
+      className="grid gap-8 grid-cols-1 md:grid-cols-3"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      {features.map((feature, index) => {
+        const Icon = feature.icon;
+        return (
+          <motion.div key={index} variants={item}>
+            <Link href={`/${locale}${feature.href}`} className="block h-full transform transition-all duration-300 hover:scale-105">
+              <Card className="group hover:shadow-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm rounded-xl p-6 cursor-pointer h-full border-2 border-transparent hover:border-blue-500 relative overflow-hidden">
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                
+                <div className="relative z-10">
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} group-hover:scale-110 transition-all duration-300 text-white shadow-lg`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                    {t(feature.title)}
+                  </h3>
+                  
+                  <p className="mt-2 text-gray-600 group-hover:text-gray-900 transition-colors duration-200">
+                    {t(feature.description)}
+                  </p>
+                  
+                  <div className="mt-4 flex items-center text-blue-600 group-hover:text-blue-700 transition-colors duration-200">
+                    <span className="text-sm font-medium">Learn more</span>
+                    <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
               </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  )
+            </Link>
+          </motion.div>
+        );
+      })}
+    </motion.div>
+  );
 }
