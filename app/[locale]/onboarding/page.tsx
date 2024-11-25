@@ -103,12 +103,21 @@ export default function OnboardingPage() {
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1]);
     } else {
-      const response = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        router.push('/map');
+      try {
+        const response = await fetch('/api/onboarding', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          router.push('/map');
+        } else {
+          console.error('Failed to complete onboarding:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error during onboarding completion:', error);
       }
     }
   };

@@ -20,13 +20,13 @@ export const metadata = {
   icons: {
     icon: [
       {
-        url: '/favicon.svg',
+        url: '/branding/favicon.svg',
         type: 'image/svg+xml',
       }
     ],
     apple: [
       {
-        url: '/logo.svg',
+        url: '/branding/logo.svg',
         type: 'image/svg+xml',
       }
     ]
@@ -57,14 +57,14 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="icon" type="image/svg+xml" href="/branding/favicon.svg" />
+        <link rel="apple-touch-icon" href="/branding/logo.svg" />
         <meta name="theme-color" content="#3B82F6" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
