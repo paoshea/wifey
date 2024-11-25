@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wifi, Signal } from 'lucide-react';
+import { Wifi, Signal, Crosshair } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 // Fix for Leaflet default marker icons
 const defaultIcon = L.icon({
@@ -38,6 +40,44 @@ interface MapViewProps {
   onPointSelect: (point: MapPoint) => void;
   center?: [number, number];
   zoom?: number;
+}
+
+function LocationControl() {
+  const map = useMapEvents({
+    locationfound(e) {
+      map.flyTo(e.latlng, map.getZoom());
+      toast({
+        title: "Location found!",
+        description: "Map centered to your current location.",
+      });
+    },
+    locationerror() {
+      toast({
+        title: "Location error",
+        description: "Unable to find your location. Please check your browser permissions.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClick = () => {
+    map.locate();
+  };
+
+  return (
+    <div className="leaflet-top leaflet-right" style={{ marginTop: '80px' }}>
+      <div className="leaflet-control leaflet-bar">
+        <Button
+          variant="secondary"
+          size="icon"
+          className="bg-white hover:bg-gray-100 w-10 h-10"
+          onClick={handleClick}
+        >
+          <Crosshair className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function MapRecenter({ center }: { center: [number, number] }) {
@@ -75,6 +115,21 @@ export default function MapView({
     });
   };
 
+  useEffect(() => {
+    // Check if geolocation is available
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter([latitude, longitude]);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        }
+      );
+    }
+  }, []);
+
   return (
     <MapContainer
       center={mapCenter}
@@ -87,6 +142,7 @@ export default function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapRecenter center={mapCenter} />
+      <LocationControl />
       
       {filteredPoints.map((point) => (
         <Marker
@@ -99,23 +155,24 @@ export default function MapView({
         >
           <Popup>
             <div className="p-2">
-              <div className="flex items-center space-x-2">
-                {point.type === 'wifi' ? (
-                  <Wifi className="w-4 h-4 text-blue-500" />
-                ) : (
-                  <Signal className="w-4 h-4 text-green-500" />
+              <h3 className="font-semibold flex items-center gap-2">
+                {point.type === 'wifi' ? <Wifi className="w-4 h-4" /> : <Signal className="w-4 h-4" />}
+                {point.name}
+              </h3>
+              <div className="mt-2 text-sm">
+                {point.details.provider && (
+                  <p><span className="font-medium">Provider:</span> {point.details.provider}</p>
                 )}
-                <h3 className="font-semibold">{point.name}</h3>
+                {point.details.strength && (
+                  <p><span className="font-medium">Strength:</span> {point.details.strength}</p>
+                )}
+                {point.details.speed && (
+                  <p><span className="font-medium">Speed:</span> {point.details.speed}</p>
+                )}
+                {point.details.type && (
+                  <p><span className="font-medium">Type:</span> {point.details.type}</p>
+                )}
               </div>
-              {point.details.speed && (
-                <p className="text-sm text-gray-600">Speed: {point.details.speed}</p>
-              )}
-              {point.details.strength && (
-                <p className="text-sm text-gray-600">Strength: {point.details.strength}</p>
-              )}
-              {point.details.provider && (
-                <p className="text-sm text-gray-600">Provider: {point.details.provider}</p>
-              )}
             </div>
           </Popup>
         </Marker>

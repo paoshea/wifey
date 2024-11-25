@@ -45,24 +45,42 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        <div className="mr-4 flex items-center">
+        {/* Desktop Logo */}
+        <div className="mr-8 hidden md:flex items-center">
           <Link href={`/${locale}`} className="flex items-center space-x-2">
             <div className="relative w-8 h-8">
               <Image
-                src="/branding/logo.svg"
+                src="/icons/icon-32x32.png"
                 alt="Wifey Logo"
-                fill
+                width={32}
+                height={32}
                 className="object-contain"
                 priority
               />
             </div>
-            <span className="hidden font-bold sm:inline-block">Wifey</span>
+            <span className="font-bold">Wifey</span>
+          </Link>
+        </div>
+
+        {/* Mobile Logo */}
+        <div className="mr-4 flex md:hidden items-center">
+          <Link href={`/${locale}`} className="flex items-center">
+            <div className="relative w-6 h-6">
+              <Image
+                src="/icons/icon-32x32.png"
+                alt="Wifey Logo"
+                width={24}
+                height={24}
+                className="object-contain"
+                priority
+              />
+            </div>
           </Link>
         </div>
 
         {/* Desktop Navigation */}
-        <div className="flex-1 hidden md:flex">
-          <nav className="flex items-center justify-center w-full max-w-2xl mx-auto">
+        <div className="flex-1 hidden md:block">
+          <div className="flex justify-between items-center max-w-3xl mx-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               
@@ -71,7 +89,7 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center justify-center flex-1 py-2 transition-colors hover:text-foreground/80",
+                    "flex items-center justify-center px-4 py-2 transition-colors hover:text-foreground/80",
                     isActive ? "text-foreground" : "text-foreground/60"
                   )}
                 >
@@ -80,7 +98,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-          </nav>
+          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
