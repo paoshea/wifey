@@ -11,8 +11,9 @@ import { Wifi, Signal, MapPin, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
-export default function Navbar() {
+export function Navigation() {
   const t = useTranslations();
+  const { locale } = useTranslations();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -38,33 +39,29 @@ export default function Navbar() {
     { href: '/explore', label: t('nav.explore'), icon: MapPin },
   ];
 
-  // Extract locale from pathname
-  const locale = pathname.split('/')[1];
-
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 flex">
-          <Link href={`/${locale}`} className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block">Wifey</span>
-          </Link>
-        </div>
+    <nav className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href={`/${locale}`} className="flex-shrink-0 flex items-center">
+              <span className="text-2xl font-bold text-blue-600">Wifey</span>
+            </Link>
+          </div>
 
-        {/* Desktop Navigation */}
-        <div className="flex-1 hidden md:flex">
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+          {/* Desktop Navigation */}
+          <div className="hidden sm:flex sm:space-x-8 items-center">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const href = `/${locale}${item.href}`;
-              const isActive = pathname === href;
-              
               return (
                 <Link
-                  key={href}
-                  href={href}
+                  key={item.href}
+                  href={`/${locale}${item.href}`}
                   className={cn(
-                    "flex items-center transition-colors hover:text-foreground/80",
-                    isActive ? "text-foreground" : "text-foreground/60"
+                    'inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200',
+                    pathname === `/${locale}${item.href}`
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-900'
                   )}
                 >
                   <Icon className="w-4 h-4 mr-2" />
@@ -72,60 +69,72 @@ export default function Navbar() {
                 </Link>
               );
             })}
-          </nav>
-        </div>
-
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <Button 
-            variant="default" 
-            onClick={() => setIsReportModalOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-          >
-            {t('nav.reportCoverage')}
-          </Button>
+            <Button 
+              variant="default" 
+              onClick={() => setIsReportModalOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+            >
+              {t('nav.reportCoverage')}
+            </Button>
+          </div>
 
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            className="md:hidden"
-            size="icon"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
+          <div className="sm:hidden flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              {isMenuOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
+            </Button>
+          </div>
         </div>
+      </div>
 
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 top-14 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto p-6 pb-32 shadow-md animate-in slide-in-from-bottom-80 md:hidden">
-            <div className="relative z-20 grid gap-6 rounded-md bg-popover p-4 text-popover-foreground shadow-md">
-              <nav className="grid grid-flow-row auto-rows-max text-sm">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const href = `/${locale}${item.href}`;
-                  const isActive = pathname === href;
-                  
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        "flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline",
-                        isActive && "font-bold"
-                      )}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Icon className="w-4 h-4 mr-2" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="sm:hidden">
+          <div className="pt-2 pb-3 space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={`/${locale}${item.href}`}
+                  className={cn(
+                    'block pl-3 pr-4 py-2 text-base font-medium transition-colors duration-200',
+                    pathname === `/${locale}${item.href}`
+                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                  )}
+                >
+                  <div className="flex items-center">
+                    <Icon className="w-4 h-4 mr-2" />
+                    {item.label}
+                  </div>
+                </Link>
+              );
+            })}
+            <div className="pl-3 pr-4 py-2">
+              <Button 
+                variant="default" 
+                onClick={() => {
+                  setIsReportModalOpen(true);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+              >
+                {t('nav.reportCoverage')}
+              </Button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Report Coverage Modal */}
       <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
@@ -153,9 +162,9 @@ export default function Navbar() {
                   />
                   <Label
                     htmlFor="cellular"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-blue-600 [&:has([data-state=checked])]:border-blue-600 cursor-pointer"
                   >
-                    <Signal className="mb-3 h-6 w-6" />
+                    <Signal className="mb-3 h-6 w-6 text-blue-600" />
                     <span className="text-sm font-medium">{t('report.cellular')}</span>
                   </Label>
                 </div>
@@ -168,9 +177,9 @@ export default function Navbar() {
                   />
                   <Label
                     htmlFor="wifi"
-                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-blue-600 [&:has([data-state=checked])]:border-blue-600 cursor-pointer"
                   >
-                    <Wifi className="mb-3 h-6 w-6" />
+                    <Wifi className="mb-3 h-6 w-6 text-blue-600" />
                     <span className="text-sm font-medium">{t('report.wifi')}</span>
                   </Label>
                 </div>

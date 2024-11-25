@@ -405,5 +405,21 @@
       "description": "Help others stay connected by adding new coverage points",
       "button": "Add Coverage Point"
     }
+  },
+  "nav": {
+    "coverage": "Coverage",
+    "wifi": "WiFi",
+    "explore": "Explore",
+    "reportCoverage": "Quick Report"
+  },
+  "report": {
+    "title": "Report Coverage",
+    "description": "Help others by quickly reporting the coverage in your current location.",
+    "cellular": "Cellular",
+    "wifi": "WiFi",
+    "submit": "Submit Report",
+    "success": "Thanks for your report!",
+    "appreciationMessage": "Thank you for contributing to our community!",
+    "joinMessage": "Join our community to track your contributions and earn rewards!"
   }
 }
