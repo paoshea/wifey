@@ -1,11 +1,15 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const t = useTranslations('Profile');
+  const { locale } = useTranslations();
 
   return (
     <div className="container max-w-2xl py-8">
@@ -51,7 +55,9 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex justify-end space-x-4">
-            <Button variant="outline">{t('cancel')}</Button>
+            <Button variant="outline" asChild>
+              <Link href={`/${locale}/dashboard`}>{t('cancel')}</Link>
+            </Button>
             <Button>{t('save')}</Button>
           </div>
         </CardContent>

@@ -301,5 +301,32 @@
     "step3": "Contribute by adding new coverage points and helping others",
     "startExploring": "Start Exploring",
     "setupProfile": "Setup Profile"
+  },
+  "Profile": {
+    "title": "Profile Settings",
+    "nameLabel": "Full Name",
+    "namePlaceholder": "Enter your full name",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "Enter your phone number",
+    "locationLabel": "Default Location",
+    "locationPlaceholder": "Enter your default location",
+    "notificationsLabel": "Notifications",
+    "notificationsDescription": "Receive notifications about new coverage points and updates",
+    "cancel": "Cancel",
+    "save": "Save Changes"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "cellularTitle": "Cellular Coverage",
+    "cellularDescription": "View and track cellular signal strength in your area",
+    "viewCoverage": "View Coverage Map",
+    "wifiTitle": "WiFi Hotspots",
+    "wifiDescription": "Find free and secure WiFi hotspots nearby",
+    "findWifi": "Find WiFi",
+    "nearbyTitle": "Nearby Points",
+    "nearbyDescription": "Discover connection points around you",
+    "exploreNearby": "Explore Nearby"
   }
 }

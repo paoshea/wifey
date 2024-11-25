@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export default function WelcomePage() {
   const t = useTranslations('Welcome');
+  const { locale } = useTranslations();
 
   return (
     <div className="container flex items-center justify-center min-h-[80vh]">
@@ -26,10 +27,10 @@ export default function WelcomePage() {
           </div>
           <div className="flex justify-center gap-4">
             <Button asChild>
-              <Link href="/dashboard">{t('startExploring')}</Link>
+              <Link href={`/${locale}/dashboard`}>{t('startExploring')}</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/profile">{t('setupProfile')}</Link>
+              <Link href={`/${locale}/profile`}>{t('setupProfile')}</Link>
             </Button>
           </div>
         </CardContent>
