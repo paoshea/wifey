@@ -33,9 +33,9 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { href: '/coverage', label: t('nav.coverage'), icon: Signal },
-    { href: '/wifi', label: t('nav.wifi'), icon: Wifi },
-    { href: '/explore', label: t('nav.explore'), icon: MapPin },
+    { href: '/coverage', label: t('navigation.coverage'), icon: Signal },
+    { href: '/wifi', label: t('navigation.wifi'), icon: Wifi },
+    { href: '/explore', label: t('navigation.explore'), icon: MapPin },
   ];
 
   // Extract locale from pathname
@@ -81,7 +81,7 @@ export default function Navbar() {
             onClick={() => setIsReportModalOpen(true)}
             className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
           >
-            {t('nav.reportCoverage')}
+            {t('navigation.reportCoverage')}
           </Button>
 
           {/* Mobile menu button */}

@@ -3,7 +3,11 @@
     "home": "Home",
     "coverageFinder": "Coverage Finder",
     "register": "Register",
-    "login": "Login"
+    "login": "Login",
+    "coverage": "Coverage",
+    "wifi": "WiFi",
+    "explore": "Explore",
+    "reportCoverage": "Quick Report"
   },
   "home": {
     "title": "Find the Best Connection Anywhere",

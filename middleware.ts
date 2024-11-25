@@ -12,6 +12,9 @@ const publicPaths = [
   '/api/auth/signup',
   '/onboarding',
   '/api/onboarding',
+  '/coverage',
+  '/wifi',
+  '/explore',
 ];
 
 // Paths that require specific roles
@@ -91,13 +94,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
+     * 1. /api/ (API routes)
+     * 2. /_next/ (Next.js internals)
+     * 3. /_static (inside /public)
+     * 4. /_vercel (Vercel internals)
+     * 5. /favicon.ico, /sitemap.xml (static files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-    // Match all paths that might have a locale prefix
-    '/(en|es)/:path*'
+    '/((?!api/|_next/|_static/|_vercel|favicon.ico|sitemap.xml).*)',
+    '/api/:path*',
   ],
 };
