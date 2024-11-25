@@ -78,6 +78,26 @@ const MarkedSpotAnimation = ({ position }: { position: [number, number] }) => {
   return null;
 };
 
+const selectedMarkerIcon = L.icon({
+  iconUrl: '/icons/map-marker-selected.svg',
+  iconRetinaUrl: '/icons/map-marker-selected.svg',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41]
+});
+
+const defaultMarkerIcon = L.icon({
+  iconUrl: '/icons/map-marker.svg',
+  iconRetinaUrl: '/icons/map-marker.svg',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41]
+});
+
 const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
   onLocationSelect,
   coveragePoints,
@@ -272,7 +292,7 @@ const EnhancedCoverageMap: React.FC<EnhancedCoverageMapProps> = ({
             <Marker
               key={index}
               position={[point.location.lat, point.location.lng]}
-              icon={getSignalIcon(point.signalStrength)}
+              icon={selectedLocation && selectedLocation[0] === point.location.lat && selectedLocation[1] === point.location.lng ? selectedMarkerIcon : defaultMarkerIcon}
             >
               <Popup>
                 <div className="p-2 space-y-2">

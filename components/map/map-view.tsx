@@ -8,12 +8,12 @@ import { Wifi, Signal } from 'lucide-react';
 
 // Fix for Leaflet default marker icons
 const defaultIcon = L.icon({
-  iconUrl: '/images/marker-icon.png',
-  iconRetinaUrl: '/images/marker-icon-2x.png',
-  shadowUrl: '/images/marker-shadow.png',
+  iconUrl: '/icons/map-marker.svg',
+  iconRetinaUrl: '/icons/map-marker.svg',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
   shadowSize: [41, 41]
 });
 
