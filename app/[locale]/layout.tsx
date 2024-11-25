@@ -17,20 +17,13 @@ export function generateStaticParams() {
 export const metadata = {
   title: 'Wifey - Find Coverage & WiFi',
   description: 'Find cellular coverage points and free WiFi hotspots near you',
-  icons: {
-    icon: [
-      {
-        url: '/favicon.svg',
-        type: 'image/svg+xml',
-      }
-    ],
-    apple: [
-      {
-        url: '/logo.svg',
-        type: 'image/svg+xml',
-      }
-    ]
-  },
+  icons: [
+    {
+      rel: 'icon',
+      type: 'image/svg+xml',
+      url: '/branding/logo.svg',
+    },
+  ],
 };
 
 type LocaleLayoutProps = {
@@ -57,8 +50,8 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className="light" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="icon" type="image/svg+xml" href="/branding/logo.svg" />
+        <link rel="apple-touch-icon" href="/branding/logo.svg" />
         <meta name="theme-color" content="#3B82F6" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

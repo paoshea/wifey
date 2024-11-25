@@ -30,13 +30,13 @@ import { motion } from 'framer-motion';
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: 'Name must be at least 2 characters.',
+    message: t('validation.nameRequired'),
   }),
   email: z.string().email({
-    message: 'Please enter a valid email address.',
+    message: t('validation.emailInvalid'),
   }),
   password: z.string().min(8, {
-    message: 'Password must be at least 8 characters.',
+    message: t('validation.passwordMinLength'),
   }),
   language: z.string(),
 });
@@ -72,20 +72,20 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.error || t('error'));
       }
 
       toast({
-        title: t('successTitle'),
+        title: t('success'),
         description: t('successMessage'),
       });
 
       // Redirect to sign in page with success message
-      router.push(`/${values.language}/auth/signin?registered=true`);
+      router.push(`/${values.language}/signin?registered=true`);
     } catch (error) {
       toast({
-        title: t('errorTitle'),
-        description: error instanceof Error ? error.message : t('errorMessage'),
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('error'),
         variant: 'destructive',
       });
     } finally {
@@ -131,7 +131,6 @@ export default function RegisterPage() {
                       <div className="relative">
                         <User className="absolute left-3 top-2.5 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
                         <Input
-                          placeholder={t('namePlaceholder')}
                           className="pl-10 text-sm sm:text-base h-10 sm:h-11"
                           {...field}
                         />
@@ -142,7 +141,46 @@ export default function RegisterPage() {
                 )}
               />
 
-              {/* Similar adjustments for email and password fields */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">{t('emailLabel')}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-2.5 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
+                        <Input
+                          className="pl-10 text-sm sm:text-base h-10 sm:h-11"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-xs sm:text-sm" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm sm:text-base">{t('passwordLabel')}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-2.5 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
+                        <Input
+                          type="password"
+                          className="pl-10 text-sm sm:text-base h-10 sm:h-11"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-xs sm:text-sm" />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -157,12 +195,12 @@ export default function RegisterPage() {
                       <FormControl>
                         <SelectTrigger className="pl-10 relative h-10 sm:h-11 text-sm sm:text-base">
                           <Globe2 className="absolute left-3 top-2.5 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
-                          <SelectValue placeholder={t('languagePlaceholder')} />
+                          <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="en">{t('languages.en')}</SelectItem>
+                        <SelectItem value="es">{t('languages.es')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-xs sm:text-sm" />
@@ -176,7 +214,9 @@ export default function RegisterPage() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  t('loading')
+                  <span className="flex items-center justify-center">
+                    <span className="mr-2">Loading...</span>
+                  </span>
                 ) : (
                   <>
                     {t('submit')}
@@ -188,15 +228,15 @@ export default function RegisterPage() {
           </Form>
 
           <div className="text-center text-sm">
-            <p className="text-gray-600">
+            <span className="text-gray-600">
               {t('alreadyHaveAccount')}{' '}
               <Link
-                href="/login"
+                href="/signin"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 {t('loginLink')}
               </Link>
-            </p>
+            </span>
           </div>
         </div>
       </motion.div>

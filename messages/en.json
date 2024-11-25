@@ -12,6 +12,7 @@
     "findCoverageButton": "Find Coverage Now",
     "getStarted": "Get Started",
     "exploreMap": "Explore Map",
+    "explore": "Explore Map",
     "features": {
       "cellular": {
         "title": "Cellular Coverage",
@@ -102,7 +103,7 @@
     "welcome": {
       "title": "Find the Best WiFi & Coverage",
       "description": "Never worry about connectivity again. Get real-time coverage maps, WiFi hotspots, and navigation all in one place.",
-      "explore": "Explore Features",
+      "explore": "Explore Map",
       "getStarted": "Get Started"
     },
     "features": {
@@ -181,18 +182,31 @@
   },
   "auth": {
     "register": {
-      "title": "Create an Account",
+      "title": "Create Account",
       "subtitle": "Join our community and stay connected",
-      "namePlaceholder": "Enter your name",
-      "emailPlaceholder": "Enter your email",
-      "passwordPlaceholder": "Create a password",
-      "languagePlaceholder": "Select your language",
-      "submitButton": "Register",
-      "loginLink": "Already have an account? Sign in",
-      "successTitle": "Registration Successful",
-      "successMessage": "Your account has been created successfully",
-      "errorTitle": "Registration Failed",
-      "errorMessage": "There was a problem creating your account"
+      "nameLabel": "Full Name",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm Password",
+      "languageLabel": "Preferred Language",
+      "languages": {
+        "en": "English",
+        "es": "Español"
+      },
+      "submit": "Create Account",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "success": "Account created successfully!",
+      "error": "Error creating account",
+      "validation": {
+        "nameRequired": "Name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email",
+        "passwordRequired": "Password is required",
+        "passwordMinLength": "Password must be at least 8 characters",
+        "passwordMismatch": "Passwords do not match",
+        "languageRequired": "Please select a language"
+      }
     },
     "signin": {
       "title": "Welcome Back!",

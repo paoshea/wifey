@@ -20,23 +20,18 @@ export default function Navbar() {
           <div className="flex">
             <Link 
               href="/"
-              className="flex items-center px-2 text-xl font-bold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+              className="flex items-center gap-2"
             >
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative mr-2"
-              >
+              <div className="relative w-8 h-8">
                 <Image
-                  src="/logo.svg"
-                  alt="Wifey Logo"
-                  width={32}
-                  height={32}
+                  alt="Wifey"
+                  fill
+                  src="/branding/logo.svg"
                   className="object-contain"
                   priority
                 />
-              </motion.div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800">
+              </div>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 font-semibold">
                 Wifey
               </span>
             </Link>
