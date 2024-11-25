@@ -136,34 +136,31 @@
     "features": {
       "title": "Powerful Features",
       "subtitle": "Discover what Wifey can do for you",
-      "wifi": {
-        "title": "WiFi Finder",
-        "description": "Locate free and secure WiFi hotspots anywhere",
+      "cellular": {
+        "title": "Cellular Coverage",
+        "description": "Find the nearest coverage point when you're in a dead zone",
         "benefits": {
-          "security": "Verified secure networks",
-          "reliability": "Connection quality ratings",
-          "updates": "Real-time availability updates",
-          "speed": "Check connection speeds"
+          "deadzone": "Locate coverage in dead zones",
+          "coverage": "Real-time signal strength tracking",
+          "alerts": "Low signal notifications"
         }
       },
-      "coverage": {
-        "title": "Coverage Map",
-        "description": "Track and monitor cellular signal strength",
+      "wifi": {
+        "title": "Free WiFi",
+        "description": "Discover nearby free WiFi hotspots",
         "benefits": {
-          "realtime": "Real-time signal monitoring",
-          "accuracy": "Precise coverage mapping",
-          "alerts": "Low signal alerts",
-          "predictions": "Coverage predictions"
+          "discovery": "Find nearby hotspots",
+          "security": "Verified secure networks",
+          "updates": "Real-time availability updates"
         }
       },
       "navigation": {
-        "title": "Smart Navigation",
-        "description": "Get guided to the best connection spots",
+        "title": "Navigation",
+        "description": "Get step-by-step directions to the nearest connection point",
         "benefits": {
-          "routing": "Optimal route planning",
+          "directions": "Turn-by-turn directions",
           "offline": "Offline map support",
-          "alternatives": "Multiple route options",
-          "eta": "Accurate arrival times"
+          "alternatives": "Multiple route options"
         }
       }
     },

@@ -8,23 +8,23 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 
 const features = [
   {
+    icon: Signal,
+    titleKey: 'features.cellular.title',
+    descriptionKey: 'features.cellular.description',
+    benefits: [
+      'features.cellular.benefits.deadzone',
+      'features.cellular.benefits.coverage',
+      'features.cellular.benefits.alerts'
+    ]
+  },
+  {
     icon: Wifi,
     titleKey: 'features.wifi.title',
     descriptionKey: 'features.wifi.description',
     benefits: [
+      'features.wifi.benefits.discovery',
       'features.wifi.benefits.security',
-      'features.wifi.benefits.reliability',
       'features.wifi.benefits.updates'
-    ]
-  },
-  {
-    icon: Signal,
-    titleKey: 'features.coverage.title',
-    descriptionKey: 'features.coverage.description',
-    benefits: [
-      'features.coverage.benefits.realtime',
-      'features.coverage.benefits.accuracy',
-      'features.coverage.benefits.alerts'
     ]
   },
   {
@@ -32,7 +32,7 @@ const features = [
     titleKey: 'features.navigation.title',
     descriptionKey: 'features.navigation.description',
     benefits: [
-      'features.navigation.benefits.routing',
+      'features.navigation.benefits.directions',
       'features.navigation.benefits.offline',
       'features.navigation.benefits.alternatives'
     ]
@@ -76,15 +76,15 @@ export function FeatureShowcase() {
             <motion.div key={feature.titleKey} variants={item}>
               <Card variant="feature" className="h-full">
                 <CardHeader>
-                  <feature.icon className="w-8 h-8 mb-4 text-primary" />
-                  <CardTitle>{t(feature.titleKey)}</CardTitle>
-                  <CardDescription>{t(feature.descriptionKey)}</CardDescription>
+                  <feature.icon className="w-8 h-8 mb-4 text-primary transition-colors duration-200 group-hover:text-primary/80" />
+                  <CardTitle className="transition-colors duration-200 group-hover:text-primary">{t(feature.titleKey)}</CardTitle>
+                  <CardDescription className="transition-colors duration-200">{t(feature.descriptionKey)}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {feature.benefits.map((benefitKey: string, index: number) => (
-                      <li key={index} className="flex items-center text-sm text-gray-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2" />
+                      <li key={index} className="flex items-center text-sm text-gray-600 transition-colors duration-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2 transition-colors duration-200" />
                         {t(benefitKey)}
                       </li>
                     ))}

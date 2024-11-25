@@ -13,12 +13,14 @@ const cardVariants = cva(
         ghost: "border-none shadow-none hover:bg-accent/50",
         interactive: "cursor-pointer hover:shadow-lg transform hover:-translate-y-1 active:translate-y-0",
         feature: `group relative overflow-hidden hover:shadow-xl
+                border border-transparent hover:border-primary/20
                 before:absolute before:inset-0 
                 before:bg-gradient-to-br 
-                before:from-${brandConfig.colors.primary[500]}/10 
-                before:to-${brandConfig.colors.primary[600]}/20 
+                before:from-${brandConfig.colors.primary[500]}/5 
+                before:to-${brandConfig.colors.primary[600]}/10 
                 before:opacity-0 before:transition-opacity 
-                hover:before:opacity-100`,
+                hover:before:opacity-100
+                hover:bg-white/80`,
       },
       size: {
         sm: "p-4",
