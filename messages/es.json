@@ -178,18 +178,18 @@
   },
   "auth": {
     "register": {
-      "title": "Crea tu Cuenta",
-      "description": "Únete para rastrear y compartir la cobertura WiFi en tu área",
-      "name": "Nombre Completo",
-      "email": "Correo Electrónico",
-      "password": "Contraseña",
-      "language": "Idioma Preferido",
+      "title": "Crear tu Cuenta",
+      "subtitle": "Únete para rastrear y compartir cobertura WiFi en tu área",
+      "nameLabel": "Nombre Completo",
+      "emailLabel": "Correo Electrónico",
+      "passwordLabel": "Contraseña",
+      "languageLabel": "Idioma Preferido",
       "submit": "Crear Cuenta",
+      "loginLink": "Iniciar Sesión",
       "alreadyHaveAccount": "¿Ya tienes una cuenta?",
-      "signIn": "Iniciar Sesión",
       "successTitle": "¡Registro Exitoso!",
       "successMessage": "Tu cuenta ha sido creada exitosamente.",
-      "errorTitle": "Error de Registro",
+      "errorTitle": "Error en el Registro",
       "errorMessage": "Hubo un problema al crear tu cuenta. Por favor, inténtalo de nuevo."
     },
     "signin": {
