@@ -61,19 +61,31 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Here you would typically make an API call to register the user
-      console.log(values);
-      
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
       toast({
         title: t('successTitle'),
         description: t('successMessage'),
       });
 
-      router.push(`/${values.language}/login`);
+      // Redirect to sign in page with success message
+      router.push(`/${values.language}/auth/signin?registered=true`);
     } catch (error) {
       toast({
         title: t('errorTitle'),
-        description: t('errorMessage'),
+        description: error instanceof Error ? error.message : t('errorMessage'),
         variant: 'destructive',
       });
     } finally {
