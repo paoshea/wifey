@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Wifi, Signal, MapPin, Menu, X } from 'lucide-react';
+import { Wifi, Signal, MapPin, Menu, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
@@ -21,11 +22,9 @@ export default function Navbar() {
 
   const handleReport = () => {
     setReportSubmitted(true);
-    // In a real app, we would send this data to the backend
     setTimeout(() => {
       setReportSubmitted(false);
       setIsReportModalOpen(false);
-      // Reset after closing
       setTimeout(() => {
         setReportType('cellular');
       }, 300);
@@ -33,9 +32,10 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { href: '/coverage', label: t('navigation.coverage'), icon: Signal },
-    { href: '/wifi', label: t('navigation.wifi'), icon: Wifi },
-    { href: '/explore', label: t('navigation.explore'), icon: MapPin },
+    { href: '', label: t('navigation.home'), icon: Home },
+    { href: 'coverage', label: t('navigation.coverage'), icon: Signal },
+    { href: 'wifi', label: t('navigation.wifi'), icon: Wifi },
+    { href: 'explore', label: t('navigation.explore'), icon: MapPin },
   ];
 
   // Extract locale from pathname
@@ -44,18 +44,24 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
-        <div className="mr-4 flex">
-          <Link href={`/${locale}`} className="mr-6 flex items-center space-x-2">
+        <div className="mr-4 flex items-center">
+          <Link href={`/${locale}`} className="flex items-center space-x-2">
+            <Image
+              src="/branding/logo.svg"
+              alt="Wifey Logo"
+              width={32}
+              height={32}
+              className="h-8 w-auto"
+            />
             <span className="hidden font-bold sm:inline-block">Wifey</span>
           </Link>
         </div>
 
         {/* Desktop Navigation */}
         <div className="flex-1 hidden md:flex">
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+          <nav className="flex items-center justify-center w-full max-w-2xl mx-auto">
             {navItems.map((item) => {
-              const Icon = item.icon;
-              const href = `/${locale}${item.href}`;
+              const href = `/${locale}/${item.href}`;
               const isActive = pathname === href;
               
               return (
@@ -63,11 +69,11 @@ export default function Navbar() {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center transition-colors hover:text-foreground/80",
+                    "flex items-center justify-center flex-1 py-2 transition-colors hover:text-foreground/80",
                     isActive ? "text-foreground" : "text-foreground/60"
                   )}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
+                  <item.icon className="w-4 h-4 mr-2" />
                   {item.label}
                 </Link>
               );
@@ -75,7 +81,7 @@ export default function Navbar() {
           </nav>
         </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+        <div className="flex flex-1 items-center justify-end space-x-2">
           <Button 
             variant="default" 
             onClick={() => setIsReportModalOpen(true)}
@@ -102,8 +108,7 @@ export default function Navbar() {
             <div className="relative z-20 grid gap-6 rounded-md bg-popover p-4 text-popover-foreground shadow-md">
               <nav className="grid grid-flow-row auto-rows-max text-sm">
                 {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const href = `/${locale}${item.href}`;
+                  const href = `/${locale}/${item.href}`;
                   const isActive = pathname === href;
                   
                   return (
@@ -111,12 +116,11 @@ export default function Navbar() {
                       key={href}
                       href={href}
                       className={cn(
-                        "flex w-full items-center rounded-md p-2 text-sm font-medium hover:underline",
-                        isActive && "font-bold"
+                        "flex items-center py-2 transition-colors hover:text-foreground/80",
+                        isActive ? "text-foreground" : "text-foreground/60"
                       )}
-                      onClick={() => setIsMenuOpen(false)}
                     >
-                      <Icon className="w-4 h-4 mr-2" />
+                      <item.icon className="w-4 h-4 mr-2" />
                       {item.label}
                     </Link>
                   );

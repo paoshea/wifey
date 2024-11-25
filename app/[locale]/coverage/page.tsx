@@ -9,7 +9,7 @@ export default function CoveragePage() {
   const t = useTranslations('coverage');
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -55,6 +55,6 @@ export default function CoveragePage() {
           </Card>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
