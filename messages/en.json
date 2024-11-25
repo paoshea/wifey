@@ -51,6 +51,7 @@
     "errors": {
       "unsupportedBrowser": "Your browser doesn't support signal monitoring",
       "locationDenied": "Location access is required for signal monitoring. Please enable location access in your browser settings.",
+      "location_denied": "Location access is required for signal monitoring. Please enable location access in your browser settings.",
       "locationUnavailable": "Unable to determine your location",
       "locationTimeout": "Location request timed out",
       "locationError": "Error getting location",

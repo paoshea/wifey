@@ -21,8 +21,9 @@ export default function CoverageFinder() {
   });
 
   const getErrorMessage = (error: Error) => {
-    const errorCode = error.message as keyof typeof SignalMonitorError;
-    return t(`errors.${errorCode.toLowerCase()}`);
+    // Convert error code from UPPER_SNAKE_CASE to camelCase
+    const errorCode = error.message.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    return t(`errors.${errorCode}`);
   };
 
   return (
