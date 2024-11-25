@@ -41,6 +41,18 @@ export default function Home() {
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             {t('home.subtitle')}
           </p>
+        </motion.div>
+
+        {/* Feature Showcase Section */}
+        <FeatureShowcase />
+
+        {/* Action Buttons */}
+        <motion.div 
+          className="mt-12 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
           <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
             <Button asChild size="lg" className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600">
               <Link href="/register">{t('home.getStarted')}</Link>
@@ -55,9 +67,6 @@ export default function Home() {
             </Button>
           </div>
         </motion.div>
-
-        {/* Feature Showcase Section */}
-        <FeatureShowcase />
 
         {/* Feature Cards with Enhanced Navigation */}
         <motion.div 

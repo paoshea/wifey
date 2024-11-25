@@ -76,15 +76,15 @@ export function FeatureShowcase() {
             <motion.div key={feature.titleKey} variants={item}>
               <Card variant="feature" className="h-full">
                 <CardHeader>
-                  <feature.icon className="w-8 h-8 mb-4 text-primary transition-colors duration-200 group-hover:text-primary/80" />
-                  <CardTitle className="transition-colors duration-200 group-hover:text-primary">{t(feature.titleKey)}</CardTitle>
-                  <CardDescription className="transition-colors duration-200">{t(feature.descriptionKey)}</CardDescription>
+                  <feature.icon className="w-8 h-8 mb-4 text-primary transition-colors duration-200" />
+                  <CardTitle className="text-lg font-semibold">{t(feature.titleKey)}</CardTitle>
+                  <CardDescription className="mt-2">{t(feature.descriptionKey)}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {feature.benefits.map((benefitKey: string, index: number) => (
-                      <li key={index} className="flex items-center text-sm text-gray-600 transition-colors duration-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2 transition-colors duration-200" />
+                      <li key={index} className="flex items-center text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2" />
                         {t(benefitKey)}
                       </li>
                     ))}

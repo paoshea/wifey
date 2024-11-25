@@ -16,11 +16,14 @@ const cardVariants = cva(
                 border border-transparent hover:border-primary/20
                 before:absolute before:inset-0 
                 before:bg-gradient-to-br 
-                before:from-${brandConfig.colors.primary[500]}/5 
-                before:to-${brandConfig.colors.primary[600]}/10 
+                before:from-transparent
+                before:to-primary/5
                 before:opacity-0 before:transition-opacity 
                 hover:before:opacity-100
-                hover:bg-white/80`,
+                hover:bg-white
+                [&_h3]:text-gray-900 hover:[&_h3]:text-primary
+                [&_p]:text-gray-600 hover:[&_p]:text-gray-700
+                [&_li]:text-gray-600 hover:[&_li]:text-gray-700`,
       },
       size: {
         sm: "p-4",
