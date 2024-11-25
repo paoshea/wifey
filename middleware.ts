@@ -33,6 +33,15 @@ const intlMiddleware = createMiddleware({
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip middleware for API routes
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // Handle internationalization first
+  const response = await intlMiddleware(request);
+  if (response) return response;
+
   // Check if the user needs onboarding
   const hasCompletedOnboarding = request.cookies.get('hasCompletedOnboarding');
   const isOnboardingPage = pathname.includes('/onboarding');
@@ -43,10 +52,6 @@ export async function middleware(request: NextRequest) {
     const locale = request.cookies.get('NEXT_LOCALE')?.value || 'en';
     return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url));
   }
-
-  // Handle internationalization first
-  const response = await intlMiddleware(request);
-  if (response) return response;
 
   // Allow public paths
   if (publicPaths.some(path => pathname.startsWith(path))) {
@@ -77,19 +82,6 @@ export async function middleware(request: NextRequest) {
         );
       }
     }
-  }
-
-  // Add user info to headers for API routes
-  if (pathname.startsWith('/api/')) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', token.sub as string);
-    requestHeaders.set('x-user-role', token.role as string);
-
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
   }
 
   return NextResponse.next();

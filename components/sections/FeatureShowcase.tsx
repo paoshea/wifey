@@ -9,21 +9,33 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 const features = [
   {
     icon: Wifi,
-    titleKey: 'onboarding.features.wifi.title',
-    descriptionKey: 'onboarding.features.wifi.description',
-    benefits: 'onboarding.features.wifi.benefits'
+    titleKey: 'features.wifi.title',
+    descriptionKey: 'features.wifi.description',
+    benefits: [
+      'features.wifi.benefits.security',
+      'features.wifi.benefits.reliability',
+      'features.wifi.benefits.updates'
+    ]
   },
   {
     icon: Signal,
-    titleKey: 'onboarding.features.coverage.title',
-    descriptionKey: 'onboarding.features.coverage.description',
-    benefits: 'onboarding.features.coverage.benefits'
+    titleKey: 'features.coverage.title',
+    descriptionKey: 'features.coverage.description',
+    benefits: [
+      'features.coverage.benefits.realtime',
+      'features.coverage.benefits.accuracy',
+      'features.coverage.benefits.alerts'
+    ]
   },
   {
     icon: Navigation2,
-    titleKey: 'onboarding.features.navigation.title',
-    descriptionKey: 'onboarding.features.navigation.description',
-    benefits: 'onboarding.features.navigation.benefits'
+    titleKey: 'features.navigation.title',
+    descriptionKey: 'features.navigation.description',
+    benefits: [
+      'features.navigation.benefits.routing',
+      'features.navigation.benefits.offline',
+      'features.navigation.benefits.alternatives'
+    ]
   },
 ]
 
@@ -70,10 +82,10 @@ export function FeatureShowcase() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {t(feature.benefits).map((benefit: string, index: number) => (
+                    {feature.benefits.map((benefitKey: string, index: number) => (
                       <li key={index} className="flex items-center text-sm text-gray-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mr-2" />
-                        {benefit}
+                        {t(benefitKey)}
                       </li>
                     ))}
                   </ul>

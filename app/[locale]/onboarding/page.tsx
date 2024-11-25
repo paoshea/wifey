@@ -39,7 +39,11 @@ const testimonials = [
   }
 ];
 
-export default function OnboardingPage() {
+export default function OnboardingPage({
+  params: { locale }
+}: {
+  params: { locale: string }
+}) {
   const t = useTranslations('onboarding');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
@@ -104,7 +108,7 @@ export default function OnboardingPage() {
       setCurrentStep(steps[currentIndex + 1]);
     } else {
       try {
-        const response = await fetch('/api/onboarding', {
+        const response = await fetch(`/api/onboarding`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -112,7 +116,7 @@ export default function OnboardingPage() {
         });
         
         if (response.ok) {
-          router.push('/map');
+          router.push(`/${locale}/map`);
         } else {
           console.error('Failed to complete onboarding:', await response.text());
         }

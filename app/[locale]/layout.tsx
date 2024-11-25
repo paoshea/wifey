@@ -64,15 +64,15 @@ export default async function LocaleLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning>
-        <ThemeProvider>
-          <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} suppressHydrationWarning>
+          <ThemeProvider>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
               <main className="flex-grow">{children}</main>
               <Toaster />
             </div>
-          </NextIntlClientProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
