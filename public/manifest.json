@@ -1,104 +1,27 @@
 {
-  "name": "Wifey - Coverage & WiFi Finder",
+  "name": "Wifey",
   "short_name": "Wifey",
-  "description": "Find and mark cellular coverage and WiFi hotspots",
+  "description": "Find WiFi and cellular coverage anywhere",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
+  "theme_color": "#2563EB",
   "icons": [
-    {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Mark Coverage",
-      "short_name": "Mark",
-      "description": "Mark a new coverage spot",
-      "url": "/coverage-finder?action=mark",
-      "icons": [{ "src": "/icons/mark-96x96.png", "sizes": "96x96" }]
+      "type": "image/png"
     },
     {
-      "name": "Find Coverage",
-      "short_name": "Find",
-      "description": "Find nearby coverage",
-      "url": "/coverage-finder",
-      "icons": [{ "src": "/icons/find-96x96.png", "sizes": "96x96" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/coverage-map.png",
-      "sizes": "1280x720",
+      "src": "/maskable-icon.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "platform": "wide",
-      "label": "Coverage Map View"
-    },
-    {
-      "src": "/screenshots/mark-coverage.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Marking Coverage Spots"
+      "purpose": "maskable"
     }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false,
-  "categories": ["utilities", "maps", "navigation"],
-  "share_target": {
-    "action": "/coverage-finder/share",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
+  ]
 }
