@@ -6,7 +6,7 @@ export function Header() {
     <header className="w-full flex justify-center items-center py-4">
       <Link href="/" className="flex items-center">
         <Image
-          src="/logo.svg"
+          src="/branding/logo.svg"
           alt="Logo"
           width={120}
           height={120}

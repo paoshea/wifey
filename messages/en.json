@@ -43,6 +43,11 @@
   },
   "coverage": {
     "title": "Coverage Finder",
+    "description": "Monitor and track cellular signal strength in your area",
+    "signalStrength": "Signal Strength Monitor",
+    "startMonitoring": "Start Monitoring",
+    "stopMonitoring": "Stop Monitoring",
+    "latestMeasurements": "Latest Measurements",
     "tabs": {
       "coverageRoute": "Find Coverage Route",
       "freeWifi": "Free WiFi Points"

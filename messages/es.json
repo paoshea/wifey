@@ -43,6 +43,11 @@
   },
   "coverage": {
     "title": "Buscador de Cobertura",
+    "description": "Monitorea y rastrea la intensidad de la señal celular en tu área",
+    "signalStrength": "Monitor de Intensidad de Señal",
+    "startMonitoring": "Iniciar Monitoreo",
+    "stopMonitoring": "Detener Monitoreo",
+    "latestMeasurements": "Últimas Mediciones",
     "tabs": {
       "coverageRoute": "Encontrar Ruta de Cobertura",
       "freeWifi": "Puntos de WiFi Gratuitos"

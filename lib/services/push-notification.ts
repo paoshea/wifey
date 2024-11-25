@@ -118,8 +118,8 @@ export class PushNotificationService {
 
     await this.swRegistration.showNotification('Test Notification', {
       body: 'This is a test notification',
-      icon: '/logo.svg',
-      badge: '/logo.svg',
+      icon: '/branding/logo.svg',
+      badge: '/branding/logo.svg',
       silent: false,
       requireInteraction: true,
       data: {
