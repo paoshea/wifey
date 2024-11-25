@@ -8,7 +8,18 @@
     "wifi": "WiFi",
     "explore": "Explore",
     "community": "Join Community",
-    "reportCoverage": "Quick Report"
+    "reportCoverage": "Quick Report",
+    "report": {
+      "button": "Make a Report",
+      "title": "Report Coverage Point",
+      "description": "Help the community by marking a spot with good coverage or WiFi.",
+      "cellular": "Cellular Coverage",
+      "wifi": "WiFi Hotspot",
+      "submit": "Mark this Spot",
+      "success": "Thanks for your report!",
+      "appreciationMessage": "Your contribution helps make our coverage map better.",
+      "joinMessage": "Join our community to track your contributions!"
+    }
   },
   "home": {
     "title": "Find the Best Connection Anywhere",

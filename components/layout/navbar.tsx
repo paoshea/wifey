@@ -1,12 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { Home, Signal, Wifi, Map, Users } from 'lucide-react';
+import { Home, Signal, Wifi, Map, Users, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
 
 const links = [
   { href: '/', label: 'home', icon: Home },
@@ -20,6 +26,26 @@ export default function Navbar() {
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('navigation');
+  const { toast } = useToast();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportType, setReportType] = useState<'wifi' | 'coverage'>('coverage');
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+
+  const handleReport = () => {
+    setReportSubmitted(true);
+    toast({
+      title: t('report.success'),
+      description: t('report.appreciationMessage'),
+      duration: 3000,
+    });
+    setTimeout(() => {
+      setReportSubmitted(false);
+      setIsReportModalOpen(false);
+      setTimeout(() => {
+        setReportType('coverage');
+      }, 300);
+    }, 2000);
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -31,7 +57,8 @@ export default function Navbar() {
               <Image
                 src="/logo.svg"
                 alt="Wifey Logo"
-                fill
+                width={32}
+                height={32}
                 className="object-contain"
                 priority
               />
@@ -49,7 +76,8 @@ export default function Navbar() {
               <Image
                 src="/logo.svg"
                 alt="Wifey Logo"
-                fill
+                width={24}
+                height={24}
                 className="object-contain"
                 priority
               />
@@ -81,8 +109,91 @@ export default function Navbar() {
               );
             })}
           </div>
+
+          {/* Report Button */}
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="default" 
+              onClick={() => setIsReportModalOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+            >
+              <X className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">{t('report.button')}</span>
+              <span className="sm:hidden">Report</span>
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Report Coverage Modal */}
+      <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('report.title')}</DialogTitle>
+            <DialogDescription>
+              {reportSubmitted ? t('report.success') : t('report.description')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!reportSubmitted && (
+            <div className="grid gap-4 py-4">
+              <RadioGroup
+                defaultValue="coverage"
+                value={reportType}
+                onValueChange={(value: 'wifi' | 'coverage') => setReportType(value)}
+                className="grid grid-cols-2 gap-4"
+              >
+                <div>
+                  <RadioGroupItem
+                    value="coverage"
+                    id="coverage"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="coverage"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Signal className="mb-3 h-6 w-6" />
+                    <span className="text-sm font-medium">{t('report.cellular')}</span>
+                  </Label>
+                </div>
+                
+                <div>
+                  <RadioGroupItem
+                    value="wifi"
+                    id="wifi"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="wifi"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Wifi className="mb-3 h-6 w-6" />
+                    <span className="text-sm font-medium">{t('report.wifi')}</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+          
+          <DialogFooter className="sm:justify-start">
+            {reportSubmitted ? (
+              <div className="w-full text-center">
+                <p className="text-green-600 font-medium mb-4">{t('report.appreciationMessage')}</p>
+                <p className="text-sm text-gray-600">{t('report.joinMessage')}</p>
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                onClick={handleReport}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+              >
+                {t('report.submit')}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </nav>
   );
 }
