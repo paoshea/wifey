@@ -10,6 +10,8 @@
     "subtitle": "Anywhere",
     "description": "Locate cellular coverage points and free WiFi hotspots near you. Never be disconnected again.",
     "findCoverageButton": "Find Coverage Now",
+    "getStarted": "Get Started",
+    "exploreMap": "Explore Map",
     "features": {
       "cellular": {
         "title": "Cellular Coverage",
