@@ -50,7 +50,7 @@ export default function Navbar() {
           <Link href={`/${locale}`} className="flex items-center space-x-2">
             <div className="relative w-8 h-8">
               <Image
-                src="/icons/icon-32x32.png"
+                src="/logo.svg"
                 alt="Wifey Logo"
                 width={32}
                 height={32}
@@ -67,7 +67,7 @@ export default function Navbar() {
           <Link href={`/${locale}`} className="flex items-center">
             <div className="relative w-6 h-6">
               <Image
-                src="/icons/icon-32x32.png"
+                src="/logo.svg"
                 alt="Wifey Logo"
                 width={24}
                 height={24}

@@ -1,14 +1,47 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { MapPin, Wifi, Signal, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import MapView from '@/components/map/map-view';
 
 export default function ExplorePage() {
   const t = useTranslations('explore');
+  const [activeLayer, setActiveLayer] = useState<'wifi' | 'coverage' | 'both'>('both');
+  const [searchRadius, setSearchRadius] = useState(5);
+
+  // Sample data - replace with real data from your backend
+  const samplePoints = [
+    {
+      id: '1',
+      type: 'wifi' as const,
+      name: 'Coffee Shop WiFi',
+      coordinates: [9.9281, -84.0907],
+      details: {
+        speed: '50 Mbps',
+        type: 'free' as const,
+        provider: 'Local Cafe'
+      }
+    },
+    {
+      id: '2',
+      type: 'coverage' as const,
+      name: 'High Coverage Zone',
+      coordinates: [9.9290, -84.0920],
+      details: {
+        strength: 'Excellent',
+        provider: 'Movistar'
+      }
+    }
+  ];
+
+  const handlePointSelect = (point: any) => {
+    console.log('Selected point:', point);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
@@ -44,8 +77,12 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <Card className="p-6 lg:col-span-2">
             <h2 className="text-2xl font-semibold mb-4">{t('map.title')}</h2>
-            <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-              <p className="text-gray-500">{t('map.loading')}</p>
+            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <MapView
+                points={samplePoints}
+                activeLayer={activeLayer}
+                onPointSelect={handlePointSelect}
+              />
             </div>
           </Card>
 
@@ -53,18 +90,30 @@ export default function ExplorePage() {
             <Card className="p-6">
               <h2 className="text-2xl font-semibold mb-4">{t('filters.title')}</h2>
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Signal className="w-5 h-5 text-blue-600" />
-                  <span>{t('filters.cellular')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Wifi className="w-5 h-5 text-indigo-600" />
-                  <span>{t('filters.wifi')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-5 h-5 text-purple-600" />
-                  <span>{t('filters.landmarks')}</span>
-                </div>
+                <Button
+                  variant={activeLayer === 'coverage' ? 'default' : 'outline'}
+                  className="w-full justify-start"
+                  onClick={() => setActiveLayer('coverage')}
+                >
+                  <Signal className="w-5 h-5 mr-2" />
+                  {t('filters.cellular')}
+                </Button>
+                <Button
+                  variant={activeLayer === 'wifi' ? 'default' : 'outline'}
+                  className="w-full justify-start"
+                  onClick={() => setActiveLayer('wifi')}
+                >
+                  <Wifi className="w-5 h-5 mr-2" />
+                  {t('filters.wifi')}
+                </Button>
+                <Button
+                  variant={activeLayer === 'both' ? 'default' : 'outline'}
+                  className="w-full justify-start"
+                  onClick={() => setActiveLayer('both')}
+                >
+                  <MapPin className="w-5 h-5 mr-2" />
+                  {t('filters.all')}
+                </Button>
               </div>
               <hr className="my-4" />
               <div className="space-y-4">
@@ -73,12 +122,13 @@ export default function ExplorePage() {
                   type="range"
                   min="0"
                   max="10"
-                  defaultValue="5"
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(parseInt(e.target.value))}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>0 km</span>
-                  <span>5 km</span>
+                  <span>{searchRadius} km</span>
                   <span>10 km</span>
                 </div>
               </div>
