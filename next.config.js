@@ -22,9 +22,6 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    domains: ['localhost'],
-    unoptimized: true,
-    disableStaticImages: false // Add this to ensure static images work
   },
   // Add static file serving configuration
   webpack: (config) => {
