@@ -80,11 +80,13 @@ const AchievementDetailsModal = ({ achievement, isUnlocked, onClose }: Achieveme
         
         <p className="text-gray-700 mb-4">{achievement.description}</p>
         
-        <div className="bg-gray-100 rounded-lg p-4 mb-4">
+        <div className="mt-4">
           <h3 className="font-semibold mb-2">Requirements</h3>
-          <p className="text-sm text-gray-600">
-            {achievement.requirements.count} {achievement.requirements.type.replace('_', ' ')}
-          </p>
+          {achievement.requirements.map((req, index) => (
+            <p key={index} className="text-sm text-gray-600">
+              {req.count} {req.type.replace('_', ' ')}
+            </p>
+          ))}
         </div>
 
         <div className="flex justify-between items-center">
@@ -114,8 +116,9 @@ export function AchievementShowcase({ achievements, onAchievementClick }: {
   achievements: Achievement[] | undefined; 
   onAchievementClick?: (achievement: Achievement) => void;
 }) {
-  const [filter, setFilter] = useState<'all' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'unlocked'>('all');
   const [sortBy, setSortBy] = useState<'rarity' | 'progress' | 'earned'>('rarity');
+  const { userProgress } = useGamification();
 
   if (!achievements) {
     return <div className="text-center p-4">Loading achievements...</div>;
@@ -126,7 +129,10 @@ export function AchievementShowcase({ achievements, onAchievementClick }: {
   }
 
   const filteredAchievements = achievements
-    .filter(achievement => filter === 'all' || achievement.completed === (filter === 'completed'))
+    .filter(achievement => {
+      const isUnlocked = userProgress?.achievements?.includes(achievement.id) ?? false;
+      return filter === 'all' || (isUnlocked === (filter === 'unlocked'));
+    })
     .sort((a, b) => {
       if (sortBy === 'rarity') {
         const rarityOrder = { epic: 0, rare: 1, common: 2 };
@@ -137,64 +143,33 @@ export function AchievementShowcase({ achievements, onAchievementClick }: {
 
   return (
     <div className="space-y-4">
-      <div className="flex space-x-4">
+      <div className="flex space-x-2 mb-4">
         <button
-          onClick={() => setFilter('completed')}
-          className="px-4 py-2 rounded-lg bg-blue-500 text-white"
+          onClick={() => setFilter('all')}
+          className={`px-3 py-1 rounded ${
+            filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+          }`}
         >
-          Completed
+          All
         </button>
-        <label className="flex items-center space-x-2">
-          Sort by:
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="ml-2 p-2 rounded border"
-            aria-label="Sort by"
-          >
-            <option value="rarity">Rarity</option>
-            <option value="progress">Progress</option>
-            <option value="earned">Earned Date</option>
-          </select>
-        </label>
+        <button
+          onClick={() => setFilter('unlocked')}
+          className={`px-3 py-1 rounded ${
+            filter === 'unlocked' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          Unlocked
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredAchievements.map((achievement) => (
-          <div
+          <AchievementCard
             key={achievement.id}
+            achievement={achievement}
+            isUnlocked={userProgress?.achievements?.includes(achievement.id) ?? false}
             onClick={() => onAchievementClick?.(achievement)}
-            className={cn(
-              'p-4 rounded-lg cursor-pointer',
-              `achievement-${achievement.rarity}`
-            )}
-            data-testid="achievement-item"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="text-4xl">{achievement.icon}</div>
-              <div>
-                <h3 className="font-bold">{achievement.title}</h3>
-                <p className="text-sm text-gray-600">{achievement.description}</p>
-                {achievement.earnedDate && (
-                  <p className="text-sm text-gray-500">
-                    Earned: {new Date(achievement.earnedDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </p>
-                )}
-                {!achievement.completed && (
-                  <p className="text-sm text-gray-500">
-                    Progress: {achievement.progress}/{achievement.target} ({Math.round((achievement.progress / achievement.target) * 100)}%)
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="mt-2">
-              <span className="text-sm font-medium">{achievement.points} points</span>
-            </div>
-          </div>
+          />
         ))}
       </div>
     </div>

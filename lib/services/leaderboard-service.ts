@@ -15,6 +15,7 @@ export interface LeaderboardUser {
   currentStreak: number;
   longestStreak: number;
   level: number;
+  avatarUrl?: string;
 }
 
 export interface LeaderboardEntry extends Omit<LeaderboardUser, 'currentStreak' | 'longestStreak'> {
@@ -124,7 +125,8 @@ export class LeaderboardService {
               ? { current: user.streaks.currentStreak, longest: user.streaks.currentStreak } 
               : { current: 0, longest: 0 },
             contributions: 0,  // TODO: Calculate from measurements
-            badges: 0         // TODO: Calculate from achievements
+            badges: 0,         // TODO: Calculate from achievements
+            avatarUrl: user.user.avatarUrl
           }));
 
           let stats: LeaderboardStats | undefined;

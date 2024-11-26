@@ -4,17 +4,13 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Signal, Trophy, ThumbsUp, Award, Star } from 'lucide-react';
 import { useGamificationStore } from '@/lib/store/gamification-store';
-import confettiFunc from 'canvas-confetti';
+
+// Import canvas-confetti using require
+const confetti = require('canvas-confetti');
 
 // Create a wrapper function for confetti with proper types
 const triggerConfetti = () => {
-  const canvas = document.createElement('canvas');
-  const myConfetti = confettiFunc.create(canvas, {
-    resize: true,
-    useWorker: true,
-  });
-  
-  myConfetti({
+  confetti({
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
