@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import Logo from '@/components/ui/logo';
+import { Button } from '@/components/ui/button';
 
 interface WelcomeProps {
   onNext: () => void;
@@ -20,17 +21,17 @@ export function Welcome({ onNext }: WelcomeProps) {
       </div>
 
       <h1 className="text-4xl font-bold mb-4">{t('title')}</h1>
-      <p className="text-lg text-gray-600 mb-8 max-w-md">
+      <p className="text-lg text-muted-foreground mb-8 max-w-md">
         {t('description')}
       </p>
 
-      <button
+      <Button
         onClick={onNext}
-        className="bg-primary text-white px-8 py-3 rounded-full text-lg font-medium 
-                 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+        size="lg"
+        className="px-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
       >
         {t('getStarted')}
-      </button>
+      </Button>
     </motion.div>
   );
 }
