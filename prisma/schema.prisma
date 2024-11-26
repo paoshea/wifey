@@ -115,24 +115,13 @@ model UserProgress {
 
 model UserStats {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgressId    String    @unique @db.ObjectId
+  userProgressId    String    @db.ObjectId
   userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
-  totalMeasurements Int       @default(0)
-  ruralMeasurements Int       @default(0)
-  uniqueLocations   Int       @default(0)
-  totalDistance     Float     @default(0)
-  contributionScore Float     @default(0)
-  verifiedSpots     Int       @default(0)
-  helpfulActions    Int       @default(0)
-  consecutiveDays   Int       @default(0)
-  lastMeasurementDate DateTime?
-  qualityScore     Float     @default(0)
-  accuracyRate     Float     @default(0)
+  stats            Json      // Stores all stats as a nested object
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  @@index([totalMeasurements])
-  @@index([contributionScore])
+  @@unique([userProgressId])
 }
 
 model Achievement {
@@ -144,6 +133,10 @@ model Achievement {
   rarity      String    // 'common' | 'rare' | 'epic'
   requirements Json[]   // Array of AchievementRequirement objects
   target      Int?     // Optional target value for progress tracking
+  progress    Int?     // Current progress
+  completed   Boolean  @default(false)
+  unlockedAt  DateTime?
+  earnedDate  String?
   userAchievements UserAchievement[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -159,6 +152,7 @@ model UserAchievement {
   achievementId String    @db.ObjectId
   progress      Int       @default(0)
   target        Int?      // Optional target value specific to this user
+  completed     Boolean   @default(false)
   unlockedAt    DateTime? // When the achievement was unlocked
   notifiedAt    DateTime? // When the user was notified
   createdAt     DateTime  @default(now())

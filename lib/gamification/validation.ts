@@ -1,147 +1,84 @@
 import { z } from 'zod';
+import { 
+  Achievement, 
+  UserStats,
+  BaseRequirement,
+  BaseRequirementSchema,
+  AchievementSchema,
+  UserStatsSchema,
+  RequirementType
+} from './types';
 
-// Achievement requirement types
-export const MeasurementCountRequirement = z.object({
-  type: z.literal('MEASUREMENT_COUNT'),
-  threshold: z.number().min(1)
-});
+// Achievement requirement validation
+export function validateRequirement(requirement: unknown): BaseRequirement {
+  return BaseRequirementSchema.parse(requirement);
+}
 
-export const RuralMeasurementsRequirement = z.object({
-  type: z.literal('RURAL_MEASUREMENTS'),
-  threshold: z.number().min(1)
-});
-
-export const ConsecutiveDaysRequirement = z.object({
-  type: z.literal('CONSECUTIVE_DAYS'),
-  threshold: z.number().min(1)
-});
-
-export const AccuracyRateRequirement = z.object({
-  type: z.literal('ACCURACY_RATE'),
-  threshold: z.number().min(0).max(100)
-});
-
-export const VerificationsRequirement = z.object({
-  type: z.literal('VERIFICATIONS'),
-  threshold: z.number().min(1)
-});
-
-export const TimeBasedRequirement = z.object({
-  type: z.literal('TIME_BASED'),
-  startHour: z.number().min(0).max(23),
-  endHour: z.number().min(0).max(23)
-});
-
-// Union of all requirement types
-export const AchievementRequirement = z.discriminatedUnion('type', [
-  MeasurementCountRequirement,
-  RuralMeasurementsRequirement,
-  ConsecutiveDaysRequirement,
-  AccuracyRateRequirement,
-  VerificationsRequirement,
-  TimeBasedRequirement
-]);
-
-// Achievement schema
-export const AchievementSchema = z.object({
-  category: z.string(),
-  title: z.string(),
-  description: z.string(),
-  points: z.number().positive(),
-  icon: z.string(),
-  tier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM']),
-  requirements: AchievementRequirement,
-  isSecret: z.boolean()
-});
-
-// User progress validation
-export const UserProgressSchema = z.object({
-  totalPoints: z.number().min(0),
-  level: z.number().min(1),
-  currentExp: z.number().min(0),
-  nextLevelExp: z.number().min(1)
-});
-
-// User stats validation
-export const UserStatsSchema = z.object({
-  totalMeasurements: z.number().min(0),
-  ruralMeasurements: z.number().min(0),
-  verifiedSpots: z.number().min(0),
-  helpfulActions: z.number().min(0),
-  consecutiveDays: z.number().min(0),
-  qualityScore: z.number().min(0).max(100),
-  accuracyRate: z.number().min(0).max(100)
-});
-
-// Streak validation
-export const UserStreakSchema = z.object({
-  currentStreak: z.number().min(0),
-  longestStreak: z.number().min(0),
-  lastActiveDate: z.date().nullable(),
-  streakHistory: z.array(z.object({
-    date: z.date(),
-    count: z.number().min(1)
-  }))
-});
-
-// Badge validation
-export const UserBadgeSchema = z.object({
-  badgeType: z.enum(['CONTRIBUTOR', 'EXPLORER', 'VERIFIER', 'ANALYST']),
-  level: z.number().min(1),
-  progress: z.number().min(0),
-  nextLevel: z.number().min(1)
-});
-
-// Validation functions
-export function validateAchievement(data: unknown) {
+// Achievement validation
+export function validateAchievement(data: unknown): Achievement {
   return AchievementSchema.parse(data);
 }
 
-export function validateUserProgress(data: unknown) {
-  return UserProgressSchema.parse(data);
+// User stats validation
+export function validateUserStats(data: unknown): UserStats['stats'] {
+  const result = UserStatsSchema.parse(data);
+  return result.stats;
 }
 
-export function validateUserStats(data: unknown) {
-  return UserStatsSchema.parse(data);
-}
+export function validateAchievementRequirements(
+  achievement: Achievement,
+  { stats }: { stats: UserStats['stats'] }
+): boolean {
+  try {
+    if (!achievement.requirements?.length) return false;
 
-export function validateUserStreak(data: unknown) {
-  return UserStreakSchema.parse(data);
-}
+    return achievement.requirements.every(requirement => {
+      const { type, value, operator = 'gte' } = requirement;
+      const statValue = stats[requirement.metric];
 
-export function validateUserBadge(data: unknown) {
-  return UserBadgeSchema.parse(data);
-}
+      if (typeof statValue !== 'number') return false;
 
-// Data integrity checks
-export function checkDataIntegrity(data: {
-  userProgress: unknown,
-  userStats: unknown,
-  userStreak: unknown,
-  userBadges: unknown[]
-}) {
-  const progress = validateUserProgress(data.userProgress);
-  const stats = validateUserStats(data.userStats);
-  const streak = validateUserStreak(data.userStreak);
-  const badges = data.userBadges.map(badge => validateUserBadge(badge));
-
-  // Additional integrity checks
-  if (progress.currentExp >= progress.nextLevelExp) {
-    throw new Error('Current experience cannot be greater than next level threshold');
+      switch (operator) {
+        case 'gt':
+          return statValue > value;
+        case 'gte':
+          return statValue >= value;
+        case 'lt':
+          return statValue < value;
+        case 'lte':
+          return statValue <= value;
+        case 'eq':
+          return statValue === value;
+        default:
+          return false;
+      }
+    });
+  } catch (error) {
+    console.error('Error validating achievement requirements:', error);
+    return false;
   }
+}
 
-  if (streak.currentStreak > streak.longestStreak) {
-    throw new Error('Current streak cannot be greater than longest streak');
+export function calculateProgress(
+  achievement: Achievement,
+  { stats }: { stats: UserStats['stats'] }
+): { current: number; target: number } {
+  try {
+    if (!achievement.requirements?.length) {
+      return { current: 0, target: 0 };
+    }
+
+    // For now, we'll use the first requirement as the main progress indicator
+    const requirement = achievement.requirements[0];
+    const { value, metric } = requirement;
+    const current = stats[metric] ?? 0;
+
+    return {
+      current: Math.min(current, value),
+      target: value
+    };
+  } catch (error) {
+    console.error('Error calculating achievement progress:', error);
+    return { current: 0, target: 0 };
   }
-
-  if (stats.accuracyRate > 100 || stats.qualityScore > 100) {
-    throw new Error('Accuracy rate and quality score must be between 0 and 100');
-  }
-
-  return {
-    progress,
-    stats,
-    streak,
-    badges
-  };
 }
