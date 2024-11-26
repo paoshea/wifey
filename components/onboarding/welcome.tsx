@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
+import Logo from '@/components/ui/logo';
 
 interface WelcomeProps {
   onNext: () => void;
@@ -16,15 +16,7 @@ export function Welcome({ onNext }: WelcomeProps) {
       className="flex flex-col items-center justify-center min-h-screen p-6 text-center"
     >
       <div className="mb-8">
-        <Image
-          src="/logo.svg"
-          alt="Wifey Logo"
-          width={120}
-          height={120}
-          priority
-          unoptimized
-          className="w-full h-full"
-        />
+        <Logo width={120} height={120} className="w-full h-full" />
       </div>
 
       <h1 className="text-4xl font-bold mb-4">{t('title')}</h1>

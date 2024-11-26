@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
@@ -13,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import Logo from '@/components/ui/logo';
 
 const links = [
   { href: '/', label: 'home', icon: Home },
@@ -54,17 +54,9 @@ export default function Navbar() {
         <div className="mr-8 hidden md:flex items-center">
           <Link href={`/${locale}`} className="flex items-center space-x-2">
             <div className="relative w-8 h-8">
-              <Image
-                src="/logo.svg"
-                alt="Wifey Logo"
-                width={32}
-                height={32}
-                className="w-full h-full"
-                priority
-                unoptimized
-              />
+              <Logo width={32} height={32} className="w-full h-full" />
             </div>
-            <span className="hidden font-bold sm:inline-block">
+            <span className="hidden lg:inline-block text-xl font-bold">
               Wifey
             </span>
           </Link>
@@ -74,15 +66,7 @@ export default function Navbar() {
         <div className="mr-4 flex md:hidden items-center">
           <Link href={`/${locale}`} className="flex items-center">
             <div className="relative w-6 h-6">
-              <Image
-                src="/logo.svg"
-                alt="Wifey Logo"
-                width={24}
-                height={24}
-                className="w-full h-full"
-                priority
-                unoptimized
-              />
+              <Logo width={24} height={24} className="w-full h-full" />
             </div>
           </Link>
         </div>
