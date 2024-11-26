@@ -7,9 +7,15 @@ import {
   LeaderboardEntry,
   Achievement 
 } from '../lib/gamification/types';
-import { GamificationService } from '../lib/gamification/gamification-service';
+import { GamificationService } from '../lib/services/gamification-service';
 import { calculateLevel, getNextLevelThreshold } from '../lib/gamification/achievements';
 import { Session } from '../lib/types/auth';
+
+interface UserAchievement {
+  achievementId: string;
+  achievement: Achievement;
+  unlockedAt: Date | null;
+}
 
 const gamificationService = new GamificationService();
 
@@ -51,7 +57,7 @@ export function useGamification(): UseGamificationReturn {
     const fetchProgress = async () => {
       try {
         setIsLoading(true);
-        const achievements = await gamificationService.getUserAchievements(session.user.id);
+        const achievements = await gamificationService.getUserAchievements(session.user.id) as UserAchievement[];
         const totalPoints = achievements.reduce((sum, achievement) => 
           achievement.unlockedAt ? sum + achievement.achievement.points : sum, 0);
         
@@ -60,7 +66,7 @@ export function useGamification(): UseGamificationReturn {
           setUserProgress({
             totalPoints,
             level,
-            achievements: achievements.filter(a => a.unlockedAt).map(a => a.achievement.id),
+            achievements: achievements.filter(a => a.unlockedAt).map(a => a.achievementId),
             stats: {
               totalMeasurements: 0,
               ruralMeasurements: 0,
