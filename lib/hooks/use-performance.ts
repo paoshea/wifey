@@ -57,10 +57,7 @@ export function usePerformance({
   useEffect(() => {
     const startTime = performance.now();
     const currentRenderCount = renderCount.current;
-
-    if (trackRenders) {
-      renderCount.current++;
-    }
+    renderCount.current++;
 
     return () => {
       const endTime = performance.now();
