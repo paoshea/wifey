@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { toast } from '@/components/ui/toast';
+import { useToastUtil } from '@/lib/utils/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations('auth.signin');
+  const { toast } = useToastUtil();
 
   useEffect(() => {
     // Show success message if user just registered
@@ -160,7 +161,7 @@ export default function SignIn() {
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Button
               variant="link"
               className="font-medium text-blue-600 hover:text-blue-500"

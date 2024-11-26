@@ -477,11 +477,11 @@ export default function OnboardingPage({
                 >
                   <div className="space-y-4">
                     <div className="flex items-center">
-                      {[...Array(testimonial.rating)].map((_, i) => (
+                      {[...Array(5)].map((_, i) => (
                         <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                       ))}
                     </div>
-                    <p className="text-gray-600 italic">"{testimonial.content}"</p>
+                    <p className="text-gray-600 italic">&ldquo;{testimonial.content}&rdquo;</p>
                     <div>
                       <p className="font-semibold text-gray-900">{testimonial.name}</p>
                       <p className="text-gray-500 text-sm">{testimonial.role}</p>

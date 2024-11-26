@@ -21,7 +21,7 @@ const defaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = defaultIcon;
 
-type MapPoint = {
+export type MapPoint = {
   id: string;
   type: 'wifi' | 'coverage';
   name: string;

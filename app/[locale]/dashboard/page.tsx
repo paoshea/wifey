@@ -1,14 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Wifi, Signal } from 'lucide-react';
+import { MapPin, Signal, Wifi } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard');
-  const { locale } = useTranslations();
+  const locale = useLocale();
 
   return (
     <div className="container py-8">

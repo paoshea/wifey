@@ -127,7 +127,3 @@ export {
   ToastClose,
   ToastAction,
 };
-
-import { useToast } from '@/components/ui/use-toast';
-
-export const toast = useToast().toast;

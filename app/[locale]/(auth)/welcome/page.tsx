@@ -1,11 +1,14 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 
 export default function WelcomePage() {
   const t = useTranslations('Welcome');
-  const { locale } = useTranslations();
+  const locale = useLocale();
 
   return (
     <div className="container flex items-center justify-center min-h-[80vh]">

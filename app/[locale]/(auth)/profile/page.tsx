@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import Link from 'next/link';
 
 export default function ProfilePage() {
   const t = useTranslations('Profile');
-  const { locale } = useTranslations();
+  const locale = useLocale();
 
   return (
     <div className="container max-w-2xl py-8">

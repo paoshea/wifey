@@ -7,7 +7,7 @@ import { MapPin, Wifi, Signal, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import MapView from '@/components/map/map-view';
+import MapView, { MapPoint } from '@/components/map/map-view';
 
 export default function ExplorePage() {
   const t = useTranslations('explore');
@@ -15,23 +15,23 @@ export default function ExplorePage() {
   const [searchRadius, setSearchRadius] = useState(5);
 
   // Sample data - replace with real data from your backend
-  const samplePoints = [
+  const samplePoints: MapPoint[] = [
     {
       id: '1',
-      type: 'wifi' as const,
+      type: 'wifi',
       name: 'Coffee Shop WiFi',
-      coordinates: [9.9281, -84.0907],
+      coordinates: [9.9281, -84.0907] as [number, number],
       details: {
         speed: '50 Mbps',
-        type: 'free' as const,
+        type: 'free',
         provider: 'Local Cafe'
       }
     },
     {
       id: '2',
-      type: 'coverage' as const,
+      type: 'coverage',
       name: 'High Coverage Zone',
-      coordinates: [9.9290, -84.0920],
+      coordinates: [9.9290, -84.0920] as [number, number],
       details: {
         strength: 'Excellent',
         provider: 'Movistar'
@@ -39,7 +39,7 @@ export default function ExplorePage() {
     }
   ];
 
-  const handlePointSelect = (point: any) => {
+  const handlePointSelect = (point: MapPoint) => {
     console.log('Selected point:', point);
   };
 

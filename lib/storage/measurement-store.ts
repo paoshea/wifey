@@ -33,9 +33,8 @@ export class MeasurementStore {
         const store = db.createObjectStore('measurements', {
           keyPath: 'id',
         });
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        store.createIndex('by-timestamp', 'timestamp');
-        store.createIndex('by-sync-status', 'syncStatus');
+        store.createIndex('by-timestamp', 'timestamp')
+          .then(() => store.createIndex('by-sync-status', 'syncStatus'));
       },
     });
   }

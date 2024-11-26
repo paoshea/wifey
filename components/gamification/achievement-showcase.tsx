@@ -114,6 +114,9 @@ export function AchievementShowcase({ achievements, onAchievementClick }: {
   achievements: Achievement[] | undefined; 
   onAchievementClick?: (achievement: Achievement) => void;
 }) {
+  const [filter, setFilter] = useState<'all' | 'completed'>('all');
+  const [sortBy, setSortBy] = useState<'rarity' | 'progress' | 'earned'>('rarity');
+
   if (!achievements) {
     return <div className="text-center p-4">Loading achievements...</div>;
   }
@@ -121,9 +124,6 @@ export function AchievementShowcase({ achievements, onAchievementClick }: {
   if (achievements.length === 0) {
     return <div className="text-center p-4">No achievements yet</div>;
   }
-
-  const [filter, setFilter] = useState<'all' | 'completed'>('all');
-  const [sortBy, setSortBy] = useState<'rarity' | 'progress' | 'earned'>('rarity');
 
   const filteredAchievements = achievements
     .filter(achievement => filter === 'all' || achievement.completed === (filter === 'completed'))

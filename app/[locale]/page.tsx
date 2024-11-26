@@ -1,15 +1,16 @@
 'use client';
 
-import { MapPin, Wifi, Signal, Trophy, Star, Award } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
+import { MapPin, Signal, Wifi, Trophy, Star, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
 
 export default function Home() {
   const t = useTranslations();
-  const { locale } = useTranslations();
+  const locale = useLocale();
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">

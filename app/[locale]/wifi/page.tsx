@@ -8,38 +8,39 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MapView from '@/components/map/map-view';
+import type { MapPoint } from '@/components/map/map-view';
 
 export default function WifiPage() {
   const t = useTranslations('wifi');
   const [searchRadius, setSearchRadius] = useState(5);
 
   // Sample wifi data - replace with real data from backend
-  const samplePoints = [
+  const samplePoints: MapPoint[] = [
     {
       id: '1',
-      type: 'wifi' as const,
+      type: 'wifi',
       name: 'Coffee Shop WiFi',
-      coordinates: [9.9281, -84.0907],
+      coordinates: [9.9281, -84.0907] as [number, number],
       details: {
         speed: '50 Mbps',
-        type: 'free' as const,
+        type: 'free',
         provider: 'Local Cafe'
       }
     },
     {
       id: '2',
-      type: 'wifi' as const,
+      type: 'wifi',
       name: 'Hotel WiFi',
-      coordinates: [9.9290, -84.0920],
+      coordinates: [9.9290, -84.0920] as [number, number],
       details: {
         speed: '100 Mbps',
-        type: 'private' as const,
+        type: 'restricted',
         provider: 'Hotel Network'
       }
     }
   ];
 
-  const handlePointSelect = (point: any) => {
+  const handlePointSelect = (point: MapPoint) => {
     console.log('Selected wifi point:', point);
   };
 
@@ -92,7 +93,7 @@ export default function WifiPage() {
               <div className="space-y-4">
                 <h3 className="font-medium">{t('filters.type.title')}</h3>
                 <div className="space-y-2">
-                  {['Free', 'Private', 'Public'].map((type) => (
+                  {['Free', 'Restricted', 'Public'].map((type) => (
                     <div key={type} className="flex items-center">
                       <input
                         type="checkbox"
