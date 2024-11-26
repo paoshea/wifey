@@ -1,5 +1,5 @@
 import React from 'react';
-import { SignalMeasurement } from '@/lib/monitoring/signal-monitor';
+import { SignalMeasurement } from '@/lib/types/monitoring';
 import { Card } from '@/components/ui/card';
 import {
   Signal,

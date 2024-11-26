@@ -10,8 +10,8 @@ import { JWT } from 'next-auth/jwt';
 
 const prisma = new PrismaClient();
 
-interface ExtendedPrismaUser extends PrismaUser {
-  password?: string;
+interface ExtendedPrismaUser extends Omit<PrismaUser, 'role'> {
+  password: string;
   role: 'user' | 'admin';
 }
 

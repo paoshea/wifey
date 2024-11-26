@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import * as Sentry from '@sentry/nextjs';
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (error instanceof PrismaClient.PrismaClientKnownRequestError) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return NextResponse.json(
           { error: 'User with this email already exists' },
