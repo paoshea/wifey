@@ -14,11 +14,15 @@ import {
   getNextLevelThreshold,
   calculateAchievementProgress
 } from './achievements';
+import { PrismaClient, UserProgress as PrismaUserProgress, Achievement as PrismaAchievement, UserStats } from '@prisma/client';
+import { validateAchievementRequirements, calculateProgress } from './validation';
 
 export class GamificationService {
   private userProgress: Map<string, UserProgress> = new Map();
-  
-  constructor() {
+  private prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
     // Initialize with empty user progress
   }
 
@@ -201,5 +205,115 @@ export class GamificationService {
     }
     
     return rewards;
+  }
+
+  async updateUserStats(userId: string, newStats: Partial<UserStats['stats']>): Promise<UserProgress> {
+    const userProgress = await this.prisma.userProgress.findUnique({
+      where: { userId },
+      include: { stats: true }
+    });
+
+    if (!userProgress) {
+      throw new Error('User progress not found');
+    }
+
+    // Update stats
+    const currentStats = userProgress.stats?.stats as Record<string, any> || {};
+    const updatedStats = {
+      ...currentStats,
+      ...newStats,
+      lastMeasurementDate: new Date().toISOString()
+    };
+
+    // Update or create user stats
+    await this.prisma.userStats.upsert({
+      where: { userProgressId: userProgress.id },
+      create: {
+        userProgressId: userProgress.id,
+        stats: updatedStats
+      },
+      update: {
+        stats: updatedStats
+      }
+    });
+
+    // Check achievements
+    const achievements = await this.checkAchievements(userId, updatedStats);
+    
+    // Update achievements
+    for (const achievement of achievements) {
+      if (achievement.completed) continue;
+
+      await this.prisma.userAchievement.upsert({
+        where: {
+          userProgressId_achievementId: {
+            userProgressId: userProgress.id,
+            achievementId: achievement.id
+          }
+        },
+        create: {
+          userProgressId: userProgress.id,
+          achievementId: achievement.id,
+          progress: achievement.progress || 0,
+          target: achievement.target,
+          completed: achievement.completed || false,
+          unlockedAt: achievement.unlockedAt
+        },
+        update: {
+          progress: achievement.progress || 0,
+          completed: achievement.completed || false,
+          unlockedAt: achievement.unlockedAt
+        }
+      });
+    }
+
+    return this.prisma.userProgress.findUnique({
+      where: { userId },
+      include: { stats: true }
+    });
+  }
+
+  private async checkAchievements(userId: string, stats: Record<string, any>): Promise<PrismaAchievement[]> {
+    const achievements = await this.prisma.achievement.findMany();
+    
+    return achievements.map(achievement => {
+      const requirements = achievement.requirements as any[];
+      const isCompleted = validateAchievementRequirements(achievement as any, { stats });
+      const progress = calculateProgress(achievement as any, { stats });
+
+      return {
+        ...achievement,
+        progress: progress.current,
+        completed: isCompleted,
+        unlockedAt: isCompleted ? new Date() : null,
+        earnedDate: isCompleted ? new Date().toISOString() : null
+      };
+    });
+  }
+
+  async getAchievements(userId: string): Promise<PrismaAchievement[]> {
+    const userProgress = await this.prisma.userProgress.findUnique({
+      where: { userId },
+      include: { achievements: true }
+    });
+
+    if (!userProgress) {
+      return this.prisma.achievement.findMany();
+    }
+
+    const achievements = await this.prisma.achievement.findMany();
+    return achievements.map(achievement => {
+      const userAchievement = userProgress.achievements.find(
+        ua => ua.achievementId === achievement.id
+      );
+
+      return {
+        ...achievement,
+        progress: userAchievement?.progress || 0,
+        completed: userAchievement?.completed || false,
+        unlockedAt: userAchievement?.unlockedAt || null,
+        earnedDate: userAchievement?.unlockedAt?.toISOString() || null
+      };
+    });
   }
 }

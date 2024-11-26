@@ -1,7 +1,6 @@
 import { z } from 'zod';
+import { Achievement, UserStats } from '@prisma/client';
 import { 
-  Achievement, 
-  UserStats,
   BaseRequirement,
   BaseRequirementSchema,
   AchievementSchema,
@@ -20,21 +19,22 @@ export function validateAchievement(data: unknown): Achievement {
 }
 
 // User stats validation
-export function validateUserStats(data: unknown): UserStats['stats'] {
+export function validateUserStats(data: unknown): Record<string, any> {
   const result = UserStatsSchema.parse(data);
   return result.stats;
 }
 
 export function validateAchievementRequirements(
   achievement: Achievement,
-  { stats }: { stats: UserStats['stats'] }
+  { stats }: { stats: Record<string, any> }
 ): boolean {
   try {
-    if (!achievement.requirements?.length) return false;
+    const requirements = achievement.requirements as any[];
+    if (!requirements?.length) return false;
 
-    return achievement.requirements.every(requirement => {
-      const { type, value, operator = 'gte' } = requirement;
-      const statValue = stats[requirement.metric];
+    return requirements.every(requirement => {
+      const { type, value, operator = 'gte', metric } = requirement;
+      const statValue = stats[metric];
 
       if (typeof statValue !== 'number') return false;
 
@@ -61,15 +61,16 @@ export function validateAchievementRequirements(
 
 export function calculateProgress(
   achievement: Achievement,
-  { stats }: { stats: UserStats['stats'] }
+  { stats }: { stats: Record<string, any> }
 ): { current: number; target: number } {
   try {
-    if (!achievement.requirements?.length) {
+    const requirements = achievement.requirements as any[];
+    if (!requirements?.length) {
       return { current: 0, target: 0 };
     }
 
     // For now, we'll use the first requirement as the main progress indicator
-    const requirement = achievement.requirements[0];
+    const requirement = requirements[0];
     const { value, metric } = requirement;
     const current = stats[metric] ?? 0;
 

@@ -19,12 +19,14 @@ export enum RarityLevel {
 
 // Base requirement schema
 export const BaseRequirementSchema = z.object({
-  type: z.enum(['measurements', 'rural_measurements', 'verified_spots', 'helping_others', 'consistency']),
-  value: z.number().positive(),
-  operator: z.enum(['gt', 'gte', 'lt', 'lte', 'eq']).optional(),
+  type: z.enum(['stat', 'achievement']),
   metric: z.string(),
-  description: z.string().optional()
+  value: z.number(),
+  operator: z.enum(['gt', 'gte', 'lt', 'lte', 'eq']).default('gte'),
 });
+
+export type BaseRequirement = z.infer<typeof BaseRequirementSchema>;
+export type RequirementType = z.infer<typeof BaseRequirementSchema>['type'];
 
 // Achievement schema
 export const AchievementSchema = z.object({
@@ -32,37 +34,25 @@ export const AchievementSchema = z.object({
   title: z.string(),
   description: z.string(),
   icon: z.string(),
+  requirements: z.array(BaseRequirementSchema),
+  progress: z.number().optional(),
+  target: z.number().optional(),
+  completed: z.boolean().optional(),
+  unlockedAt: z.date().nullable().optional(),
+  earnedDate: z.string().nullable().optional(),
   points: z.number().positive(),
   rarity: z.enum(['common', 'rare', 'epic']),
-  requirements: z.array(BaseRequirementSchema),
-  target: z.number().nullable(),
-  progress: z.number().optional(),
-  unlockedAt: z.date().nullable().optional(),
-  completed: z.boolean().optional(),
-  earnedDate: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
 
 // User stats schema
 export const UserStatsSchema = z.object({
-  id: z.string(),
-  userProgressId: z.string(),
-  stats: z.object({
-    totalMeasurements: z.number(),
-    ruralMeasurements: z.number(),
-    uniqueLocations: z.number(),
-    totalDistance: z.number(),
-    contributionScore: z.number(),
-    verifiedSpots: z.number(),
-    helpfulActions: z.number(),
-    consecutiveDays: z.number(),
-    qualityScore: z.number(),
-    accuracyRate: z.number(),
-    lastMeasurementDate: z.string().nullable()
-  }),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  id: z.string().optional(),
+  userProgressId: z.string().optional(),
+  stats: z.record(z.string(), z.any()),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 // Achievement progress schema
@@ -77,7 +67,6 @@ export const AchievementProgressSchema = z.object({
 export type Achievement = z.infer<typeof AchievementSchema>;
 export type UserStats = z.infer<typeof UserStatsSchema>;
 export type AchievementProgress = z.infer<typeof AchievementProgressSchema>;
-export type BaseRequirement = z.infer<typeof BaseRequirementSchema>;
 
 // Achievement notification type
 export interface AchievementNotification {
