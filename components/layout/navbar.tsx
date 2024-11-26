@@ -55,12 +55,13 @@ export default function Navbar() {
           <Link href={`/${locale}`} className="flex items-center space-x-2">
             <div className="relative w-8 h-8">
               <Image
-                src="/logo.svg"
+                src="/branding/logo.svg"
                 alt="Wifey Logo"
                 width={32}
                 height={32}
-                className="object-contain"
+                className="w-full h-full"
                 priority
+                unoptimized
               />
             </div>
             <span className="hidden font-bold sm:inline-block">
@@ -74,12 +75,13 @@ export default function Navbar() {
           <Link href={`/${locale}`} className="flex items-center">
             <div className="relative w-6 h-6">
               <Image
-                src="/logo.svg"
+                src="/branding/logo.svg"
                 alt="Wifey Logo"
                 width={24}
                 height={24}
-                className="object-contain"
+                className="w-full h-full"
                 priority
+                unoptimized
               />
             </div>
           </Link>

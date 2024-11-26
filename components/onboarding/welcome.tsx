@@ -22,7 +22,8 @@ export function Welcome({ onNext }: WelcomeProps) {
           width={120}
           height={120}
           priority
-          className="dark:invert"
+          unoptimized
+          className="w-full h-full"
         />
       </div>
 
