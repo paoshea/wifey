@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Signal, Trophy, ThumbsUp, Award, Star } from 'lucide-react';
 import { useGamificationStore } from '@/lib/store/gamification-store';
-import * as confetti from 'canvas-confetti';
+import { create } from 'canvas-confetti';
 
 interface SuccessPopupProps {
   show: boolean;
@@ -30,7 +30,7 @@ export default function SuccessPopup({ show, onClose, location }: SuccessPopupPr
       checkStreak();
 
       // Trigger confetti effect
-      confetti({
+      create({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },

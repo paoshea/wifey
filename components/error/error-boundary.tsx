@@ -4,7 +4,7 @@ import { Component, ReactNode, ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { logError } from '@/lib/monitoring/sentry';
+import { trackError } from '@/lib/monitoring/sentry';
 
 interface Props {
   children: ReactNode;
@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logError(error, {
+    trackError(error, {
       errorInfo,
       component: 'ErrorBoundary',
     });
