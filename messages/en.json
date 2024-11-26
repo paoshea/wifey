@@ -411,25 +411,26 @@
     "filters": {
       "title": "Filter Coverage",
       "all": "All Coverage Types",
-      "type": {
-        "title": "Coverage Type",
-        "all": "All Types",
-        "wifi": "WiFi",
-        "cellular": "Cellular",
-        "mixed": "Mixed"
-      },
-      "quality": {
-        "title": "Coverage Quality",
-        "all": "All Qualities",
-        "excellent": "Excellent",
-        "good": "Good",
-        "fair": "Fair",
-        "poor": "Poor"
+      "cellular": "Cellular Coverage",
+      "wifi": "WiFi Hotspots",
+      "landmarks": "Landmarks",
+      "range": {
+        "title": "Search Range",
+        "all": "Any Distance",
+        "nearby": "Nearby (1km)",
+        "local": "Local (5km)",
+        "city": "City (10km)",
+        "region": "Region (50km)"
       }
     },
     "map": {
       "title": "Coverage Map",
       "loading": "Loading coverage map..."
+    },
+    "contribute": {
+      "title": "Add New Points",
+      "description": "Help others stay connected by adding new coverage points",
+      "button": "Add Coverage Point"
     },
     "stats": {
       "title": "Coverage Statistics",
