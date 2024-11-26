@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 
 export type AchievementCategory = 
@@ -37,9 +39,11 @@ export interface Achievement {
   tier: AchievementTier;
   category: AchievementCategory;
   requirements: AchievementRequirement[];
-  unlockedAt?: Date | null;
-  progress?: number;
   target?: number;
+  progress?: number;
+  unlockedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UserAchievement {
@@ -50,6 +54,8 @@ export interface UserAchievement {
   target?: number;
   unlockedAt?: Date | null;
   notifiedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AchievementProgress {
@@ -61,17 +67,48 @@ export interface AchievementProgress {
 }
 
 export interface UserProgress {
+  id: string;
+  userId: string;
   totalPoints: number;
   level: number;
-  achievements: string[];  // Achievement IDs
+  currentXP: number;
+  totalXP: number;
+  nextLevelXP: number;
+  streak: number;
+  lastActive: Date;
+  unlockedAchievements: number;
+  lastAchievementAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
   stats: {
     totalMeasurements: number;
     ruralMeasurements: number;
+    uniqueLocations: number;
+    totalDistance: number;
+    contributionScore: number;
     verifiedSpots: number;
     helpfulActions: number;
     consecutiveDays: number;
-    lastMeasurementDate: string;
+    qualityScore: number;
+    accuracyRate: number;
   };
+}
+
+export interface UserStats {
+  id: string;
+  userProgressId: string;
+  totalMeasurements: number;
+  ruralMeasurements: number;
+  uniqueLocations: number;
+  totalDistance: number;
+  contributionScore: number;
+  verifiedSpots: number;
+  helpfulActions: number;
+  consecutiveDays: number;
+  qualityScore: number;
+  accuracyRate: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ContributionReward {
@@ -98,3 +135,40 @@ export interface LeaderboardEntry {
   rank: number;
   avatarUrl?: string;
 }
+
+// Zod schemas for validation
+export const AchievementRequirementSchema = z.object({
+  type: z.string(),
+  value: z.number(),
+  operator: z.enum(['gt', 'gte', 'lt', 'lte', 'eq']).optional(),
+  metric: z.string(),
+  description: z.string().optional()
+});
+
+export const AchievementSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  icon: z.string(),
+  points: z.number(),
+  rarity: z.enum(['common', 'rare', 'epic']),
+  tier: z.enum(['bronze', 'silver', 'gold', 'platinum']),
+  category: z.enum([
+    'COVERAGE_PIONEER', 
+    'RURAL_EXPLORER', 
+    'CONSISTENT_MAPPER', 
+    'COVERAGE_EXPERT', 
+    'COMMUNITY_HELPER', 
+    'WIFI_SCOUT', 
+    'NETWORK_VALIDATOR', 
+    'COVERAGE_CHAMPION'
+  ]),
+  requirements: z.array(AchievementRequirementSchema),
+  target: z.number().optional(),
+  progress: z.number().optional(),
+  unlockedAt: z.date().nullable().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+});
+
+export type ValidatedAchievement = z.infer<typeof AchievementSchema>;
