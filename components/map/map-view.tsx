@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -35,9 +35,10 @@ export type MapPoint = {
 };
 
 interface MapViewProps {
-  points: MapPoint[];
-  activeLayer: 'wifi' | 'coverage' | 'both';
-  onPointSelect: (point: MapPoint) => void;
+  points?: MapPoint[];
+  activeLayer?: 'wifi' | 'coverage' | 'both';
+  onPointSelect?: (point: MapPoint) => void;
+  onMapClick?: (latlng: { lat: number; lng: number }) => void;
   center?: [number, number];
   zoom?: number;
 }
@@ -89,13 +90,15 @@ function MapRecenter({ center }: { center: [number, number] }) {
 }
 
 export default function MapView({
-  points,
-  activeLayer,
-  onPointSelect,
+  points = [],
+  activeLayer = 'both',
+  onPointSelect = () => {},
+  onMapClick,
   center = [9.9281, -84.0907], // Default center (Costa Rica)
   zoom = 13
 }: MapViewProps) {
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
+  const mapRef = useRef<L.Map | null>(null);
 
   const filteredPoints = points.filter(point => {
     if (activeLayer === 'both') return true;
@@ -165,12 +168,30 @@ export default function MapView({
     }
   }, []);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (onMapClick) {
+        onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+      }
+    };
+
+    map.on('click', handleMapClick);
+
+    return () => {
+      map.off('click', handleMapClick);
+    };
+  }, [onMapClick]);
+
   return (
     <MapContainer
       center={mapCenter}
       zoom={zoom}
       className="w-full h-full rounded-lg"
       style={{ background: '#f3f4f6' }}
+      ref={mapRef}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

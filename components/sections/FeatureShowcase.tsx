@@ -2,13 +2,13 @@
 
 import { MapPin, Wifi, Signal } from 'lucide-react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 
 export function FeatureShowcase() {
   const t = useTranslations('home.features');
-  const { locale } = useTranslations();
+  const locale = useLocale();
 
   const container = {
     hidden: { opacity: 0 },

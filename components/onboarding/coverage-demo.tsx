@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { Signal } from 'lucide-react';
 
-const Map = dynamic(() => import('@/components/map/map'), { ssr: false });
+const Map = dynamic(() => import('@/components/map/map-view'), { ssr: false });
 
 interface CoverageDemoProps {
   onNext: () => void;
@@ -18,7 +18,7 @@ export function CoverageDemo({ onNext }: CoverageDemoProps) {
 
   const carriers = ['AT&T', 'T-Mobile', 'Verizon', 'Sprint'];
 
-  const handleMapClick = () => {
+  const handleMapClick = (latlng: { lat: number; lng: number }) => {
     setStep('signal');
   };
 
@@ -33,11 +33,9 @@ export function CoverageDemo({ onNext }: CoverageDemoProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="p-4 bg-white shadow-md z-10">
-        <h2 className="text-2xl font-bold mb-2">{t('title')}</h2>
-        <p className="text-gray-600">{t('description')}</p>
-      </div>
+    <div className="flex flex-col gap-4 h-full">
+      <h2 className="text-2xl font-bold text-center">{t('title')}</h2>
+      <p className="text-center text-muted-foreground">{t('description')}</p>
 
       <div className="flex-1 relative">
         <Map onMapClick={handleMapClick} />
