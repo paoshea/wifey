@@ -1,0 +1,56 @@
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.wifey.app',
+  appName: 'Wifey',
+  webDir: 'out',
+  server: {
+    androidScheme: 'https',
+    cleartext: true,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#FFFFFF',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#488AFF',
+    },
+    Geolocation: {
+      permissions: {
+        ios: {
+          'location-always': 'Track WiFi and cellular coverage in background',
+          'location-when-in-use': 'Track coverage points near you',
+        },
+        android: {
+          'location-background': 'Track WiFi and cellular coverage in background',
+          'location-when-in-use': 'Track coverage points near you',
+        },
+      },
+    },
+    BackgroundGeolocation: {
+      notification: {
+        title: 'Wifey Coverage Tracking',
+        text: 'Tracking coverage points in your area',
+      },
+      distanceFilter: 10,
+    },
+  },
+  ios: {
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile',
+    backgroundColor: '#FFFFFF',
+  },
+  android: {
+    backgroundColor: '#FFFFFF',
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+  },
+};

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Signal, Trophy, ThumbsUp, Award, Star } from 'lucide-react';
 import { useGamificationStore } from '@/lib/store/gamification-store';
-import confetti from 'canvas-confetti';
+import * as confetti from 'canvas-confetti';
 
 interface SuccessPopupProps {
   show: boolean;

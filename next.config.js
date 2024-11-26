@@ -1,5 +1,4 @@
 // This file sets up the configuration for Next.js
-const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
 // First create the next-intl configuration
@@ -33,30 +32,5 @@ const nextConfig = {
   }
 };
 
-// First wrap with next-intl
-let config = withNextIntl(nextConfig);
-
-// Then wrap with Sentry
-config = withSentryConfig(
-  config,
-  {
-    org: "ownco-bp",
-    project: "javascript-nextjs",
-    silent: !process.env.CI,
-    widenClientFileUpload: true,
-    reactComponentAnnotation: {
-      enabled: true,
-    },
-    tunnelRoute: "/_sentry",
-    hideSourceMaps: true,
-    disableLogger: true,
-    automaticVercelMonitors: true,
-  },
-  {
-    hideSourceMaps: true,
-    disableServerWebpackPlugin: process.env.NODE_ENV === 'development',
-    disableClientWebpackPlugin: process.env.NODE_ENV === 'development',
-  }
-);
-
-module.exports = config;
+// Export the config wrapped with next-intl
+module.exports = withNextIntl(nextConfig);

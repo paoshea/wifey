@@ -1,6 +1,11 @@
 import { Achievement } from '@prisma/client';
 import { ACHIEVEMENT_TIERS } from './constants';
 
+// Bonus constants
+export const RURAL_BONUS_MULTIPLIER = 1.5;
+export const FIRST_IN_AREA_BONUS = 100;
+export const QUALITY_BONUS_MAX = 50;
+
 export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'rural-pioneer',

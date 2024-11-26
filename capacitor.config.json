@@ -3,13 +3,46 @@
   "appName": "Wifey",
   "webDir": "out",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": true
   },
   "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#FFFFFF",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#488AFF"
+    },
     "Geolocation": {
-      "permissions": [
-        "location"
-      ]
+      "permissions": {
+        "ios": ["location-always", "location-when-in-use"],
+        "android": ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_BACKGROUND_LOCATION"]
+      }
+    },
+    "BackgroundGeolocation": {
+      "notification": {
+        "title": "Wifey Coverage Tracking",
+        "text": "Tracking coverage points in your area"
+      },
+      "distanceFilter": 10
     }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#FFFFFF"
+  },
+  "android": {
+    "backgroundColor": "#FFFFFF",
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
   }
 }
