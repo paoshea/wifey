@@ -16,6 +16,8 @@ model User {
   preferredLanguage String         @default("en")
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  emailVerified     DateTime?      // Added for auth
+  image             String?        // Added for user profile
   contributions     CoveragePoint[]
   measurements      Measurement[]
   progress          UserProgress?
@@ -102,6 +104,8 @@ model UserProgress {
   stats          UserStats?
   streaks        UserStreak?
   badges         UserBadge[]
+  unlockedAchievements Int @default(0)  // Added to track total unlocked achievements
+  lastAchievementAt DateTime?  // Added to track last achievement unlock
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -133,20 +137,18 @@ model UserStats {
 
 model Achievement {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  category    String
   title       String    @unique
   description String
-  points      Int
   icon        String
-  tier        String    // BRONZE, SILVER, GOLD, PLATINUM
-  requirements Json     // Stored requirements criteria
-  isSecret    Boolean   @default(false)
+  points      Int
+  rarity      String    // 'common' | 'rare' | 'epic'
+  requirements Json[]   // Array of AchievementRequirement objects
+  target      Int?     // Optional target value for progress tracking
   userAchievements UserAchievement[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@index([category])
-  @@index([tier])
+  @@index([rarity])
 }
 
 model UserAchievement {
@@ -156,8 +158,9 @@ model UserAchievement {
   achievement   Achievement @relation(fields: [achievementId], references: [id])
   achievementId String    @db.ObjectId
   progress      Int       @default(0)
-  completed     Boolean   @default(false)
-  completedAt   DateTime?
+  target        Int?      // Optional target value specific to this user
+  unlockedAt    DateTime? // When the achievement was unlocked
+  notifiedAt    DateTime? // When the user was notified
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

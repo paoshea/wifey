@@ -59,14 +59,23 @@ async function main() {
     {
       name: 'Test User 1',
       email: 'test1@example.com',
+      password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy', // hashed 'password123'
+      role: 'user',
+      preferredLanguage: 'en',
     },
     {
       name: 'Test User 2',
       email: 'test2@example.com',
+      password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
+      role: 'user',
+      preferredLanguage: 'en',
     },
     {
       name: 'Test User 3',
       email: 'test3@example.com',
+      password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
+      role: 'user',
+      preferredLanguage: 'en',
     },
   ];
 
@@ -84,9 +93,12 @@ async function main() {
         }
       },
       level: Math.floor(Math.random() * 10) + 1,
-      currentExp: Math.floor(Math.random() * 1000),
+      currentXP: Math.floor(Math.random() * 1000),
+      totalXP: Math.floor(Math.random() * 2000),
       totalPoints: Math.floor(Math.random() * 5000),
-      nextLevelExp: Math.floor(Math.random() * 1000) + 1000,
+      nextLevelXP: Math.floor(Math.random() * 1000) + 1000,
+      unlockedAchievements: 0,
+      streak: Math.floor(Math.random() * 7),
       stats: {
         create: {
           totalMeasurements: Math.floor(Math.random() * 100),
@@ -96,6 +108,9 @@ async function main() {
           consecutiveDays: Math.floor(Math.random() * 7),
           qualityScore: Math.random() * 100,
           accuracyRate: Math.random() * 100,
+          uniqueLocations: Math.floor(Math.random() * 40),
+          totalDistance: Math.random() * 1000,
+          contributionScore: Math.random() * 100,
         },
       },
       streaks: {

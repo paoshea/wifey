@@ -1,85 +1,64 @@
 import { PrismaClient } from '@prisma/client';
-import { AchievementInput } from '../types';
+import { AchievementRarity } from '../../lib/gamification/types';
 
-const achievements: AchievementInput[] = [
+const achievements = [
   {
-    category: 'CONTRIBUTION',
     title: "First Steps",
     description: "Make your first measurement",
     points: 100,
     icon: '🎯',
-    tier: 'BRONZE',
-    requirements: {
-      type: 'MEASUREMENT_COUNT',
-      threshold: 1
-    },
-    isSecret: false
+    rarity: 'common' as AchievementRarity,
+    requirements: [
+      {
+        type: 'measurements',
+        value: 1,
+        operator: 'gte',
+        metric: 'total_measurements',
+        description: 'Make at least 1 measurement'
+      }
+    ],
+    target: 1
   },
   {
-    category: 'CONTRIBUTION',
     title: "Rural Explorer",
     description: "Take measurements in rural areas",
     points: 250,
     icon: '🌾',
-    tier: 'SILVER',
-    requirements: {
-      type: 'RURAL_MEASUREMENTS',
-      threshold: 10
-    },
-    isSecret: false
+    rarity: 'rare' as AchievementRarity,
+    requirements: [
+      {
+        type: 'rural_measurements',
+        value: 10,
+        operator: 'gte',
+        metric: 'rural_measurements',
+        description: 'Make at least 10 measurements in rural areas'
+      }
+    ],
+    target: 10
   },
   {
-    category: 'VERIFICATION',
-    title: "Verification Master",
-    description: "Verify other users' measurements",
-    points: 500,
-    icon: '🛡️',
-    tier: 'GOLD',
-    requirements: {
-      type: 'VERIFICATIONS',
-      threshold: 50
-    },
-    isSecret: false
-  },
-  {
-    category: 'QUALITY',
-    title: "Accuracy Champion",
-    description: "Maintain high measurement accuracy",
+    title: "Coverage Champion",
+    description: "Become a top contributor with verified measurements",
     points: 1000,
-    icon: '🎯',
-    tier: 'PLATINUM',
-    requirements: {
-      type: 'ACCURACY_RATE',
-      threshold: 95
-    },
-    isSecret: false
-  },
-  {
-    category: 'STREAK',
-    title: "Consistent Contributor",
-    description: "Contribute measurements for consecutive days",
-    points: 750,
-    icon: '🔥',
-    tier: 'GOLD',
-    requirements: {
-      type: 'CONSECUTIVE_DAYS',
-      threshold: 7
-    },
-    isSecret: false
-  },
-  {
-    category: 'SECRET',
-    title: "Night Owl",
-    description: "Take measurements during night hours",
-    points: 300,
-    icon: '🦉',
-    tier: 'SILVER',
-    requirements: {
-      type: 'TIME_BASED',
-      startHour: 22,
-      endHour: 5
-    },
-    isSecret: true
+    icon: '👑',
+    rarity: 'epic' as AchievementRarity,
+    requirements: [
+      {
+        type: 'verified_spots',
+        value: 50,
+        operator: 'gte',
+        metric: 'verified_spots',
+        description: 'Get 50 measurements verified by other users'
+      },
+      {
+        type: 'accuracy',
+        value: 95,
+        operator: 'gte',
+        metric: 'accuracy_rate',
+        description: 'Maintain 95% accuracy rate'
+      }
+    ],
+    target: 50
   }
 ];
 

@@ -10,6 +10,8 @@ export type AchievementCategory =
   | 'NETWORK_VALIDATOR'   // Verifying others' measurements
   | 'COVERAGE_CHAMPION';  // Top contributor
 
+export type AchievementRarity = 'common' | 'rare' | 'epic';
+
 export type AchievementRequirementType = 
   | 'measurements'
   | 'rural_measurements'
@@ -18,8 +20,11 @@ export type AchievementRequirementType =
   | 'consistency';
 
 export interface AchievementRequirement {
-  type: AchievementRequirementType;
-  count: number;
+  type: string;
+  value: number;
+  operator?: 'gt' | 'gte' | 'lt' | 'lte' | 'eq';
+  metric: string;
+  description?: string;
 }
 
 export interface Achievement {
@@ -28,12 +33,31 @@ export interface Achievement {
   description: string;
   icon: string;
   points: number;
-  rarity: 'common' | 'rare' | 'epic';
+  rarity: AchievementRarity;
   tier: AchievementTier;
-  progress: number;
-  target: number;
   category: AchievementCategory;
   requirements: AchievementRequirement[];
+  unlockedAt?: Date | null;
+  progress?: number;
+  target?: number;
+}
+
+export interface UserAchievement {
+  id: string;
+  achievementId: string;
+  userProgressId: string;
+  progress: number;
+  target?: number;
+  unlockedAt?: Date | null;
+  notifiedAt?: Date | null;
+}
+
+export interface AchievementProgress {
+  achievement: Achievement;
+  progress: number;
+  target: number;
+  isUnlocked: boolean;
+  unlockedAt?: Date | null;
 }
 
 export interface UserProgress {
