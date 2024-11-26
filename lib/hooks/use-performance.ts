@@ -78,7 +78,7 @@ export function usePerformance({
         renderCount: currentRenderCount,
       });
     };
-  }, [componentName, performanceMonitor, thresholds.renderTime, trackEvent, trackRenders]);
+  }, [componentName, thresholds.renderTime, trackEvent, trackRenders]);
 
   // Track effect performance
   const trackEffect = useCallback((
