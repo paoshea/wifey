@@ -57,7 +57,10 @@ export function usePerformance({
   useEffect(() => {
     const startTime = performance.now();
     const currentRenderCount = renderCount.current;
-    renderCount.current++;
+    
+    if (trackRenders) {
+      renderCount.current = currentRenderCount + 1;
+    }
 
     return () => {
       const endTime = performance.now();
@@ -75,7 +78,7 @@ export function usePerformance({
         renderCount: currentRenderCount,
       });
     };
-  });
+  }, [componentName, performanceMonitor, thresholds.renderTime, trackEvent, trackRenders]);
 
   // Track effect performance
   const trackEffect = useCallback((
