@@ -54,12 +54,42 @@ export default function Home() {
         {/* Feature Cards */}
         <FeatureShowcase />
 
+        {/* Action Buttons */}
+        <motion.div 
+          className="mt-12 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
+            <Button 
+              asChild 
+              size="lg" 
+              className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+            >
+              <Link href={`/${locale}/onboarding`}>
+                {t('home.tellUsAboutYourself')}
+              </Link>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              asChild 
+              className="w-full sm:w-auto min-w-[200px] border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600"
+            >
+              <Link href={`/${locale}/explore`}>
+                {t('home.exploreMap')}
+              </Link>
+            </Button>
+          </div>
+        </motion.div>
+
         {/* Gamification Section */}
         <motion.div 
           className="mt-20 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             {t('home.gamification.title')}
@@ -86,36 +116,6 @@ export default function Home() {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('home.gamification.leaderboard.title')}</h3>
               <p className="text-gray-600">{t('home.gamification.leaderboard.description')}</p>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <motion.div 
-          className="mt-16 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
-            <Button 
-              asChild 
-              size="lg" 
-              className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-            >
-              <Link href={`/${locale}/onboarding`}>
-                {t('home.tellUsAboutYourself')}
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              asChild 
-              className="w-full sm:w-auto min-w-[200px] border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600"
-            >
-              <Link href={`/${locale}/explore`}>
-                {t('home.exploreMap')}
-              </Link>
-            </Button>
           </div>
         </motion.div>
       </div>

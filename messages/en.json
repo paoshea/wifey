@@ -80,12 +80,37 @@
   "coverage": {
     "title": "Cellular Coverage",
     "subtitle": "Find and track cellular coverage points in your area",
+    "search": {
+      "placeholder": "Search for coverage points...",
+      "button": "Search"
+    },
+    "filters": {
+      "title": "Filter Coverage",
+      "providers": {
+        "title": "Service Providers",
+        "all": "All Providers",
+        "verizon": "Verizon",
+        "att": "AT&T",
+        "tmobile": "T-Mobile",
+        "other": "Other"
+      },
+      "range": {
+        "title": "Coverage Range",
+        "all": "All Ranges",
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "poor": "Poor"
+      }
+    },
     "map": {
       "title": "Coverage Map",
       "loading": "Loading coverage map..."
     },
     "stats": {
       "title": "Coverage Statistics",
+      "total": "Total Points",
+      "today": "Added Today",
       "coverage": "Area Coverage",
       "points": "Coverage Points",
       "contributors": "Contributors"
@@ -338,47 +363,80 @@
     "exploreNearby": "Explore Nearby"
   },
   "wifi": {
-    "title": "WiFi Hotspots",
-    "subtitle": "Discover free and secure WiFi hotspots near you",
+    "title": "WiFi Coverage",
+    "subtitle": "Find and track WiFi hotspots in your area",
+    "search": {
+      "placeholder": "Search for WiFi hotspots...",
+      "button": "Search"
+    },
+    "filters": {
+      "title": "Filter WiFi",
+      "type": {
+        "title": "WiFi Type",
+        "all": "All Types",
+        "public": "Public",
+        "private": "Private",
+        "free": "Free",
+        "paid": "Paid"
+      },
+      "range": {
+        "title": "Signal Strength",
+        "all": "All Strengths",
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "poor": "Poor"
+      }
+    },
     "map": {
       "title": "WiFi Map",
-      "loading": "Loading WiFi hotspots..."
-    },
-    "nearby": {
-      "title": "Nearby Hotspots",
-      "viewMore": "View More Hotspots"
+      "loading": "Loading WiFi map..."
     },
     "stats": {
       "title": "WiFi Statistics",
-      "hotspots": "Total Hotspots",
-      "secure": "Secure Networks",
-      "speed": "Average Speed"
+      "total": "Total Hotspots",
+      "today": "Added Today",
+      "free": "Free Hotspots",
+      "points": "WiFi Points",
+      "contributors": "Contributors"
     }
   },
   "explore": {
     "title": "Explore Coverage",
     "subtitle": "Find the best connection points around you",
     "search": {
-      "placeholder": "Enter a location or landmark",
+      "placeholder": "Search locations...",
       "button": "Search"
+    },
+    "filters": {
+      "title": "Filter Coverage",
+      "all": "All Coverage Types",
+      "type": {
+        "title": "Coverage Type",
+        "all": "All Types",
+        "wifi": "WiFi",
+        "cellular": "Cellular",
+        "mixed": "Mixed"
+      },
+      "quality": {
+        "title": "Coverage Quality",
+        "all": "All Qualities",
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "poor": "Poor"
+      }
     },
     "map": {
       "title": "Coverage Map",
-      "loading": "Loading map..."
+      "loading": "Loading coverage map..."
     },
-    "filters": {
-      "title": "Filters",
-      "cellular": "Cellular Coverage",
-      "wifi": "WiFi Hotspots",
-      "landmarks": "Landmarks",
-      "range": {
-        "title": "Search Range"
-      }
-    },
-    "contribute": {
-      "title": "Add New Points",
-      "description": "Help others stay connected by adding new coverage points",
-      "button": "Add Coverage Point"
+    "stats": {
+      "title": "Coverage Statistics",
+      "total": "Total Points",
+      "today": "Added Today",
+      "coverage": "Area Coverage",
+      "contributors": "Contributors"
     }
   },
   "nav": {

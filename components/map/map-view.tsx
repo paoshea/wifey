@@ -122,11 +122,46 @@ export default function MapView({
         (position) => {
           const { latitude, longitude } = position.coords;
           setMapCenter([latitude, longitude]);
+          toast({
+            title: "Location found",
+            description: "Map centered to your current location.",
+          });
         },
         (error) => {
-          console.error("Error getting location:", error);
+          let errorMessage = "Unable to get your location. ";
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Please enable location permissions in your browser settings.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is currently unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "Request to get location timed out.";
+              break;
+            default:
+              errorMessage += "An unknown error occurred.";
+          }
+          
+          toast({
+            title: "Location Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
+    } else {
+      toast({
+        title: "Location Not Supported",
+        description: "Geolocation is not supported by your browser.",
+        variant: "destructive",
+      });
     }
   }, []);
 
