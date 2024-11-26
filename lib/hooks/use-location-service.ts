@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { EnhancedLocationService, Coordinates, MarkedLocation, DistanceResult } from '@/lib/services/enhanced-location-service';
 import { useGamificationStore } from '@/lib/store/gamification-store';
 import { CarrierCoverage } from '@/lib/carriers/types';
@@ -21,7 +21,7 @@ export function useLocationService(): UseLocationServiceResult {
     const [nearbyLocations, setNearbyLocations] = useState<MarkedLocation[]>([]);
     
     const { addContribution } = useGamificationStore();
-    const locationService = EnhancedLocationService.getInstance();
+    const locationService = useMemo(() => EnhancedLocationService.getInstance(), []);
 
     // Load saved locations on mount
     useEffect(() => {
@@ -39,14 +39,16 @@ export function useLocationService(): UseLocationServiceResult {
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const coordinates: Coordinates = {
+                    const coords = {
                         latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
                     };
-                    resolve(coordinates);
+                    locationService.updateCurrentLocation(coords);
+                    resolve(coords);
                 },
                 (error) => {
-                    reject(new Error(`Failed to get location: ${error.message}`));
+                    reject(error);
                 },
                 {
                     enableHighAccuracy: true,
@@ -69,19 +71,18 @@ export function useLocationService(): UseLocationServiceResult {
     const markLocation = useCallback(async (coverage?: CarrierCoverage): Promise<string> => {
         setIsLoading(true);
         setError(null);
-
         try {
-            const location = await getCurrentLocation();
-            setCurrentLocation(location);
-            
-            const id = locationService.markLocation(location, coverage);
-            
-            // Add gamification points for contribution
-            addContribution();
-            
+            const coords = await getCurrentLocation();
+            const id = await addContribution(coords, coverage);
+            locationService.addLocation({
+                id,
+                coordinates: coords,
+                coverage,
+                timestamp: new Date().toISOString()
+            });
             return id;
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to mark location';
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to mark location';
             setError(errorMessage);
             throw new Error(errorMessage);
         } finally {
@@ -128,7 +129,7 @@ export function useLocationService(): UseLocationServiceResult {
         return () => {
             clearInterval(intervalId);
         };
-    }, [getCurrentLocation, locationService]);
+    }, [getCurrentLocation]);
 
     return {
         markLocation,

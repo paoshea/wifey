@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Rectangle } from 'react-leaflet';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -20,15 +20,14 @@ export default function CoverageAreaMap() {
   const [coverage, setCoverage] = useState<CarrierCoverage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Default bounds for Costa Rica
-  const bounds = {
-    minLat: 8.0,
+  const bounds = useMemo(() => ({
+    minLat: 8.2,
     maxLat: 11.2,
     minLng: -85.9,
     maxLng: -82.6
-  };
+  }), []);
 
-  const fetchAreaCoverage = async () => {
+  const fetchAreaCoverage = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(
@@ -46,7 +45,7 @@ export default function CoverageAreaMap() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [bounds]);
 
   useEffect(() => {
     fetchAreaCoverage();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GamificationService } from '@/lib/gamification/gamification-service';
 import { LeaderboardEntry } from '@/lib/gamification/types';
@@ -19,7 +19,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ refreshInterval = 3000
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'allTime'>('daily');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const gamificationService = new GamificationService();
+  const gamificationService = useMemo(() => new GamificationService(), []);
 
   const fetchLeaderboard = useCallback(async () => {
     try {

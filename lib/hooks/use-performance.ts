@@ -14,6 +14,8 @@ interface UsePerformanceOptions {
   };
 }
 
+const RENDER_TIME_THRESHOLD = 16;
+
 export function usePerformance({
   componentName,
   trackRenders = true,
@@ -53,22 +55,29 @@ export function usePerformance({
 
   // Track renders
   useEffect(() => {
+    const startTime = performance.now();
+    const currentRenderCount = renderCount.current;
+
     if (trackRenders) {
       renderCount.current++;
-      const renderTime = performance.now() - mountTime.current;
+    }
 
-      if (renderTime > (thresholds.renderTime || 16)) {
+    return () => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      if (duration > (thresholds.renderTime || RENDER_TIME_THRESHOLD)) {
         trackEvent('slow_render', {
           component: componentName,
-          renderTime,
-          renderCount: renderCount.current,
+          renderTime: duration,
+          renderCount: currentRenderCount,
         });
       }
 
-      performanceMonitor.recordMetric(`${componentName}_render`, renderTime, {
-        renderCount: renderCount.current,
+      performanceMonitor.recordMetric(`${componentName}_render`, duration, {
+        renderCount: currentRenderCount,
       });
-    }
+    };
   });
 
   // Track effect performance
