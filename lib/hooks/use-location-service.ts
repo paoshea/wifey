@@ -26,7 +26,8 @@ export function useLocationService(): UseLocationServiceResult {
     // Load saved locations on mount
     useEffect(() => {
         locationService.loadFromLocalStorage();
-    }, []);
+        return () => locationService.cleanup();
+    }, [locationService]);
 
     // Get current location
     const getCurrentLocation = useCallback(async (): Promise<Coordinates> => {
@@ -54,7 +55,7 @@ export function useLocationService(): UseLocationServiceResult {
                 }
             );
         });
-    }, []);
+    }, [locationService]);
 
     // Update nearby locations when current location changes
     useEffect(() => {
@@ -62,7 +63,7 @@ export function useLocationService(): UseLocationServiceResult {
             const nearby = locationService.findNearbyLocations(currentLocation);
             setNearbyLocations(nearby);
         }
-    }, [currentLocation]);
+    }, [currentLocation, locationService]);
 
     // Mark current location
     const markLocation = useCallback(async (coverage?: CarrierCoverage): Promise<string> => {
@@ -86,22 +87,22 @@ export function useLocationService(): UseLocationServiceResult {
         } finally {
             setIsLoading(false);
         }
-    }, [getCurrentLocation, addContribution]);
+    }, [getCurrentLocation, addContribution, locationService]);
 
     // Get location by ID
     const getLocation = useCallback((id: string): MarkedLocation | null => {
         return locationService.getLocation(id);
-    }, []);
+    }, [locationService]);
 
     // Calculate distance between two points
     const calculateDistance = useCallback((from: Coordinates, to: Coordinates): DistanceResult => {
         return locationService.calculateDistance(from, to);
-    }, []);
+    }, [locationService]);
 
     // Find nearby locations
     const findNearbyLocations = useCallback((coordinates: Coordinates, radiusKm?: number): MarkedLocation[] => {
         return locationService.findNearbyLocations(coordinates, radiusKm);
-    }, []);
+    }, [locationService]);
 
     // Update current location periodically
     useEffect(() => {
@@ -127,7 +128,7 @@ export function useLocationService(): UseLocationServiceResult {
         return () => {
             clearInterval(intervalId);
         };
-    }, [getCurrentLocation]);
+    }, [getCurrentLocation, locationService]);
 
     return {
         markLocation,

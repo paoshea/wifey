@@ -89,18 +89,18 @@ export default function OptimizedMap({
   }, [markers]);
 
   // Handle map movement
-  const handleMapMove = () => {
+  const handleMapMove = useCallback(() => {
     startMark('map_move');
     updateVisibleMarkers();
     endMark('map_move');
-  };
+  }, [updateVisibleMarkers]);
 
   // Handle map zoom change
-  const handleZoomChange = () => {
+  const handleZoomChange = useCallback(() => {
     startMark('map_zoom_change');
     updateVisibleMarkers();
     endMark('map_zoom_change');
-  };
+  }, [updateVisibleMarkers]);
 
   // Initialize map when component mounts
   useEffect(() => {

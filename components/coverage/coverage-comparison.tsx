@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -37,19 +37,11 @@ export default function CoverageComparison({ location }: { location: { lat: numb
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCoverageComparison();
-  }, [location]);
-
-  const fetchCoverageComparison = async () => {
+  const fetchCoverageComparison = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(
-        `/api/coverage/compare?lat=${location.lat}&lng=${location.lng}&radius=5000`
-      );
-      
+      const response = await fetch(`/api/coverage/compare?lat=${location.lat}&lng=${location.lng}&radius=5000`);
       if (!response.ok) throw new Error('Failed to fetch coverage comparison');
-      
       const data = await response.json();
       setCoverageData(data.currentCoverage);
       setHistoricalData(data.historicalData);
@@ -58,7 +50,11 @@ export default function CoverageComparison({ location }: { location: { lat: numb
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [location]);
+
+  useEffect(() => {
+    fetchCoverageComparison();
+  }, [fetchCoverageComparison]);
 
   const getSignalStrengthColor = (strength: number) => {
     if (strength >= 80) return 'text-green-500';

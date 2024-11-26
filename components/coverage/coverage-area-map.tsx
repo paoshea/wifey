@@ -50,7 +50,7 @@ export default function CoverageAreaMap() {
 
   useEffect(() => {
     fetchAreaCoverage();
-  }, []);
+  }, [fetchAreaCoverage]);
 
   const center: [number, number] = [
     (bounds.maxLat + bounds.minLat) / 2,

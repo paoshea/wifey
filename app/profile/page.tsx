@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ACHIEVEMENT_TIERS, TIER_COLORS, type AchievementTier } from '@/lib/gamification/constants';
 import { ACHIEVEMENTS } from '@/lib/gamification/achievements';
+import Image from 'next/image';
 
 // Helper function to calculate achievement progress
 function getAchievementProgress(achievement: any, stats: any): number {
@@ -98,10 +99,12 @@ export default function ProfilePage() {
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden">
                 {session.user?.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || 'Profile'}
-                    className="w-full h-full object-cover"
+                    width={128}
+                    height={128}
+                    className="rounded-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">

@@ -33,7 +33,17 @@ export default function SignIn() {
         duration: 5000,
       });
     }
-  }, [searchParams]);
+  }, [searchParams, t, toast]);
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: t('Error'),
+        description: t(error),
+        variant: 'destructive',
+      });
+    }
+  }, [error, t, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

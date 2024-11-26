@@ -33,7 +33,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ refreshInterval = 3000
     } finally {
       setLoading(false);
     }
-  }, [timeframe]);
+  }, [timeframe, gamificationService]);
 
   useEffect(() => {
     fetchLeaderboard();
