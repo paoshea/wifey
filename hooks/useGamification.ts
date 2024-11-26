@@ -53,14 +53,14 @@ export function useGamification(): UseGamificationReturn {
         setIsLoading(true);
         const achievements = await gamificationService.getUserAchievements(session.user.id);
         const totalPoints = achievements.reduce((sum, achievement) => 
-          achievement.completed ? sum + achievement.points : sum, 0);
+          achievement.unlockedAt ? sum + achievement.achievement.points : sum, 0);
         
         if (typeof totalPoints === 'number') {
           const level = calculateLevel(totalPoints);
           setUserProgress({
             totalPoints,
             level,
-            achievements: achievements.filter(a => a.completed).map(a => a.id),
+            achievements: achievements.filter(a => a.unlockedAt).map(a => a.achievement.id),
             stats: {
               totalMeasurements: 0,
               ruralMeasurements: 0,
