@@ -1,3 +1,5 @@
+// lib/storage/measurement-store.ts
+
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
 
@@ -33,8 +35,9 @@ export class MeasurementStore {
         const store = db.createObjectStore('measurements', {
           keyPath: 'id',
         });
-        store.createIndex('by-timestamp', 'timestamp')
-          .then(() => store.createIndex('by-sync-status', 'syncStatus'));
+        // Create indexes directly
+        store.createIndex('by-timestamp', 'timestamp');
+        store.createIndex('by-sync-status', 'syncStatus');
       },
     });
   }

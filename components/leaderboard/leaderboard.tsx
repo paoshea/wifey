@@ -1,3 +1,5 @@
+// components/gamification/leaderboard.tsx
+
 'use client';
 
 import React from 'react';
@@ -25,9 +27,8 @@ function LeaderboardRow({ entry, highlight = false }: { entry: LeaderboardEntry;
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex items-center p-4 ${
-        highlight ? 'bg-blue-50 rounded-lg' : ''
-      }`}
+      className={`flex items-center p-4 ${highlight ? 'bg-blue-50 rounded-lg' : ''
+        }`}
     >
       <div className="flex-shrink-0 w-12 text-center">
         {entry.rank <= 3 ? (
@@ -43,7 +44,7 @@ function LeaderboardRow({ entry, highlight = false }: { entry: LeaderboardEntry;
 
       <div className="flex-shrink-0 ml-4">
         <Avatar>
-          <AvatarImage src={entry.avatarUrl ?? undefined} alt={entry.username} />
+          <AvatarImage src={entry.image} alt={entry.username} />
           <AvatarFallback>{entry.username.charAt(0)}</AvatarFallback>
         </Avatar>
       </div>
@@ -137,7 +138,7 @@ export default function Leaderboard() {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch leaderboard with stats included
         const response = await leaderboardService.getLeaderboard(timeframe, 1, 10, true);
         setEntries(response.entries);

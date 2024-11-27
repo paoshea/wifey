@@ -1,3 +1,5 @@
+// prisma/seed.ts
+
 import { PrismaClient } from '@prisma/client';
 import { seedAchievements } from './seed/achievements';
 import { WifiHotspotInput, UserInput, UserProgressInput } from './types';
@@ -101,22 +103,24 @@ async function main() {
       streak: Math.floor(Math.random() * 7),
       stats: {
         create: {
-          totalMeasurements: Math.floor(Math.random() * 100),
-          ruralMeasurements: Math.floor(Math.random() * 20),
-          verifiedSpots: Math.floor(Math.random() * 10),
-          helpfulActions: Math.floor(Math.random() * 50),
-          consecutiveDays: Math.floor(Math.random() * 7),
-          qualityScore: Math.random() * 100,
-          accuracyRate: Math.random() * 100,
-          uniqueLocations: Math.floor(Math.random() * 30),
-          totalDistance: Math.floor(Math.random() * 1000),
-          contributionScore: Math.floor(Math.random() * 1000)
+          stats: {
+            totalMeasurements: Math.floor(Math.random() * 100),
+            ruralMeasurements: Math.floor(Math.random() * 20),
+            verifiedSpots: Math.floor(Math.random() * 10),
+            helpfulActions: Math.floor(Math.random() * 50),
+            consecutiveDays: Math.floor(Math.random() * 7),
+            qualityScore: Math.random() * 100,
+            accuracyRate: Math.random() * 100,
+            uniqueLocations: Math.floor(Math.random() * 30),
+            totalDistance: Math.floor(Math.random() * 1000),
+            contributionScore: Math.floor(Math.random() * 1000)
+          }
         }
       },
       streaks: {
         create: {
           currentStreak: Math.floor(Math.random() * 7),
-          longestStreak: Math.floor(Math.random() * 14)
+          lastUpdated: new Date()
         }
       }
     };

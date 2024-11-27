@@ -1,12 +1,14 @@
+// lib/gamification/validation/achievement-validation.ts
+
 import { z } from 'zod';
-import { 
+import {
   Achievement,
   Requirement,
   RequirementType,
   RequirementOperator,
   StatsMetric,
   StatsContent
-} from '../types';
+} from '@/lib/gamification/types';
 import { validateRequirement } from './requirement-validation';
 
 const requirementSchema = z.object({
@@ -14,7 +16,7 @@ const requirementSchema = z.object({
   metric: z.nativeEnum(StatsMetric),
   operator: z.nativeEnum(RequirementOperator),
   value: z.number().min(0),
-  description: z.string().optional()
+  description: z.string()  // Make description required
 });
 
 export const achievementSchema = z.object({
@@ -38,6 +40,11 @@ export function validateAchievementRequirements(
   try {
     // First validate the requirements schema
     const validatedRequirements = requirements.map(req => {
+      // Ensure description is present
+      if (!req.description) {
+        throw new Error('Requirement description is required');
+      }
+      
       const result = requirementSchema.safeParse(req);
       if (!result.success) {
         throw new Error(`Invalid requirement: ${result.error}`);

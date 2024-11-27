@@ -1,3 +1,5 @@
+// utils/map-utils.ts
+
 import L from 'leaflet';
 import type { LatLng } from 'leaflet';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
@@ -18,13 +20,20 @@ export const getSignalIcon = (signalStrength: number): L.Icon => {
   });
 };
 
+type GeoLocation = {
+  lat: number;
+  lng: number;
+};
+
 // Convert coverage points to heatmap data format
 export const coverageToHeatmapData = (
   measurements: SignalMeasurement[] | CarrierCoverage[]
 ): Array<[number, number, number]> => {
   return measurements.map(measurement => {
     // Handle both SignalMeasurement and CarrierCoverage types
-    const location = 'geolocation' in measurement ? measurement.geolocation : measurement.location;
+    const location = ('geolocation' in measurement 
+      ? measurement.geolocation 
+      : measurement.location) as GeoLocation;
     return [location.lat, location.lng, measurement.signalStrength];
   });
 };
@@ -38,7 +47,7 @@ export const optimizeRoute = (
   // Create a grid of points between start and end
   const points: Array<[number, number]> = [];
   const steps = 10;
-  
+
   for (let i = 0; i <= steps; i++) {
     const lat = start[0] + (end[0] - start[0]) * (i / steps);
     const lng = start[1] + (end[1] - start[1]) * (i / steps);
@@ -50,7 +59,7 @@ export const optimizeRoute = (
     const nearest = findNearestCoveragePoint(point, measurements);
     return nearest ? [nearest.geolocation.lat, nearest.geolocation.lng] : point;
   });
-  
+
   return optimizedRoute;
 };
 

@@ -1,3 +1,5 @@
+// lib/gamification/validation/index.ts 
+
 import { z } from 'zod';
 import {
   Achievement,
@@ -7,7 +9,6 @@ import {
   RequirementType,
   RequirementOperator,
   ValidatedMeasurementInput,
-  MeasurementInput,
   AchievementTier
 } from '../types';
 
@@ -25,7 +26,7 @@ export function validateAchievement(achievement: Achievement) {
       metric: z.nativeEnum(StatsMetric),
       value: z.number(),
       operator: z.nativeEnum(RequirementOperator),
-      description: z.string().optional()
+      description: z.string()
     })),
     target: z.number().nullable(),
     createdAt: z.date(),
@@ -54,12 +55,21 @@ export function validateStatsContent(stats: StatsContent) {
 }
 
 // Requirement validation
-export function validateRequirement(requirement: Requirement, stats: StatsContent): boolean {
-  if (!(requirement.metric in stats)) {
+export function validateRequirement(requirement: { metric: StatsMetric; operator: RequirementOperator; value: number }, stats: StatsContent | null): boolean {
+  if (!stats) {
     return false;
   }
 
-  const value = stats[requirement.metric];
+  const validatedStats = validateStatsContent(stats);
+  if (!validatedStats.success) {
+    return false;
+  }
+
+  const value = validatedStats.data[requirement.metric];
+  if (typeof value !== 'number') {
+    return false;
+  }
+
   switch (requirement.operator) {
     case RequirementOperator.EQUAL:
       return value === requirement.value;
@@ -79,7 +89,11 @@ export function validateRequirement(requirement: Requirement, stats: StatsConten
 }
 
 // Achievement requirements validation
-export function validateAchievementRequirements(achievement: Achievement, context: { stats: StatsContent }) {
+export function validateAchievementRequirements(achievement: Achievement, context: { stats: StatsContent | null }) {
+  if (!context.stats) {
+    return false;
+  }
+
   const validatedStats = validateStatsContent(context.stats);
   if (!validatedStats.success) {
     return false;
@@ -90,23 +104,32 @@ export function validateAchievementRequirements(achievement: Achievement, contex
     return false;
   }
 
-  const requirements = achievement.requirements as Requirement[];
-  return requirements.every(req => validateRequirement(req, context.stats));
+  const requirements = validatedAchievement.data.requirements;
+  return requirements.every(req => validateRequirement(req, validatedStats.data));
 }
 
 // Progress calculation
-export function calculateProgress(achievement: Achievement, context: { stats: StatsContent }) {
-  const requirements = achievement.requirements as Requirement[];
-  const target = achievement.target || 100;
-  const progress = requirements.reduce((acc, req) => {
-    const value = context.stats[req.metric as keyof StatsContent];
-    return acc + (value / req.value) * (target / requirements.length);
-  }, 0);
+export function calculateProgress(achievement: Achievement, context: { stats: StatsContent | null }) {
+  if (!context.stats) {
+    return 0;
+  }
 
-  return {
-    current: Math.min(progress, target),
-    target
-  };
+  const validatedStats = validateStatsContent(context.stats);
+  if (!validatedStats.success) {
+    return 0;
+  }
+
+  const validatedAchievement = validateAchievement(achievement);
+  if (!validatedAchievement.success) {
+    return 0;
+  }
+
+  // Calculate progress based on requirements
+  const requirements = validatedAchievement.data.requirements;
+  const totalRequirements = requirements.length;
+  const metRequirements = requirements.filter(req => validateRequirement(req, validatedStats.data)).length;
+
+  return Math.floor((metRequirements / totalRequirements) * 100);
 }
 
 // Level calculation
