@@ -1,7 +1,15 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AchievementShowcase } from '../achievement-showcase';
-import type { Achievement, AchievementCategory } from '@/lib/gamification/types';
+import { 
+  Achievement, 
+  AchievementCategory, 
+  AchievementTier, 
+  RequirementType, 
+  RequirementOperator,
+  StatsMetric
+} from '@/lib/gamification/types';
+import { validateAchievement } from '@/lib/gamification/validation';
 
 const mockAchievements: Achievement[] = [
   {
@@ -9,34 +17,50 @@ const mockAchievements: Achievement[] = [
     title: 'Rural Pioneer',
     description: 'Complete your first rural area measurement',
     icon: '🌲',
-    rarity: 'common',
-    tier: 'bronze',
+    rarity: 'COMMON',
+    tier: AchievementTier.BRONZE,
     progress: 1,
     target: 1,
     points: 100,
-    category: 'RURAL_EXPLORER' as AchievementCategory,
+    category: AchievementCategory.RURAL_EXPLORER,
     requirements: [{
-      type: 'rural_measurements',
-      count: 1
-    }]
+      type: RequirementType.STAT,
+      metric: StatsMetric.RURAL_MEASUREMENTS,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      value: 1
+    }],
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'coverage-master',
     title: 'Coverage Master',
     description: 'Map 1000 unique locations',
     icon: '📍',
-    rarity: 'rare',
-    tier: 'gold',
+    rarity: 'RARE',
+    tier: AchievementTier.GOLD,
     progress: 750,
     target: 1000,
     points: 500,
-    category: 'COVERAGE_EXPERT' as AchievementCategory,
+    category: AchievementCategory.COVERAGE_EXPERT,
     requirements: [{
-      type: 'measurements',
-      count: 1000
-    }]
+      type: RequirementType.STAT,
+      metric: StatsMetric.UNIQUE_LOCATIONS,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      value: 1000
+    }],
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
+
+// Validate mock achievements
+mockAchievements.forEach(achievement => {
+  const validationResult = validateAchievement(achievement);
+  if (!validationResult.success) {
+    throw new Error(`Invalid mock achievement: ${validationResult.error}`);
+  }
+});
 
 describe('AchievementShowcase', () => {
   it('renders loading state when achievements are undefined', () => {
@@ -109,6 +133,6 @@ describe('AchievementShowcase', () => {
     render(<AchievementShowcase achievements={mockAchievements} onAchievementClick={onAchievementClick} />);
     
     fireEvent.click(screen.getByText('Rural Pioneer'));
-    expect(onAchievementClick).toHaveBeenCalledWith(mockAchievements[1]);
+    expect(onAchievementClick).toHaveBeenCalledWith(mockAchievements[0]);
   });
 });

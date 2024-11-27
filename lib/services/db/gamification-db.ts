@@ -22,22 +22,29 @@ const prisma = new PrismaClient();
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
-interface BaseUserStats {
+interface StatsContent {
   totalMeasurements: number;
   ruralMeasurements: number;
   uniqueLocations: number;
   totalDistance: number;
   contributionScore: number;
+  qualityScore: number;
+  accuracyRate: number;
+  verifiedSpots: number;
+  helpfulActions: number;
+  consecutiveDays: number;
 }
-
-type UserStatsData = Omit<PrismaTypes.UserStatsCreateInput, 'id' | 'userId' | 'user'> & BaseUserStats;
 
 interface BaseUserProgress {
   level: number;
   currentXP: number;
   totalXP: number;
+  nextLevelXP: number;
   streak: number;
   lastActive: Date;
+  totalPoints: number;
+  unlockedAchievements: number;
+  lastAchievementAt: Date | null;
 }
 
 type UserProgressData = Omit<PrismaTypes.UserProgressCreateInput, 'id' | 'userId' | 'user' | 'achievements'> & BaseUserProgress;
@@ -45,14 +52,20 @@ type UserProgressData = Omit<PrismaTypes.UserProgressCreateInput, 'id' | 'userId
 interface MeasurementData {
   isRural: boolean;
   location?: {
-    latitude: number;
-    longitude: number;
+    lat: number;
+    lng: number;
+  };
+  quality: number;
+  device: {
+    type: string;
+    model: string;
+    os: string;
   };
 }
 
 interface LeaderboardData {
-  score: number;
-  rank?: number | null;
+  points: number;
+  rank: number;
   timeframe: TimeFrame;
 }
 
@@ -61,29 +74,35 @@ interface RankHistoryEntry {
   date: Date;
 }
 
-function calculateUpdatedStats(currentStats: UserStats, measurement: MeasurementData): Partial<UserStatsData> {
+function calculateUpdatedStats(currentStats: UserStats, measurement: MeasurementData): Partial<StatsContent> {
+  const stats = currentStats.stats as StatsContent;
   const isRural = measurement.isRural ?? false;
   return {
-    totalMeasurements: (currentStats.totalMeasurements || 0) + 1,
-    ruralMeasurements: isRural ? (currentStats.ruralMeasurements || 0) + 1 : (currentStats.ruralMeasurements || 0),
-    contributionScore: (currentStats.contributionScore || 0) + (isRural ? 2 : 1),
+    totalMeasurements: (stats.totalMeasurements || 0) + 1,
+    ruralMeasurements: isRural ? (stats.ruralMeasurements || 0) + 1 : (stats.ruralMeasurements || 0),
+    contributionScore: (stats.contributionScore || 0) + (isRural ? 2 : 1),
+    qualityScore: measurement.quality,
   };
 }
 
 function calculateUpdatedProgress(currentProgress: UserProgress, measurement: MeasurementData): Partial<UserProgressData> {
   const xpGained = measurement.isRural ? 20 : 10;
+  const newXP = (currentProgress.currentXP || 0) + xpGained;
+  const newTotalXP = (currentProgress.totalXP || 0) + xpGained;
+  const newLevel = Math.floor(Math.sqrt(newTotalXP / 100)) + 1;
+  const newNextLevelXP = Math.pow(newLevel, 2) * 100;
+  
   return {
-    currentXP: (currentProgress.currentXP || 0) + xpGained,
-    totalXP: (currentProgress.totalXP || 0) + xpGained,
-    level: currentProgress.level || 1,
+    currentXP: newXP,
+    totalXP: newTotalXP,
+    level: newLevel,
+    nextLevelXP: newNextLevelXP,
     streak: currentProgress.streak || 1,
     lastActive: new Date(),
+    totalPoints: currentProgress.totalPoints + (measurement.isRural ? 2 : 1),
+    unlockedAchievements: currentProgress.unlockedAchievements,
+    lastAchievementAt: currentProgress.lastAchievementAt,
   };
-}
-
-function determineEligibleAchievements(stats: UserStats, progress: UserProgress): string[] {
-  // TO DO: implement logic to determine eligible achievements
-  return [];
 }
 
 export class GamificationDB {
@@ -271,7 +290,7 @@ export class GamificationDB {
   // User Stats Methods
   async updateUserStats(
     userId: string,
-    stats: Partial<UserStatsData>
+    stats: Partial<UserStats>
   ): Promise<UserStats> {
     try {
       userIdSchema.parse(userId);
@@ -287,7 +306,7 @@ export class GamificationDB {
         throw new Error(`User progress not found for user ${userId}`);
       }
 
-      const defaultStats: Partial<UserStatsData> = {
+      const defaultStats: Partial<UserStats> = {
         totalMeasurements: 0,
         ruralMeasurements: 0,
         uniqueLocations: 0,
@@ -436,12 +455,12 @@ export class GamificationDB {
         },
         create: {
           userId: progress.userId,
-          points: data.score,
+          points: data.points,
           rank: data.rank ?? 0,
           timeframe: data.timeframe,
         },
         update: {
-          points: data.score,
+          points: data.points,
           ...(data.rank !== undefined && data.rank !== null ? { rank: data.rank } : {}),
         },
       });

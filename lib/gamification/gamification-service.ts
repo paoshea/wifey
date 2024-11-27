@@ -1,319 +1,324 @@
-import { 
-  Achievement, 
-  UserProgress, 
-  ContributionReward,
-  LeaderboardEntry,
-  AchievementRequirementType 
+import { PrismaClient, Achievement, UserProgress, UserStats, Prisma } from '@prisma/client';
+import {
+  ValidatedAchievement,
+  ValidatedUserStats,
+  ValidatedUserProgress,
+  AchievementProgress,
+  AchievementNotification,
+  StatsUpdate,
+  MeasurementResult,
+  ValidatedMeasurementInput,
+  TransactionContext,
+  AchievementCheckResult,
+  StatsContent,
+  StatsContentSchema,
+  RequirementType,
+  RequirementOperator,
+  AchievementTier,
+  StatsMetric
 } from './types';
-import { 
-  ACHIEVEMENTS, 
-  RURAL_BONUS_MULTIPLIER, 
-  FIRST_IN_AREA_BONUS,
-  QUALITY_BONUS_MAX,
+import {
+  validateAchievement,
+  validateUserStats,
+  validateStatsContent,
+  validateUserProgress,
+  validateMeasurementInput,
+  checkRequirementMet,
+  calculateProgress,
   calculateLevel,
-  getNextLevelThreshold,
-  calculateAchievementProgress
+  calculateRequiredXP
+} from './validation';
+import {
+  calculateMeasurementPoints,
+  calculateAchievementXP,
+  DEFAULT_ACHIEVEMENTS
 } from './achievements';
-import { PrismaClient, UserProgress as PrismaUserProgress, Achievement as PrismaAchievement, UserStats } from '@prisma/client';
-import { validateAchievementRequirements, calculateProgress } from './validation';
+import {
+  GamificationError,
+  ValidationError,
+  UserProgressNotFoundError,
+  AchievementNotFoundError,
+  DatabaseError,
+  TransactionError
+} from './errors';
 
 export class GamificationService {
-  private userProgress: Map<string, UserProgress> = new Map();
-  private prisma: PrismaClient;
+  constructor(private prisma: PrismaClient) {}
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-    // Initialize with empty user progress
-  }
-
-  private async getUserProgress(userId: string): Promise<UserProgress | null> {
-    // TODO: Implement database fetch
-    return this.userProgress.get(userId) || null;
-  }
-
-  private async updateUserProgress(userId: string, progress: UserProgress): Promise<void> {
-    // TODO: Implement database update
-    this.userProgress.set(userId, progress);
-  }
-
-  public async processMeasurement(userId: string, measurement: { 
-    isRural: boolean;
-    isFirstInArea: boolean;
-    quality: number;
-  }): Promise<ContributionReward> {
-    const { isRural, isFirstInArea, quality } = measurement;
-    let userProgress = await this.getUserProgress(userId) || {
-      totalPoints: 0,
-      level: 1,
-      achievements: [],
-      stats: {
-        totalMeasurements: 0,
-        ruralMeasurements: 0,
-        verifiedSpots: 0,
-        helpfulActions: 0,
-        consecutiveDays: 0,
-        lastMeasurementDate: new Date().toISOString()
-      }
-    };
-
-    // Calculate base points and bonuses
-    let points = 10; // Base points for measurement
-    const bonuses: ContributionReward['bonuses'] = {};
-
-    if (isRural) {
-      const ruralBonus = Math.round(points * RURAL_BONUS_MULTIPLIER);
-      points += ruralBonus;
-      bonuses.ruralArea = ruralBonus;
-      userProgress.stats.ruralMeasurements++;
-    }
-
-    if (isFirstInArea) {
-      points += FIRST_IN_AREA_BONUS;
-      bonuses.firstInArea = FIRST_IN_AREA_BONUS;
-    }
-
-    // Quality bonus (0-10 points based on quality score)
-    const qualityBonus = Math.round(quality * QUALITY_BONUS_MAX);
-    points += qualityBonus;
-    bonuses.qualityBonus = qualityBonus;
-
-    // Update user progress
-    const today = new Date();
-    const lastMeasurementDate = new Date(userProgress.stats.lastMeasurementDate);
-    const daysSinceLastMeasurement = Math.floor((today.getTime() - lastMeasurementDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (daysSinceLastMeasurement === 1) {
-      userProgress.stats.consecutiveDays++;
-      const streakBonus = Math.min(userProgress.stats.consecutiveDays, 7);
-      points += streakBonus;
-      bonuses.consistencyStreak = streakBonus;
-    } else if (daysSinceLastMeasurement > 1) {
-      userProgress.stats.consecutiveDays = 1;
-    }
-
-    userProgress.stats.totalMeasurements++;
-    userProgress.stats.lastMeasurementDate = today.toISOString();
-    userProgress.totalPoints += points;
-
-    // Check for new achievements
-    const newAchievements = await this.checkAchievements(userId, userProgress.stats);
-    for (const achievement of newAchievements) {
-      userProgress.achievements.push(achievement.id);
-      userProgress.totalPoints += achievement.points;
-    }
-
-    // Check for level up
-    const newLevel = calculateLevel(userProgress.totalPoints);
-    const levelUp = newLevel > userProgress.level ? {
-      newLevel,
-      rewards: this.getLevelRewards(newLevel)
-    } : undefined;
-    userProgress.level = newLevel;
-
-    await this.updateUserProgress(userId, userProgress);
-
-    return {
-      points,
-      bonuses,
-      achievements: newAchievements,
-      levelUp
-    };
-  }
-
-  private async checkAchievements(userId: string, stats: UserProgress['stats']): Promise<Achievement[]> {
-    const earnedAchievements: Achievement[] = [];
-    const userAchievements = await this.getUserAchievements(userId);
-
-    for (const achievement of userAchievements) {
-      if (achievement.completed) continue;
-
-      const { type, count } = achievement.requirements;
-      let currentProgress = 0;
-
-      switch (type) {
-        case 'measurements':
-          currentProgress = stats.totalMeasurements;
-          break;
-        case 'rural_measurements':
-          currentProgress = stats.ruralMeasurements;
-          break;
-        case 'verified_spots':
-          currentProgress = stats.verifiedSpots;
-          break;
-        case 'helping_others':
-          currentProgress = stats.helpfulActions;
-          break;
-        case 'consistency':
-          currentProgress = stats.consecutiveDays;
-          break;
-      }
-
-      achievement.progress = currentProgress;
-      if (currentProgress >= count && !achievement.completed) {
-        achievement.completed = true;
-        achievement.earnedDate = new Date().toISOString();
-        earnedAchievements.push(achievement);
-      }
-    }
-
-    return earnedAchievements;
-  }
-
-  public async getUserAchievements(userId: string): Promise<Achievement[]> {
-    const progress = await this.getUserProgress(userId);
-    if (!progress) {
-      return [...ACHIEVEMENTS]; // Return copy of base achievements for new users
-    }
-
-    // Merge base achievements with user progress
-    return ACHIEVEMENTS.map(achievement => {
-      const userAchievement = { ...achievement };
-      if (progress.achievements.includes(achievement.id)) {
-        userAchievement.completed = true;
-      }
-      return userAchievement;
-    });
-  }
-
-  public async getLeaderboard(timeframe: 'daily' | 'weekly' | 'monthly' | 'allTime' = 'allTime'): Promise<LeaderboardEntry[]> {
-    // TODO: Implement proper leaderboard with timeframe filtering
-    const entries: LeaderboardEntry[] = [];
-    for (const [userId, progress] of this.userProgress.entries()) {
-      entries.push({
-        userId,
-        username: `User ${userId}`,
-        points: progress.totalPoints,
-        rank: 0 // Will be calculated after sorting
-      });
-    }
-    
-    // Sort by points and assign ranks
-    return entries
-      .sort((a, b) => b.points - a.points)
-      .map((entry, index) => ({ ...entry, rank: index + 1 }));
-  }
-
-  private getLevelRewards(level: number): string[] {
-    const rewards: string[] = [];
-    
-    // Add level-specific rewards
-    if (level % 5 === 0) {
-      rewards.push('special_badge');
-    }
-    if (level % 10 === 0) {
-      rewards.push('premium_feature');
-    }
-    
-    return rewards;
-  }
-
-  async updateUserStats(userId: string, newStats: Partial<UserStats['stats']>): Promise<UserProgress> {
-    const userProgress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-      include: { stats: true }
-    });
-
-    if (!userProgress) {
-      throw new Error('User progress not found');
-    }
-
-    // Update stats
-    const currentStats = userProgress.stats?.stats as Record<string, any> || {};
-    const updatedStats = {
-      ...currentStats,
-      ...newStats,
-      lastMeasurementDate: new Date().toISOString()
-    };
-
-    // Update or create user stats
-    await this.prisma.userStats.upsert({
-      where: { userProgressId: userProgress.id },
-      create: {
-        userProgressId: userProgress.id,
-        stats: updatedStats
-      },
-      update: {
-        stats: updatedStats
-      }
-    });
-
-    // Check achievements
-    const achievements = await this.checkAchievements(userId, updatedStats);
-    
-    // Update achievements
-    for (const achievement of achievements) {
-      if (achievement.completed) continue;
-
-      await this.prisma.userAchievement.upsert({
-        where: {
-          userProgressId_achievementId: {
-            userProgressId: userProgress.id,
-            achievementId: achievement.id
+  async getAchievements(userId: string): Promise<AchievementProgress[]> {
+    try {
+      const userProgress = await this.prisma.userProgress.findUnique({
+        where: { userId },
+        include: {
+          stats: true,
+          achievements: {
+            include: { achievement: true }
           }
-        },
-        create: {
-          userProgressId: userProgress.id,
-          achievementId: achievement.id,
-          progress: achievement.progress || 0,
-          target: achievement.target,
-          completed: achievement.completed || false,
-          unlockedAt: achievement.unlockedAt
-        },
-        update: {
-          progress: achievement.progress || 0,
-          completed: achievement.completed || false,
-          unlockedAt: achievement.unlockedAt
         }
       });
-    }
 
-    return this.prisma.userProgress.findUnique({
-      where: { userId },
-      include: { stats: true }
-    });
+      if (!userProgress) {
+        throw new UserProgressNotFoundError(userId);
+      }
+
+      const achievements = await this.prisma.achievement.findMany();
+      return await Promise.all(achievements.map(async achievement => {
+        const userAchievement = userProgress.achievements.find(
+          ua => ua.achievementId === achievement.id
+        );
+
+        if (!userAchievement) {
+          // Create a new user achievement if it doesn't exist
+          const newUserAchievement = await this.prisma.userAchievement.create({
+            data: {
+              userProgressId: userProgress.id,
+              achievementId: achievement.id,
+              progress: 0,
+              target: achievement.target,
+              completed: false
+            },
+            include: { achievement: true }
+          });
+          return newUserAchievement;
+        }
+
+        return userAchievement;
+      }));
+    } catch (error) {
+      if (error instanceof GamificationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to fetch achievements', error);
+    }
   }
 
-  private async checkAchievements(userId: string, stats: Record<string, any>): Promise<PrismaAchievement[]> {
-    const achievements = await this.prisma.achievement.findMany();
+  async processMeasurement(userId: string, data: unknown): Promise<MeasurementResult> {
+    const validatedInput = validateMeasurementInput(data);
     
-    return achievements.map(achievement => {
-      const requirements = achievement.requirements as any[];
-      const isCompleted = validateAchievementRequirements(achievement as any, { stats });
-      const progress = calculateProgress(achievement as any, { stats });
+    return await this.prisma.$transaction(async (tx) => {
+      const context: TransactionContext = { tx, userId, now: new Date() };
+      
+      try {
+        // Get or create user progress
+        let userProgress = await tx.userProgress.findUnique({
+          where: { userId },
+          include: { stats: true }
+        });
 
-      return {
-        ...achievement,
-        progress: progress.current,
-        completed: isCompleted,
-        unlockedAt: isCompleted ? new Date() : null,
-        earnedDate: isCompleted ? new Date().toISOString() : null
-      };
+        if (!userProgress) {
+          const initialStats: StatsContent = {
+            [StatsMetric.TOTAL_MEASUREMENTS]: 0,
+            [StatsMetric.RURAL_MEASUREMENTS]: 0,
+            [StatsMetric.VERIFIED_SPOTS]: 0,
+            [StatsMetric.HELPFUL_ACTIONS]: 0,
+            [StatsMetric.CONSECUTIVE_DAYS]: 0,
+            [StatsMetric.QUALITY_SCORE]: 0,
+            [StatsMetric.ACCURACY_RATE]: 0,
+            [StatsMetric.UNIQUE_LOCATIONS]: 0,
+            [StatsMetric.TOTAL_DISTANCE]: 0,
+            [StatsMetric.CONTRIBUTION_SCORE]: 0
+          };
+
+          userProgress = await tx.userProgress.create({
+            data: {
+              userId,
+              totalPoints: 0,
+              level: 1,
+              currentXP: 0,
+              totalXP: 0,
+              nextLevelXP: calculateRequiredXP(1),
+              streak: 0,
+              lastActive: context.now,
+              unlockedAchievements: 0,
+              stats: {
+                create: {
+                  stats: initialStats as Prisma.JsonValue
+                }
+              }
+            },
+            include: { stats: true }
+          });
+        }
+
+        // Calculate streak
+        const lastActive = userProgress.lastActive;
+        const daysSinceLastActive = Math.floor((context.now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+        const streak = daysSinceLastActive === 1 ? userProgress.streak + 1 : 1;
+
+        // Calculate points and XP
+        const { points, xp, bonuses } = calculateMeasurementPoints({
+          ...validatedInput,
+          streak
+        });
+
+        // Update stats
+        const currentStats = validateStatsContent(userProgress.stats?.stats || {});
+        const updatedStats: StatsContent = {
+          ...currentStats,
+          [StatsMetric.TOTAL_MEASUREMENTS]: currentStats[StatsMetric.TOTAL_MEASUREMENTS] + 1,
+          [StatsMetric.RURAL_MEASUREMENTS]: validatedInput.isRural ? 
+            currentStats[StatsMetric.RURAL_MEASUREMENTS] + 1 : 
+            currentStats[StatsMetric.RURAL_MEASUREMENTS],
+          [StatsMetric.QUALITY_SCORE]: validatedInput.quality,
+          [StatsMetric.CONSECUTIVE_DAYS]: streak
+        };
+
+        await tx.userStats.upsert({
+          where: { userProgressId: userProgress.id },
+          create: {
+            userProgress: { connect: { id: userProgress.id } },
+            stats: updatedStats as Prisma.JsonValue
+          },
+          update: { 
+            stats: updatedStats as Prisma.JsonValue
+          }
+        });
+
+        // Update user progress
+        const totalXP = userProgress.totalXP + xp;
+        const { level, currentXP, nextLevelXP } = calculateLevel(totalXP);
+        const newLevel = level > userProgress.level ? level : undefined;
+        
+        await tx.userProgress.update({
+          where: { id: userProgress.id },
+          data: {
+            totalPoints: userProgress.totalPoints + points,
+            level,
+            currentXP,
+            totalXP,
+            nextLevelXP,
+            streak,
+            lastActive: context.now
+          }
+        });
+
+        // Check achievements
+        const achievements = await tx.achievement.findMany();
+        const notifications: AchievementNotification[] = [];
+
+        for (const achievement of achievements) {
+          const result = await this.checkAchievement(achievement, updatedStats, context);
+          if (result.notification) {
+            notifications.push(result.notification);
+          }
+        }
+
+        return {
+          points,
+          xp,
+          bonuses,
+          achievements: notifications,
+          newLevel,
+          newStats: updatedStats
+        };
+      } catch (error) {
+        if (error instanceof GamificationError) {
+          throw error;
+        }
+        throw new TransactionError('Failed to process measurement', error);
+      }
     });
   }
 
-  async getAchievements(userId: string): Promise<PrismaAchievement[]> {
-    const userProgress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-      include: { achievements: true }
-    });
+  private async checkAchievement(
+    achievement: Achievement,
+    stats: StatsContent,
+    context: TransactionContext
+  ): Promise<AchievementCheckResult> {
+    try {
+      const userAchievement = await context.tx.userAchievement.findUnique({
+        where: {
+          userProgressId_achievementId: {
+            userProgressId: context.userId,
+            achievementId: achievement.id
+          }
+        }
+      });
 
-    if (!userProgress) {
-      return this.prisma.achievement.findMany();
-    }
+      if (userAchievement?.completed) {
+        return { completed: true, progress: 100 };
+      }
 
-    const achievements = await this.prisma.achievement.findMany();
-    return achievements.map(achievement => {
-      const userAchievement = userProgress.achievements.find(
-        ua => ua.achievementId === achievement.id
+      const requirements = achievement.requirements as Requirement[];
+      const allRequirementsMet = requirements.every(req => 
+        checkRequirementMet(req, stats, context)
       );
 
-      return {
-        ...achievement,
-        progress: userAchievement?.progress || 0,
-        completed: userAchievement?.completed || false,
-        unlockedAt: userAchievement?.unlockedAt || null,
-        earnedDate: userAchievement?.unlockedAt?.toISOString() || null
-      };
-    });
+      if (allRequirementsMet) {
+        const updatedAchievement = await context.tx.userAchievement.upsert({
+          where: {
+            userProgressId_achievementId: {
+              userProgressId: context.userId,
+              achievementId: achievement.id
+            }
+          },
+          create: {
+            userProgressId: context.userId,
+            achievementId: achievement.id,
+            progress: achievement.target || 100,
+            target: achievement.target,
+            completed: true,
+            unlockedAt: context.now
+          },
+          update: {
+            progress: achievement.target || 100,
+            completed: true,
+            unlockedAt: context.now
+          }
+        });
+
+        // Update user progress
+        await context.tx.userProgress.update({
+          where: { userId: context.userId },
+          data: {
+            unlockedAchievements: { increment: 1 },
+            lastAchievementAt: context.now,
+            totalPoints: { increment: achievement.points }
+          }
+        });
+
+        return {
+          completed: true,
+          progress: 100,
+          notification: {
+            achievement,
+            pointsEarned: achievement.points
+          }
+        };
+      }
+
+      // Calculate and update progress
+      const overallProgress = Math.floor(
+        requirements.reduce((sum, req) => sum + calculateProgress(req, stats), 0) / requirements.length
+      );
+
+      if (userAchievement) {
+        await context.tx.userAchievement.update({
+          where: {
+            userProgressId_achievementId: {
+              userProgressId: context.userId,
+              achievementId: achievement.id
+            }
+          },
+          data: { progress: overallProgress }
+        });
+      } else {
+        await context.tx.userAchievement.create({
+          data: {
+            userProgressId: context.userId,
+            achievementId: achievement.id,
+            progress: overallProgress,
+            target: achievement.target
+          }
+        });
+      }
+
+      return { completed: false, progress: overallProgress };
+    } catch (error) {
+      if (error instanceof GamificationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to check achievement', error);
+    }
   }
 }

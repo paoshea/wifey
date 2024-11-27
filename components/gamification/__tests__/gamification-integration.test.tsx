@@ -6,7 +6,16 @@ import { GamificationService } from '@/lib/gamification/gamification-service';
 import { ProgressVisualization } from '../progress-visualization';
 import { AchievementShowcase } from '../achievement-showcase';
 import { Leaderboard } from '../leaderboard';
-import type { LeaderboardEntry } from '@/lib/gamification/types';
+import { 
+  LeaderboardEntry, 
+  UserProgress,
+  AchievementTier,
+  RequirementType,
+  RequirementOperator,
+  StatsMetric,
+  AchievementCategory
+} from '@/lib/gamification/types';
+import { validateUserProgress, validateAchievement } from '@/lib/gamification/validation';
 
 // Mock the GamificationService
 jest.mock('@/lib/gamification/gamification-service', () => ({
@@ -19,28 +28,35 @@ jest.mock('@/lib/gamification/gamification-service', () => ({
         level: 5,
         rank: 1,
         topAchievements: [],
-        avatarUrl: undefined
+        avatarUrl: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
     ])
   }))
 }));
 
-const mockProgress = {
+const mockProgress: UserProgress = {
+  userId: '1',
   level: 5,
   levelProgress: 0.75,
+  currentLevelPoints: 750,
   nextLevelThreshold: 1000,
+  totalPoints: 4750,
   stats: {
-    totalMeasurements: 150,
-    ruralMeasurements: 75,
-    uniqueLocations: 30,
-    contributionScore: 450,
-    measurementsTrend: 12,
-    ruralTrend: 25,
-    locationsTrend: 8,
-    scoreTrend: 15
+    [StatsMetric.TOTAL_MEASUREMENTS]: 150,
+    [StatsMetric.RURAL_MEASUREMENTS]: 75,
+    [StatsMetric.UNIQUE_LOCATIONS]: 30,
+    [StatsMetric.CONTRIBUTION_SCORE]: 450,
+    [StatsMetric.MEASUREMENTS_TREND]: 12,
+    [StatsMetric.RURAL_TREND]: 25,
+    [StatsMetric.LOCATIONS_TREND]: 8,
+    [StatsMetric.SCORE_TREND]: 15
   },
-  activityData: [/* ... */],
-  milestones: [/* ... */]
+  activityData: [],
+  milestones: [],
+  createdAt: new Date(),
+  updatedAt: new Date()
 };
 
 const mockAchievements = [
@@ -50,15 +66,19 @@ const mockAchievements = [
     description: 'Take measurements in rural areas',
     icon: '🌾',
     points: 100,
-    rarity: 'common' as const,
-    tier: 'bronze' as const,
+    rarity: 'COMMON',
+    tier: AchievementTier.BRONZE,
     progress: 5,
     target: 10,
-    category: 'RURAL_EXPLORER' as const,
+    category: AchievementCategory.RURAL_EXPLORER,
     requirements: [{
-      type: 'rural_measurements' as const,
-      count: 10
-    }]
+      type: RequirementType.STAT,
+      metric: StatsMetric.RURAL_MEASUREMENTS,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      value: 10
+    }],
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'helpful-user',
@@ -66,15 +86,19 @@ const mockAchievements = [
     description: 'Help other users with their measurements',
     icon: '🤝',
     points: 150,
-    rarity: 'rare' as const,
-    tier: 'silver' as const,
+    rarity: 'RARE',
+    tier: AchievementTier.SILVER,
     progress: 3,
     target: 5,
-    category: 'COMMUNITY_HELPER' as const,
+    category: AchievementCategory.COMMUNITY_HELPER,
     requirements: [{
-      type: 'helping_others' as const,
-      count: 5
-    }]
+      type: RequirementType.STAT,
+      metric: StatsMetric.HELP_OTHERS,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      value: 5
+    }],
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 
@@ -85,11 +109,31 @@ const mockLeaderboardEntries: LeaderboardEntry[] = [
     points: 1500,
     level: 5,
     rank: 1,
-    topAchievements: [],
-    avatarUrl: undefined
-  },
-  // ... more entries
+    topAchievements: mockAchievements,
+    avatarUrl: undefined,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
 ];
+
+// Validate mock data
+const validateMockData = () => {
+  // Validate progress
+  const progressValidation = validateUserProgress(mockProgress);
+  if (!progressValidation.success) {
+    throw new Error(`Invalid mock progress: ${progressValidation.error}`);
+  }
+
+  // Validate achievements
+  mockAchievements.forEach(achievement => {
+    const achievementValidation = validateAchievement(achievement);
+    if (!achievementValidation.success) {
+      throw new Error(`Invalid mock achievement: ${achievementValidation.error}`);
+    }
+  });
+};
+
+validateMockData();
 
 describe('Gamification Integration', () => {
   it('shows consistent user level across components', () => {
@@ -209,7 +253,9 @@ describe('Gamification Integration', () => {
         level: 5,
         rank: 1,
         topAchievements: [],
-        avatarUrl: undefined
+        avatarUrl: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }],
       weekly: [{
         userId: '1',
@@ -218,7 +264,9 @@ describe('Gamification Integration', () => {
         level: 8,
         rank: 1,
         topAchievements: [],
-        avatarUrl: undefined
+        avatarUrl: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }]
     };
 

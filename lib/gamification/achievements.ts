@@ -1,124 +1,155 @@
-import { Achievement } from '@prisma/client';
-import { ACHIEVEMENT_TIERS } from './constants';
+import { AchievementTier, RequirementType, RequirementOperator } from './types';
 
-// Bonus constants
-export const RURAL_BONUS_MULTIPLIER = 1.5;
-export const FIRST_IN_AREA_BONUS = 100;
-export const QUALITY_BONUS_MAX = 50;
+// Achievement point values
+export const POINT_VALUES = {
+  COMMON: 100,
+  RARE: 250,
+  EPIC: 500
+} as const;
 
-export const ACHIEVEMENTS: Achievement[] = [
+// Bonus multipliers and constants
+export const BONUS_MULTIPLIERS = {
+  RURAL_AREA: 1.5,
+  FIRST_IN_AREA: 50,
+  QUALITY_MAX: 10,
+  STREAK_MAX: 7
+} as const;
+
+// Base XP values
+export const XP_VALUES = {
+  BASE_MEASUREMENT: 10,
+  RURAL_BONUS: 5,
+  FIRST_IN_AREA: 25,
+  ACHIEVEMENT_COMMON: 50,
+  ACHIEVEMENT_RARE: 100,
+  ACHIEVEMENT_EPIC: 200
+} as const;
+
+// Default achievement definitions - these will be stored in the database
+export const DEFAULT_ACHIEVEMENTS = [
   {
-    id: 'rural-pioneer',
-    title: 'Rural Pioneer',
-    description: 'Complete your first rural area measurement',
-    icon: '🌲',
-    points: 100,
-    tier: ACHIEVEMENT_TIERS.BRONZE,
-    category: 'RURAL',
-    requirements: {
-      type: 'rural_measurements',
-      count: 1
-    },
-    isSecret: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    title: 'First Steps',
+    description: 'Make your first measurement',
+    icon: '🎯',
+    points: POINT_VALUES.COMMON,
+    tier: AchievementTier.COMMON,
+    requirements: [{
+      type: RequirementType.STAT,
+      metric: 'totalMeasurements',
+      value: 1,
+      operator: RequirementOperator.GREATER_THAN_EQUAL
+    }]
   },
   {
-    id: 'coverage-master',
-    title: 'Coverage Master',
-    description: 'Map 100 unique locations',
-    icon: '📱',
-    points: 500,
-    tier: ACHIEVEMENT_TIERS.GOLD,
-    category: 'COVERAGE',
-    requirements: {
-      type: 'unique_locations',
-      count: 100
-    },
-    isSecret: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    title: 'Rural Explorer',
+    description: 'Make measurements in rural areas',
+    icon: '🌾',
+    points: POINT_VALUES.RARE,
+    tier: AchievementTier.RARE,
+    requirements: [{
+      type: RequirementType.STAT,
+      metric: 'ruralMeasurements',
+      value: 10,
+      operator: RequirementOperator.GREATER_THAN_EQUAL
+    }]
   },
   {
-    id: 'speed-demon',
-    title: 'Speed Demon',
-    description: 'Complete 50 measurements in one day',
-    icon: '⚡',
-    points: 250,
-    tier: ACHIEVEMENT_TIERS.SILVER,
-    category: 'SPEED',
-    requirements: {
-      type: 'measurements',
-      count: 50
-    },
-    isSecret: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    title: 'Quality Controller',
+    description: 'Maintain high quality measurements',
+    icon: '⭐',
+    points: POINT_VALUES.RARE,
+    tier: AchievementTier.RARE,
+    requirements: [{
+      type: RequirementType.STAT,
+      metric: 'qualityScore',
+      value: 90,
+      operator: RequirementOperator.GREATER_THAN_EQUAL
+    }]
   },
   {
-    id: 'consistency-king',
     title: 'Consistency King',
-    description: 'Submit measurements for 30 consecutive days',
+    description: 'Maintain a 7-day measurement streak',
     icon: '👑',
-    points: 1000,
-    tier: ACHIEVEMENT_TIERS.PLATINUM,
-    category: 'CONSISTENCY',
-    requirements: {
-      type: 'consistency',
-      count: 30
-    },
-    isSecret: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    points: POINT_VALUES.EPIC,
+    tier: AchievementTier.EPIC,
+    requirements: [{
+      type: RequirementType.STREAK,
+      metric: 'streak',
+      value: 7,
+      operator: RequirementOperator.GREATER_THAN_EQUAL
+    }]
   },
   {
-    id: 'helpful-hero',
-    title: 'Helpful Hero',
-    description: 'Help 25 users find better coverage',
+    title: 'Community Helper',
+    description: 'Help verify other users\' measurements',
     icon: '🤝',
-    points: 300,
-    tier: ACHIEVEMENT_TIERS.BRONZE,
-    category: 'HELPING',
-    requirements: {
-      type: 'helping_others',
-      count: 25
-    },
-    isSecret: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    points: POINT_VALUES.RARE,
+    tier: AchievementTier.RARE,
+    requirements: [{
+      type: RequirementType.STAT,
+      metric: 'helpfulActions',
+      value: 25,
+      operator: RequirementOperator.GREATER_THAN_EQUAL
+    }]
   }
-];
+] as const;
 
-export function calculateLevel(points: number): number {
-  return Math.floor(Math.sqrt(points / 100)) + 1;
+// Contribution calculation functions
+export function calculateMeasurementPoints(params: {
+  isRural: boolean;
+  isFirstInArea: boolean;
+  quality: number;
+  streak: number;
+}): {
+  points: number;
+  xp: number;
+  bonuses: Record<string, number>;
+} {
+  const { isRural, isFirstInArea, quality, streak } = params;
+  let points = XP_VALUES.BASE_MEASUREMENT;
+  let xp = XP_VALUES.BASE_MEASUREMENT;
+  const bonuses: Record<string, number> = {};
+
+  // Rural bonus
+  if (isRural) {
+    const ruralBonus = Math.round(points * (BONUS_MULTIPLIERS.RURAL_AREA - 1));
+    points += ruralBonus;
+    xp += XP_VALUES.RURAL_BONUS;
+    bonuses.ruralArea = ruralBonus;
+  }
+
+  // First in area bonus
+  if (isFirstInArea) {
+    points += BONUS_MULTIPLIERS.FIRST_IN_AREA;
+    xp += XP_VALUES.FIRST_IN_AREA;
+    bonuses.firstInArea = BONUS_MULTIPLIERS.FIRST_IN_AREA;
+  }
+
+  // Quality bonus
+  const qualityBonus = Math.round((quality / 100) * BONUS_MULTIPLIERS.QUALITY_MAX);
+  points += qualityBonus;
+  bonuses.quality = qualityBonus;
+
+  // Streak bonus
+  if (streak > 0) {
+    const streakBonus = Math.min(streak, BONUS_MULTIPLIERS.STREAK_MAX);
+    points += streakBonus;
+    bonuses.streak = streakBonus;
+  }
+
+  return { points, xp, bonuses };
 }
 
-export function getNextLevelThreshold(currentLevel: number): number {
-  return Math.pow(currentLevel, 2) * 100;
-}
-
-export function getTotalPoints(achievements: Achievement[]): number {
-  return achievements.reduce((total, achievement) => total + achievement.points, 0);
-}
-
-export function getTierOrder(tier: Achievement['tier']): number {
-  const order = {
-    [ACHIEVEMENT_TIERS.BRONZE]: 0,
-    [ACHIEVEMENT_TIERS.SILVER]: 1,
-    [ACHIEVEMENT_TIERS.GOLD]: 2,
-    [ACHIEVEMENT_TIERS.PLATINUM]: 3,
-  };
-  return order[tier] || 0;
-}
-
-export function sortAchievementsByTier(achievements: Achievement[]): Achievement[] {
-  return [...achievements].sort((a, b) => getTierOrder(b.tier) - getTierOrder(a.tier));
-}
-
-export function searchAchievements(achievements: Achievement[], query: string): Achievement[] {
-  const lowercaseQuery = query.toLowerCase();
-  return achievements.filter(achievement => 
-    achievement.title.toLowerCase().includes(lowercaseQuery) ||
-    achievement.description.toLowerCase().includes(lowercaseQuery)
-  );
+// Achievement XP calculation
+export function calculateAchievementXP(tier: AchievementTier): number {
+  switch (tier) {
+    case AchievementTier.COMMON:
+      return XP_VALUES.ACHIEVEMENT_COMMON;
+    case AchievementTier.RARE:
+      return XP_VALUES.ACHIEVEMENT_RARE;
+    case AchievementTier.EPIC:
+      return XP_VALUES.ACHIEVEMENT_EPIC;
+    default:
+      return 0;
+  }
 }

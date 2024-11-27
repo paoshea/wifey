@@ -3,7 +3,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
 import { GamificationService } from '../../../lib/gamification/gamification-service';
-import { LeaderboardEntry, Achievement } from '../../../lib/gamification/types';
+import { 
+  LeaderboardEntry, 
+  Achievement,
+  AchievementTier,
+  RequirementType,
+  RequirementOperator,
+  StatsMetric,
+  AchievementCategory
+} from '../../../lib/gamification/types';
+import { validateAchievement } from '../../../lib/gamification/validation';
 import '@testing-library/jest-dom';
 
 // Mock Framer Motion
@@ -29,17 +38,29 @@ const mockAchievements: Achievement[] = [
     description: 'Made your first contribution',
     icon: 'trophy',
     points: 100,
-    rarity: 'common' as const,
-    tier: 'bronze' as const,
+    rarity: 'COMMON',
+    tier: AchievementTier.BRONZE,
     progress: 100,
     target: 100,
-    category: 'COVERAGE_PIONEER' as const,
+    category: AchievementCategory.COVERAGE_PIONEER,
     requirements: [{
-      type: 'measurements' as const,
-      count: 1
-    }]
+      type: RequirementType.STAT,
+      metric: StatsMetric.TOTAL_MEASUREMENTS,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      value: 1
+    }],
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
+
+// Validate mock achievements
+mockAchievements.forEach(achievement => {
+  const validationResult = validateAchievement(achievement);
+  if (!validationResult.success) {
+    throw new Error(`Invalid mock achievement: ${validationResult.error}`);
+  }
+});
 
 const mockEntries: LeaderboardEntry[] = [
   {
@@ -49,7 +70,9 @@ const mockEntries: LeaderboardEntry[] = [
     points: 1000,
     rank: 1,
     topAchievements: mockAchievements,
-    avatarUrl: 'avatar1.jpg'
+    avatarUrl: 'avatar1.jpg',
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     userId: '2',
@@ -58,7 +81,9 @@ const mockEntries: LeaderboardEntry[] = [
     points: 900,
     rank: 2,
     topAchievements: [],
-    avatarUrl: 'avatar2.jpg'
+    avatarUrl: 'avatar2.jpg',
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     userId: '3',
@@ -67,7 +92,9 @@ const mockEntries: LeaderboardEntry[] = [
     points: 800,
     rank: 3,
     topAchievements: [],
-    avatarUrl: undefined
+    avatarUrl: undefined,
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 

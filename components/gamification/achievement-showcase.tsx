@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGamification } from '@/hooks/useGamification';
-import { Achievement, AchievementRequirement, ValidatedAchievement } from '@/lib/gamification/types';
+import { 
+  Achievement, 
+  AchievementRequirement, 
+  ValidatedAchievement,
+  AchievementTier,
+  RequirementType,
+  RequirementOperator,
+  StatsMetric
+} from '@/lib/gamification/types';
 import { cn } from '@/lib/utils';
 
 interface AchievementCardProps {
@@ -16,9 +24,10 @@ interface AchievementCardProps {
 
 const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }: AchievementCardProps) => {
   const rarityColors: Record<Achievement['rarity'], string> = {
-    common: 'bg-blue-600',
-    rare: 'bg-purple-600',
-    epic: 'bg-gradient-to-r from-yellow-400 to-orange-500'
+    'COMMON': 'bg-blue-600',
+    'RARE': 'bg-purple-600',
+    'EPIC': 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    'LEGENDARY': 'bg-gradient-to-r from-purple-400 to-pink-500'
   };
 
   const progressPercentage = Math.min((progress / target) * 100, 100);
@@ -32,6 +41,7 @@ const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }:
         isUnlocked ? rarityColors[achievement.rarity] : 'bg-gray-800 opacity-60'
       )}
       onClick={onClick}
+      data-testid="achievement-item"
     >
       <div className="flex items-center space-x-3">
         <div className="text-4xl">{achievement.icon}</div>
@@ -55,7 +65,7 @@ const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }:
       )}
       <div className="mt-2 flex justify-between items-center">
         <span className="text-sm text-white font-medium">+{achievement.points} pts</span>
-        <span className="text-xs text-white opacity-75 capitalize">{achievement.rarity}</span>
+        <span className="text-xs text-white opacity-75 capitalize">{achievement.rarity.toLowerCase()}</span>
       </div>
     </motion.div>
   );
@@ -71,6 +81,30 @@ interface AchievementDetailsModalProps {
 
 const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, onClose }: AchievementDetailsModalProps) => {
   const progressPercentage = Math.min((progress / target) * 100, 100);
+
+  const getRequirementText = (req: AchievementRequirement): string => {
+    const operatorText = {
+      [RequirementOperator.GREATER_THAN]: '>',
+      [RequirementOperator.GREATER_THAN_EQUAL]: '≥',
+      [RequirementOperator.LESS_THAN]: '<',
+      [RequirementOperator.LESS_THAN_EQUAL]: '≤',
+      [RequirementOperator.EQUAL]: '=',
+      [RequirementOperator.NOT_EQUAL]: '≠'
+    };
+
+    switch (req.type) {
+      case RequirementType.STAT:
+        return `${StatsMetric[req.metric].replace(/_/g, ' ')} ${operatorText[req.operator]} ${req.value}`;
+      case RequirementType.STREAK:
+        return `Maintain a streak of ${req.value} days`;
+      case RequirementType.LEVEL:
+        return `Reach level ${req.value}`;
+      case RequirementType.ACHIEVEMENT:
+        return `Unlock achievement: ${req.value}`;
+      default:
+        return 'Unknown requirement';
+    }
+  };
 
   return (
     <motion.div
@@ -88,7 +122,7 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
           <div className="text-6xl">{achievement.icon}</div>
           <div>
             <h2 className="text-2xl font-bold">{achievement.title}</h2>
-            <p className="text-gray-600 capitalize">{achievement.rarity} Achievement</p>
+            <p className="text-gray-600 capitalize">{achievement.rarity.toLowerCase()} Achievement</p>
           </div>
         </div>
         
@@ -99,51 +133,36 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
           {achievement.requirements.map((req, index) => (
             <div key={index} className="mb-2">
               <p className="text-sm text-gray-600">
-                {req.value} {req.metric.replace('_', ' ')}
-                {req.description && (
-                  <span className="text-xs text-gray-500 ml-1">({req.description})</span>
-                )}
+                {getRequirementText(req)}
               </p>
-              {!isUnlocked && (
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                  <div 
-                    className="bg-blue-500 h-full rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              )}
             </div>
           ))}
         </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <div>
-            <span className="text-lg font-bold">+{achievement.points}</span>
-            <span className="text-gray-600 ml-1">points</span>
+        {!isUnlocked && (
+          <div className="mt-4">
+            <h3 className="font-semibold mb-2">Progress</h3>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              Progress: {progress}/{target} ({Math.round(progressPercentage)}%)
+            </p>
           </div>
-          {isUnlocked ? (
-            <div className="flex flex-col items-end">
-              <span className="text-green-600 font-medium">Unlocked ✓</span>
-              <span className="text-xs text-gray-500">
-                {achievement.unlockedAt?.toLocaleDateString()}
-              </span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-end">
-              <span className="text-gray-500">Locked 🔒</span>
-              <span className="text-xs text-gray-500">
-                {progress} / {target}
-              </span>
-            </div>
-          )}
-        </div>
+        )}
 
-        <button
-          onClick={onClose}
-          className="mt-6 w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Close
-        </button>
+        <div className="mt-6 flex justify-between items-center">
+          <span className="text-lg font-semibold">+{achievement.points} points</span>
+          <button
+            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -154,48 +173,44 @@ interface AchievementShowcaseProps {
   onAchievementClick?: (achievement: ValidatedAchievement) => void;
 }
 
-export function AchievementShowcase({ achievements = [], onAchievementClick }: AchievementShowcaseProps) {
+export const AchievementShowcase = ({ achievements = [], onAchievementClick }: AchievementShowcaseProps) => {
   const [selectedAchievement, setSelectedAchievement] = useState<ValidatedAchievement | null>(null);
-  const { progress } = useGamification();
 
-  const getProgressForAchievement = (achievementId: string) => {
-    const achievementProgress = progress.find(p => p.achievement.id === achievementId);
-    return {
-      progress: achievementProgress?.progress || 0,
-      target: achievementProgress?.target || 0,
-      isUnlocked: achievementProgress?.isUnlocked || false
-    };
-  };
+  if (!achievements) {
+    return <div className="text-center py-8">Loading achievements...</div>;
+  }
+
+  if (achievements.length === 0) {
+    return <div className="text-center py-8">No achievements yet</div>;
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {achievements.map(achievement => {
-        const { progress, target, isUnlocked } = getProgressForAchievement(achievement.id);
-        
-        return (
-          <AchievementCard
-            key={achievement.id}
-            achievement={achievement}
-            progress={progress}
-            target={target}
-            isUnlocked={isUnlocked}
-            onClick={() => {
-              setSelectedAchievement(achievement);
-              onAchievementClick?.(achievement);
-            }}
-          />
-        );
-      })}
+      {achievements.map((achievement) => (
+        <AchievementCard
+          key={achievement.id}
+          achievement={achievement}
+          progress={achievement.progress}
+          target={achievement.target}
+          isUnlocked={achievement.progress >= achievement.target}
+          onClick={() => {
+            setSelectedAchievement(achievement);
+            onAchievementClick?.(achievement);
+          }}
+        />
+      ))}
 
       <AnimatePresence>
         {selectedAchievement && (
           <AchievementDetailsModal
             achievement={selectedAchievement}
-            {...getProgressForAchievement(selectedAchievement.id)}
+            progress={selectedAchievement.progress}
+            target={selectedAchievement.target}
+            isUnlocked={selectedAchievement.progress >= selectedAchievement.target}
             onClose={() => setSelectedAchievement(null)}
           />
         )}
       </AnimatePresence>
     </div>
   );
-}
+};

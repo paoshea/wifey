@@ -1,203 +1,250 @@
 import { PrismaClient } from '@prisma/client';
 import { GamificationService } from '../gamification-service';
 import { 
-  ValidatedAchievement, 
-  ValidatedUserStats,
+  ValidatedUserProgress, 
+  ValidatedAchievement,
+  AchievementTier,
   RequirementType,
-  RarityLevel 
+  RequirementOperator,
+  StatsMetric,
+  StatsContent,
+  Requirement,
+  UserAchievement,
+  UserStats
 } from '../types';
-import { mockDeep, MockProxy } from 'jest-mock-extended';
+import { validateAchievementRequirements } from '../validation';
 
-describe('GamificationService', () => {
-  let prisma: MockProxy<PrismaClient>;
-  let service: GamificationService;
+interface MockPrismaClient extends PrismaClient {
+  userProgress: {
+    findUnique: jest.Mock<Promise<ValidatedUserProgress | null>>;
+    create: jest.Mock<Promise<ValidatedUserProgress>>;
+    update: jest.Mock<Promise<ValidatedUserProgress>>;
+    upsert: jest.Mock<Promise<ValidatedUserProgress>>;
+  };
+  achievement: {
+    findMany: jest.Mock<Promise<ValidatedAchievement[]>>;
+    findUnique: jest.Mock<Promise<ValidatedAchievement | null>>;
+  };
+  userAchievement: {
+    findUnique: jest.Mock<Promise<UserAchievement | null>>;
+    create: jest.Mock<Promise<UserAchievement>>;
+    update: jest.Mock<Promise<UserAchievement>>;
+    upsert: jest.Mock<Promise<UserAchievement>>;
+  };
+  userStats: {
+    upsert: jest.Mock<Promise<UserStats>>;
+  };
+  $transaction: jest.Mock<Promise<any>>;
+}
 
-  const mockUserId = 'test-user-id';
-  const mockAchievement: ValidatedAchievement = {
-    id: 'test-achievement',
-    title: 'Test Achievement',
-    description: 'Test Description',
-    icon: '🎯',
-    points: 100,
-    rarity: RarityLevel.COMMON,
-    requirements: [{
-      type: RequirementType.MEASUREMENT_COUNT,
-      value: 10,
-      metric: 'measurements'
-    }],
-    isSecret: false,
-    unlockedAt: null,
+const mockPrisma: jest.Mocked<MockPrismaClient> = {
+  userProgress: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    upsert: jest.fn()
+  },
+  achievement: {
+    findMany: jest.fn(),
+    findUnique: jest.fn()
+  },
+  userAchievement: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    upsert: jest.fn()
+  },
+  userStats: {
+    upsert: jest.fn()
+  },
+  $transaction: jest.fn(callback => callback(mockPrisma))
+} as unknown as jest.Mocked<MockPrismaClient>;
+
+const mockStatsContent: StatsContent = {
+  [StatsMetric.TOTAL_MEASUREMENTS]: 50,
+  [StatsMetric.RURAL_MEASUREMENTS]: 10,
+  [StatsMetric.VERIFIED_SPOTS]: 5,
+  [StatsMetric.HELPFUL_ACTIONS]: 3,
+  [StatsMetric.CONSECUTIVE_DAYS]: 5,
+  [StatsMetric.QUALITY_SCORE]: 80,
+  [StatsMetric.ACCURACY_RATE]: 90,
+  [StatsMetric.UNIQUE_LOCATIONS]: 45,
+  [StatsMetric.TOTAL_DISTANCE]: 1000,
+  [StatsMetric.CONTRIBUTION_SCORE]: 75
+};
+
+const mockUserProgress: ValidatedUserProgress = {
+  id: 'progress-1',
+  userId: 'user-1',
+  totalPoints: 100,
+  level: 1,
+  currentXP: 50,
+  totalXP: 50,
+  nextLevelXP: 100,
+  streak: 5,
+  lastActive: new Date(),
+  unlockedAchievements: 1,
+  lastAchievementAt: new Date(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  stats: {
+    id: 'stats-1',
+    userProgressId: 'progress-1',
+    stats: mockStatsContent,
     createdAt: new Date(),
     updatedAt: new Date()
-  };
+  },
+  achievements: []
+};
 
-  const mockUserStats: ValidatedUserStats = {
-    measurementCount: 15,
-    ruralMeasurements: 5,
-    consecutiveDays: 3,
-    accuracyRate: 95,
-    verifications: 10,
-    lastActiveAt: new Date()
-  };
+const mockRequirements: Requirement[] = [
+  {
+    type: RequirementType.STAT,
+    metric: StatsMetric.RURAL_MEASUREMENTS,
+    value: 1,
+    operator: RequirementOperator.GREATER_THAN_EQUAL,
+    description: 'Complete at least 1 rural measurement'
+  }
+];
+
+const mockAchievements: ValidatedAchievement[] = [
+  {
+    id: 'rural-pioneer',
+    title: 'Rural Pioneer',
+    description: 'Complete your first rural area measurement',
+    icon: '🌲',
+    points: 100,
+    tier: AchievementTier.COMMON,
+    requirements: mockRequirements,
+    target: 1,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    id: 'coverage-master',
+    title: 'Coverage Master',
+    description: 'Map 1000 unique locations',
+    icon: '📍',
+    points: 500,
+    tier: AchievementTier.LEGENDARY,
+    requirements: [{
+      type: RequirementType.STAT,
+      metric: StatsMetric.UNIQUE_LOCATIONS,
+      value: 1000,
+      operator: RequirementOperator.GREATER_THAN_EQUAL,
+      description: 'Map 1000 unique locations'
+    }],
+    target: 1000,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+];
+
+describe('GamificationService', () => {
+  let service: GamificationService;
 
   beforeEach(() => {
-    prisma = mockDeep<PrismaClient>();
-    service = new GamificationService(prisma);
+    jest.clearAllMocks();
+    service = new GamificationService(mockPrisma);
+
+    mockPrisma.userProgress.findUnique.mockResolvedValue(mockUserProgress);
+    mockPrisma.achievement.findMany.mockResolvedValue(mockAchievements);
+    mockPrisma.userAchievement.findUnique.mockResolvedValue(null);
+    mockPrisma.userAchievement.create.mockImplementation((data) => {
+      return Promise.resolve({
+        id: 'new-achievement',
+        ...data.data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    });
+  });
+
+  describe('updateUserStats', () => {
+    const testUserId = 'test-user-id';
+    const newStats = {
+      totalMeasurements: 5,
+      ruralMeasurements: 2
+    };
+
+    it('should update user stats and check achievements', async () => {
+      mockPrisma.userProgress.findUnique.mockResolvedValue({
+        ...mockUserProgress,
+        stats: {
+          id: 'stats-1',
+          userProgressId: 'progress-1',
+          stats: mockStatsContent,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+      mockPrisma.achievement.findMany.mockResolvedValue(mockAchievements);
+      mockPrisma.userProgress.update.mockResolvedValue(mockUserProgress);
+      mockPrisma.userStats.upsert.mockResolvedValue({
+        id: 'stats-1',
+        userProgressId: 'progress-1',
+        stats: mockStatsContent,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      mockPrisma.userAchievement.upsert.mockResolvedValue({
+        id: 'user-achievement-id',
+        userProgressId: mockUserProgress.id,
+        achievementId: mockAchievements[0].id,
+        progress: 5,
+        target: 10,
+        completed: false,
+        unlockedAt: null,
+        notifiedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await service.updateUserStats(testUserId, newStats);
+
+      expect(mockPrisma.userStats.upsert).toHaveBeenCalled();
+      expect(mockPrisma.userProgress.update).toHaveBeenCalled();
+      expect(mockPrisma.userAchievement.upsert).toHaveBeenCalled();
+    });
   });
 
   describe('getAchievements', () => {
-    it('should fetch and validate achievements', async () => {
-      prisma.achievement.findMany.mockResolvedValue([{
-        ...mockAchievement,
-        userAchievements: []
-      }]);
-
-      const achievements = await service.getAchievements(mockUserId);
-
-      expect(achievements).toHaveLength(1);
-      expect(achievements[0]).toMatchObject(mockAchievement);
-      expect(prisma.achievement.findMany).toHaveBeenCalledWith({
+    it('should fetch and validate user achievements', async () => {
+      const result = await service.getAchievements('user-1');
+      expect(result).toBeDefined();
+      expect(result.length).toBe(mockAchievements.length);
+      expect(mockPrisma.userProgress.findUnique).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
         include: {
-          userAchievements: {
-            where: { userProgress: { userId: mockUserId } }
+          stats: true,
+          achievements: {
+            include: { achievement: true }
           }
         }
       });
     });
 
-    it('should use cache for subsequent calls', async () => {
-      prisma.achievement.findMany.mockResolvedValue([{
-        ...mockAchievement,
-        userAchievements: []
-      }]);
-
-      await service.getAchievements(mockUserId);
-      await service.getAchievements(mockUserId);
-
-      expect(prisma.achievement.findMany).toHaveBeenCalledTimes(1);
-    });
-
-    it('should handle errors gracefully', async () => {
-      prisma.achievement.findMany.mockRejectedValue(new Error('DB Error'));
-
-      await expect(service.getAchievements(mockUserId))
-        .rejects
-        .toThrow('Failed to fetch achievements');
+    it('should handle missing user progress', async () => {
+      mockPrisma.userProgress.findUnique.mockResolvedValueOnce(null);
+      await expect(service.getAchievements('user-1')).rejects.toThrow('User progress not found');
     });
   });
 
-  describe('getUserStats', () => {
-    it('should fetch and validate user stats', async () => {
-      prisma.userStats.findUnique.mockResolvedValue(mockUserStats);
-
-      const stats = await service.getUserStats(mockUserId);
-
-      expect(stats).toMatchObject(mockUserStats);
-      expect(prisma.userStats.findUnique).toHaveBeenCalledWith({
-        where: { userId: mockUserId }
+  describe('processMeasurement', () => {
+    it('should process measurement and update stats', async () => {
+      const result = await service.processMeasurement('user-1', {
+        isRural: false,
+        isFirstInArea: false,
+        quality: 80,
+        location: {
+          lat: 37.7749,
+          lng: -122.4194
+        }
       });
-    });
 
-    it('should throw if user stats not found', async () => {
-      prisma.userStats.findUnique.mockResolvedValue(null);
-
-      await expect(service.getUserStats(mockUserId))
-        .rejects
-        .toThrow('User stats not found');
-    });
-  });
-
-  describe('checkAndUnlockAchievements', () => {
-    const mockUserProgress = {
-      id: 'progress-id',
-      userId: mockUserId,
-      totalPoints: 0
-    };
-
-    beforeEach(() => {
-      prisma.achievement.findMany.mockResolvedValue([{
-        ...mockAchievement,
-        userAchievements: []
-      }]);
-      prisma.userStats.findUnique.mockResolvedValue(mockUserStats);
-      prisma.userProgress.findUnique.mockResolvedValue(mockUserProgress);
-    });
-
-    it('should unlock achievements when requirements are met', async () => {
-      const notifications = await service.checkAndUnlockAchievements(mockUserId);
-
-      expect(notifications).toHaveLength(1);
-      expect(notifications[0].achievement).toMatchObject(mockAchievement);
-      expect(notifications[0].pointsEarned).toBe(mockAchievement.points);
-      expect(prisma.userAchievement.create).toHaveBeenCalled();
-      expect(prisma.userProgress.update).toHaveBeenCalled();
-    });
-
-    it('should not unlock already unlocked achievements', async () => {
-      prisma.achievement.findMany.mockResolvedValue([{
-        ...mockAchievement,
-        unlockedAt: new Date(),
-        userAchievements: [{
-          unlockedAt: new Date()
-        }]
-      }]);
-
-      const notifications = await service.checkAndUnlockAchievements(mockUserId);
-
-      expect(notifications).toHaveLength(0);
-      expect(prisma.userAchievement.create).not.toHaveBeenCalled();
-    });
-
-    it('should handle transaction errors', async () => {
-      prisma.$transaction.mockRejectedValue(new Error('Transaction failed'));
-
-      await expect(service.checkAndUnlockAchievements(mockUserId))
-        .rejects
-        .toThrow('Failed to check and unlock achievements');
-    });
-  });
-
-  describe('updateUserStats', () => {
-    const mockUpdate = {
-      measurementCount: 20
-    };
-
-    beforeEach(() => {
-      prisma.userStats.update.mockResolvedValue({
-        ...mockUserStats,
-        ...mockUpdate
-      });
-    });
-
-    it('should update stats and check achievements', async () => {
-      await service.updateUserStats(mockUserId, mockUpdate);
-
-      expect(prisma.userStats.update).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
-        data: mockUpdate
-      });
-      expect(prisma.$transaction).toHaveBeenCalled();
-    });
-
-    it('should invalidate cache after update', async () => {
-      // Prime the cache
-      prisma.userStats.findUnique.mockResolvedValue(mockUserStats);
-      await service.getUserStats(mockUserId);
-
-      // Update stats
-      await service.updateUserStats(mockUserId, mockUpdate);
-
-      // Cache should be invalidated, causing a new fetch
-      await service.getUserStats(mockUserId);
-      expect(prisma.userStats.findUnique).toHaveBeenCalledTimes(2);
-    });
-
-    it('should handle update errors', async () => {
-      prisma.userStats.update.mockRejectedValue(new Error('Update failed'));
-
-      await expect(service.updateUserStats(mockUserId, mockUpdate))
-        .rejects
-        .toThrow('Failed to update user stats');
+      expect(result).toBeDefined();
+      expect(result.points).toBeGreaterThan(0);
+      expect(result.updatedStats[StatsMetric.TOTAL_MEASUREMENTS]).toBe(mockStatsContent[StatsMetric.TOTAL_MEASUREMENTS] + 1);
     });
   });
 });

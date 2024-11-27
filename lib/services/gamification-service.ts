@@ -1,11 +1,18 @@
-import { PrismaClient, UserProgress, Achievement } from '@prisma/client';
+import { PrismaClient, Achievement, UserProgress } from '@prisma/client';
 import { validateAchievementRequirements, calculateProgress } from '../gamification/validation';
-import { UserStats } from '../gamification/types';
+import { 
+  StatsContent, 
+  ValidatedLeaderboardEntry,
+  ValidatedUserStats,
+  ValidatedAchievement,
+  AchievementTier,
+  LeaderboardEntrySchema
+} from '../gamification/types';
 
 export class GamificationService {
   constructor(private prisma: PrismaClient) {}
 
-  async updateUserStats(userId: string, newStats: Partial<UserStats['stats']>): Promise<UserProgress> {
+  async updateUserStats(userId: string, newStats: Partial<StatsContent>): Promise<UserProgress> {
     const userProgress = await this.prisma.userProgress.findUnique({
       where: { userId },
       include: { stats: true, achievements: true }
@@ -16,11 +23,10 @@ export class GamificationService {
     }
 
     // Update stats
-    const stats = userProgress.stats?.stats || {};
+    const currentStats = (userProgress.stats?.stats || {}) as StatsContent;
     const updatedStats = {
-      ...stats,
-      ...newStats,
-      lastMeasurementDate: new Date().toISOString()
+      ...currentStats,
+      ...newStats
     };
 
     // Update or create user stats
@@ -40,8 +46,6 @@ export class GamificationService {
     
     // Update achievements
     for (const achievement of achievements) {
-      if (achievement.completed) continue;
-
       await this.prisma.userAchievement.upsert({
         where: {
           userProgressId_achievementId: {
@@ -55,12 +59,12 @@ export class GamificationService {
           progress: achievement.progress || 0,
           target: achievement.target,
           completed: achievement.completed || false,
-          unlockedAt: achievement.unlockedAt
+          unlockedAt: achievement.completed ? new Date() : null
         },
         update: {
           progress: achievement.progress || 0,
           completed: achievement.completed || false,
-          unlockedAt: achievement.unlockedAt
+          unlockedAt: achievement.completed ? new Date() : null
         }
       });
     }
@@ -71,22 +75,57 @@ export class GamificationService {
     });
   }
 
-  private async checkAchievements(userId: string, stats: UserStats['stats']): Promise<Achievement[]> {
-    const achievements = await this.prisma.achievement.findMany();
-    
-    return achievements.map(achievement => {
-      const { requirements } = achievement;
-      const isCompleted = validateAchievementRequirements(achievement, { stats });
-      const progress = calculateProgress(achievement, { stats });
-
-      return {
-        ...achievement,
-        progress: progress.current,
-        completed: isCompleted,
-        unlockedAt: isCompleted ? new Date() : null,
-        earnedDate: isCompleted ? new Date().toISOString() : null
-      };
+  async updateLeaderboardEntry(userId: string, data: { points: number; timeframe: string }): Promise<ValidatedLeaderboardEntry> {
+    const entry = await this.prisma.leaderboardEntry.upsert({
+      where: {
+        userId_timeframe: {
+          userId,
+          timeframe: data.timeframe
+        }
+      },
+      create: {
+        userId,
+        points: data.points,
+        rank: await this.calculateRank(data.points, data.timeframe),
+        timeframe: data.timeframe
+      },
+      update: {
+        points: data.points,
+        rank: await this.calculateRank(data.points, data.timeframe)
+      }
     });
+
+    // Validate the entry using the schema
+    return LeaderboardEntrySchema.parse(entry);
+  }
+
+  private async calculateRank(points: number, timeframe: string): Promise<number> {
+    const higherScores = await this.prisma.leaderboardEntry.count({
+      where: {
+        timeframe,
+        points: { gt: points }
+      }
+    });
+    return higherScores + 1;
+  }
+
+  private async checkAchievements(userId: string, stats: StatsContent): Promise<Achievement[]> {
+    const achievements = await this.prisma.achievement.findMany({
+      where: {
+        userAchievements: {
+          none: {
+            userProgress: {
+              userId
+            },
+            completed: true
+          }
+        }
+      }
+    });
+    
+    return achievements.filter(achievement => 
+      validateAchievementRequirements(achievement, { stats })
+    );
   }
 
   async getAchievements(userId: string): Promise<Achievement[]> {

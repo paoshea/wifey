@@ -7,24 +7,132 @@ datasource db {
   url      = env("MONGODB_URI")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum AchievementTier {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum RequirementType {
+  STAT
+  LEVEL
+  STREAK
+  ACHIEVEMENT
+}
+
+enum RequirementOperator {
+  GREATER_THAN
+  GREATER_THAN_EQUAL
+  LESS_THAN
+  LESS_THAN_EQUAL
+  EQUAL
+}
+
 model User {
-  id                String          @id @default(auto()) @map("_id") @db.ObjectId
-  email             String         @unique
-  name              String?
-  password          String
-  role              String         @default("user")
-  preferredLanguage String         @default("en")
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  emailVerified     DateTime?      // Added for auth
-  image             String?        // Added for user profile
-  contributions     CoveragePoint[]
-  measurements      Measurement[]
-  progress          UserProgress?
-  leaderboard       LeaderboardEntry[]
-  rankHistory       RankHistory[]
-  errorLogs         ErrorLog[]
-  performanceLogs   PerformanceLog[]
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  name            String?
+  email           String    @unique
+  password        String
+  role            UserRole  @default(USER)
+  preferredLanguage String  @default("en")
+  emailVerified   DateTime?
+  image           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  progress        UserProgress?
+  coveragePoints  CoveragePoint[]
+  measurements    Measurement[]
+  rankHistory     RankHistory[]
+  errorLogs       ErrorLog[]
+  performanceLogs PerformanceLog[]
+}
+
+model UserProgress {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String    @unique @db.ObjectId
+  user                User      @relation(fields: [userId], references: [id])
+  totalPoints         Int       @default(0)
+  level              Int       @default(1)
+  currentXP          Int       @default(0)
+  totalXP            Int       @default(0)
+  nextLevelXP        Int       @default(100)
+  streak             Int       @default(0)
+  lastActive         DateTime  @default(now())
+  unlockedAchievements Int    @default(0)
+  lastAchievementAt   DateTime?
+  stats              UserStats?
+  achievements       UserAchievement[]
+  userStreak         UserStreak?
+  userBadges         UserBadge[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([level])
+  @@index([totalPoints])
+}
+
+model UserStats {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  userProgressId    String    @unique @db.ObjectId
+  userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
+  stats            Json      // Stores StatsContent object
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Achievement {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String    @unique
+  description String
+  icon        String
+  points      Int
+  tier        AchievementTier
+  requirements Json     // Array of Requirement objects
+  target      Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userAchievements UserAchievement[]
+
+  @@index([tier])
+}
+
+model UserAchievement {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userProgressId  String    @db.ObjectId
+  achievementId   String    @db.ObjectId
+  progress        Int       @default(0)
+  target          Int?
+  completed       Boolean   @default(false)
+  unlockedAt      DateTime?
+  notifiedAt      DateTime?
+  userProgress    UserProgress @relation(fields: [userProgressId], references: [id])
+  achievement     Achievement  @relation(fields: [achievementId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userProgressId, achievementId])
+  @@index([completed])
+  @@index([unlockedAt])
+}
+
+model LeaderboardEntry {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  timeframe   String    // 'daily', 'weekly', 'monthly', 'allTime'
+  points      Int
+  rank        Int
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, timeframe])
+  @@index([timeframe, points])
+  @@index([rank])
 }
 
 model CoveragePoint {
@@ -45,6 +153,8 @@ model CoveragePoint {
   metadata       Json?     // Additional metadata for coverage point
 
   @@unique([provider, type, location], name: "provider_type_location_unique")
+  @@index([provider])
+  @@index([type])
 }
 
 model CoverageHistory {
@@ -55,16 +165,21 @@ model CoverageHistory {
   timestamp       DateTime      @default(now())
   userId          String?       @db.ObjectId
   metadata        Json?         // Weather conditions, time of day, etc.
+
+  @@index([timestamp])
 }
 
 model WifiHotspot {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
-  location     Json
+  location     Json     // { lat: number, lng: number }
   provider     String
   speed        String?
   isPublic     Boolean  @default(true)
   lastVerified DateTime @default(now())
+
+  @@index([provider])
+  @@index([isPublic])
 }
 
 model Measurement {
@@ -73,11 +188,14 @@ model Measurement {
   type      String   // 'speed', 'signal', or 'latency'
   value     Float
   unit      String
-  location  Json
+  location  Json     // { lat: number, lng: number }
   timestamp DateTime @default(now())
-  device    Json
+  device    Json     // Device information
   metadata  Json?    // Additional measurement metadata
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([type])
+  @@index([timestamp])
 }
 
 model CoverageComparison {
@@ -86,81 +204,8 @@ model CoverageComparison {
   providers   Json[]   // Array of provider comparisons
   timestamp   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
 
-// Gamification Models
-model UserProgress {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String    @unique @db.ObjectId
-  user            User      @relation(fields: [userId], references: [id])
-  totalPoints     Int       @default(0)
-  level           Int       @default(1)
-  currentXP       Int       @default(0)
-  totalXP         Int       @default(0)
-  nextLevelXP     Int       @default(100)
-  streak          Int       @default(0)
-  lastActive      DateTime  @default(now())
-  achievements    UserAchievement[]
-  stats          UserStats?
-  streaks        UserStreak?
-  badges         UserBadge[]
-  unlockedAchievements Int @default(0)  // Added to track total unlocked achievements
-  lastAchievementAt DateTime?  // Added to track last achievement unlock
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@index([level])
-  @@index([currentXP])
-}
-
-model UserStats {
-  id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgressId    String    @db.ObjectId
-  userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
-  stats            Json      // Stores all stats as a nested object
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  @@unique([userProgressId])
-}
-
-model Achievement {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  title       String    @unique
-  description String
-  icon        String
-  points      Int
-  rarity      String    // 'common' | 'rare' | 'epic'
-  requirements Json[]   // Array of AchievementRequirement objects
-  target      Int?     // Optional target value for progress tracking
-  progress    Int?     // Current progress
-  completed   Boolean  @default(false)
-  unlockedAt  DateTime?
-  earnedDate  String?
-  userAchievements UserAchievement[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([rarity])
-}
-
-model UserAchievement {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String   @db.ObjectId
-  achievement   Achievement @relation(fields: [achievementId], references: [id])
-  achievementId String    @db.ObjectId
-  progress      Int       @default(0)
-  target        Int?      // Optional target value specific to this user
-  completed     Boolean   @default(false)
-  unlockedAt    DateTime? // When the achievement was unlocked
-  notifiedAt    DateTime? // When the user was notified
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@unique([userProgressId, achievementId])
-  @@index([userProgressId])
-  @@index([achievementId])
+  @@index([timestamp])
 }
 
 model UserStreak {
@@ -171,6 +216,8 @@ model UserStreak {
   lastUpdated   DateTime  @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([currentStreak])
 }
 
 model UserBadge {
@@ -189,22 +236,6 @@ model UserBadge {
   @@index([badgeType])
 }
 
-model LeaderboardEntry {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
-  points      Int       @default(0)
-  rank        Int
-  timeframe   String    // daily, weekly, monthly, allTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@unique([userId, timeframe])
-  @@index([userId])
-  @@index([timeframe])
-  @@index([points])
-}
-
 model RankHistory {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   userId      String    @db.ObjectId
@@ -212,50 +243,36 @@ model RankHistory {
   rank        Int
   date        DateTime  @default(now())
   timeframe   String    // daily, weekly, monthly, allTime
+  points      Int
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
-  @@unique([userId, timeframe, date])
   @@index([userId])
-  @@index([timeframe])
-  @@index([date])
+  @@index([timeframe, date])
 }
 
 model ErrorLog {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String?   @db.ObjectId
-  user        User?     @relation(fields: [userId], references: [id])
-  errorType   String
-  message     String
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id])
+  error       String
   stack       String?
   metadata    Json?
-  severity    String    // info, warning, error, fatal
   timestamp   DateTime  @default(now())
-  resolved    Boolean   @default(false)
-  resolvedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
-  @@index([errorType])
-  @@index([severity])
   @@index([timestamp])
 }
 
 model PerformanceLog {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String?   @db.ObjectId
-  user        User?     @relation(fields: [userId], references: [id])
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id])
   operation   String
   duration    Int       // in milliseconds
-  success     Boolean   @default(true)
   metadata    Json?
   timestamp   DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
   @@index([operation])
   @@index([timestamp])
-  @@index([duration])
 }

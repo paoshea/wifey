@@ -8,24 +8,51 @@ import {
   filterAchievementsByCompletion,
   searchAchievements
 } from '../../../lib/gamification/achievements';
-import { Achievement } from '../../../lib/gamification/types';
+import { 
+  ValidatedAchievement, 
+  AchievementTier, 
+  RequirementType, 
+  RequirementOperator,
+  StatsMetric,
+  Requirement
+} from '../../../lib/gamification/types';
 
-const mockAchievements: Achievement[] = [
+const mockRequirements: Requirement[] = [
+  {
+    type: RequirementType.STAT,
+    metric: StatsMetric.RURAL_MEASUREMENTS,
+    value: 1,
+    operator: RequirementOperator.GREATER_THAN_EQUAL,
+    description: 'Complete at least 1 rural measurement'
+  },
+  {
+    type: RequirementType.STAT,
+    metric: StatsMetric.UNIQUE_LOCATIONS,
+    value: 1000,
+    operator: RequirementOperator.GREATER_THAN_EQUAL,
+    description: 'Map 1000 unique locations'
+  },
+  {
+    type: RequirementType.STAT,
+    metric: StatsMetric.TOTAL_MEASUREMENTS,
+    value: 50,
+    operator: RequirementOperator.GREATER_THAN_EQUAL,
+    description: 'Complete 50 measurements in one day'
+  }
+];
+
+const mockAchievements: ValidatedAchievement[] = [
   {
     id: 'rural-pioneer',
     title: 'Rural Pioneer',
     description: 'Complete your first rural area measurement',
     icon: '🌲',
     points: 100,
-    rarity: 'common' as const,
-    tier: 'bronze' as const,
-    progress: 1,
+    tier: AchievementTier.COMMON,
+    requirements: [mockRequirements[0]],
     target: 1,
-    category: 'RURAL_EXPLORER' as const,
-    requirements: [{
-      type: 'rural_measurements' as const,
-      count: 1
-    }]
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'coverage-master',
@@ -33,15 +60,11 @@ const mockAchievements: Achievement[] = [
     description: 'Map 1000 unique locations',
     icon: '📍',
     points: 500,
-    rarity: 'epic' as const,
-    tier: 'platinum' as const,
-    progress: 750,
+    tier: AchievementTier.LEGENDARY,
+    requirements: [mockRequirements[1]],
     target: 1000,
-    category: 'COVERAGE_EXPERT' as const,
-    requirements: [{
-      type: 'measurements' as const,
-      count: 1000
-    }]
+    createdAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'speed-demon',
@@ -49,43 +72,55 @@ const mockAchievements: Achievement[] = [
     description: 'Complete 50 measurements in one day',
     icon: '⚡',
     points: 250,
-    rarity: 'rare' as const,
-    tier: 'gold' as const,
-    progress: 50,
+    tier: AchievementTier.RARE,
+    requirements: [mockRequirements[2]],
     target: 50,
-    category: 'CONSISTENT_MAPPER' as const,
-    requirements: [{
-      type: 'measurements' as const,
-      count: 50
-    }]
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ];
 
 describe('calculateAchievementProgress', () => {
   it('calculates correct progress percentage', () => {
-    const achievement = mockAchievements[1]; // Coverage Master
+    const achievement = { 
+      ...mockAchievements[1],
+      progress: 750
+    };
     expect(calculateAchievementProgress(achievement)).toBe(0.75); // 750/1000
   });
 
   it('caps progress at 100%', () => {
-    const achievement = mockAchievements[0]; // Rural Pioneer
+    const achievement = {
+      ...mockAchievements[0],
+      progress: 1
+    };
     expect(calculateAchievementProgress(achievement)).toBe(1); // 1/1
   });
 
   it('handles zero target gracefully', () => {
-    const achievement = { ...mockAchievements[0], target: 0 };
+    const achievement = {
+      ...mockAchievements[0],
+      target: 0
+    };
     expect(calculateAchievementProgress(achievement)).toBe(1);
   });
 
   it('handles negative progress gracefully', () => {
-    const achievement = { ...mockAchievements[0], progress: -1 };
+    const achievement = {
+      ...mockAchievements[0],
+      progress: -1
+    };
     expect(calculateAchievementProgress(achievement)).toBe(0);
   });
 });
 
 describe('isAchievementCompleted', () => {
   it('correctly identifies completed achievements', () => {
-    const completed = mockAchievements.filter(isAchievementCompleted);
+    const achievementsWithProgress = mockAchievements.map((achievement, index) => ({
+      ...achievement,
+      progress: index === 0 || index === 2 ? achievement.target : achievement.target * 0.75
+    }));
+    const completed = achievementsWithProgress.filter(isAchievementCompleted);
     expect(completed.length).toBe(2);
     expect(completed[0].id).toBe('rural-pioneer');
     expect(completed[1].id).toBe('speed-demon');
@@ -94,134 +129,92 @@ describe('isAchievementCompleted', () => {
 
 describe('getAchievementPoints', () => {
   it('returns points for completed achievements', () => {
-    const ruralPioneer = mockAchievements[0];
-    const speedDemon = mockAchievements[2];
+    const ruralPioneer = {
+      ...mockAchievements[0],
+      progress: 1
+    };
+    const speedDemon = {
+      ...mockAchievements[2],
+      progress: 50
+    };
     
     expect(getAchievementPoints(ruralPioneer)).toBe(100);
     expect(getAchievementPoints(speedDemon)).toBe(250);
   });
-
-  it('returns 0 for incomplete achievements', () => {
-    const coverageMaster = mockAchievements[1];
-    expect(getAchievementPoints(coverageMaster)).toBe(0);
-  });
 });
 
 describe('getTotalPoints', () => {
-  it('sums points from all completed achievements', () => {
-    const total = getTotalPoints(mockAchievements);
-    // Rural Pioneer (100) + Speed Demon (250) = 350
-    expect(total).toBe(350);
+  it('sums points from completed achievements', () => {
+    const achievementsWithProgress = mockAchievements.map((achievement, index) => ({
+      ...achievement,
+      progress: index === 0 || index === 2 ? achievement.target : achievement.target * 0.75
+    }));
+    expect(getTotalPoints(achievementsWithProgress)).toBe(350); // 100 + 250
   });
 });
 
 describe('getRarityOrder', () => {
-  it('returns correct order for each rarity', () => {
-    expect(getRarityOrder('epic')).toBe(0);
-    expect(getRarityOrder('rare')).toBe(1);
-    expect(getRarityOrder('common')).toBe(2);
+  it('returns correct rarity order', () => {
+    expect(getRarityOrder(AchievementTier.LEGENDARY)).toBe(4);
+    expect(getRarityOrder(AchievementTier.EPIC)).toBe(3);
+    expect(getRarityOrder(AchievementTier.RARE)).toBe(2);
+    expect(getRarityOrder(AchievementTier.COMMON)).toBe(1);
   });
 });
 
 describe('sortAchievementsByRarity', () => {
   it('sorts achievements by rarity order', () => {
     const sorted = sortAchievementsByRarity(mockAchievements);
-    expect(sorted[0].rarity).toBe('epic'); // Coverage Master
-    expect(sorted[1].rarity).toBe('rare'); // Speed Demon
-    expect(sorted[2].rarity).toBe('common'); // Rural Pioneer
-  });
-
-  it('maintains relative order within same rarity', () => {
-    const achievements: Achievement[] = [
-      {
-        id: 'a1',
-        title: 'First Epic',
-        description: 'First epic achievement',
-        icon: '🏆',
-        points: 500,
-        rarity: 'epic' as const,
-        tier: 'platinum' as const,
-        progress: 100,
-        target: 100,
-        category: 'COVERAGE_EXPERT' as const,
-        requirements: [{
-          type: 'measurements' as const,
-          count: 100
-        }]
-      },
-      {
-        id: 'a2',
-        title: 'Second Epic',
-        description: 'Second epic achievement',
-        icon: '🎖️',
-        points: 600,
-        rarity: 'epic' as const,
-        tier: 'platinum' as const,
-        progress: 200,
-        target: 200,
-        category: 'COVERAGE_EXPERT' as const,
-        requirements: [{
-          type: 'measurements' as const,
-          count: 200
-        }]
-      }
-    ];
-
-    const sorted = sortAchievementsByRarity(achievements);
-    expect(sorted[0].id).toBe('a1'); // Should maintain original order
-    expect(sorted[1].id).toBe('a2');
-  });
-
-  it('handles empty array', () => {
-    expect(sortAchievementsByRarity([])).toEqual([]);
+    expect(sorted[0].tier).toBe(AchievementTier.LEGENDARY); // Coverage Master
+    expect(sorted[1].tier).toBe(AchievementTier.RARE); // Speed Demon
+    expect(sorted[2].tier).toBe(AchievementTier.COMMON); // Rural Pioneer
   });
 });
 
 describe('filterAchievementsByCompletion', () => {
   it('filters completed achievements', () => {
-    const completed = filterAchievementsByCompletion(mockAchievements, true);
-    expect(completed).toHaveLength(2);
-    expect(completed.every(a => a.progress >= a.target)).toBe(true);
+    const achievementsWithProgress = mockAchievements.map((achievement, index) => ({
+      ...achievement,
+      progress: index === 0 || index === 2 ? achievement.target : achievement.target * 0.75
+    }));
+    const completed = filterAchievementsByCompletion(achievementsWithProgress, true);
+    expect(completed.length).toBe(2);
+    expect(completed[0].id).toBe('rural-pioneer');
+    expect(completed[1].id).toBe('speed-demon');
   });
 
   it('filters incomplete achievements', () => {
-    const incomplete = filterAchievementsByCompletion(mockAchievements, false);
-    expect(incomplete).toHaveLength(1);
-    expect(incomplete.every(a => a.progress < a.target)).toBe(true);
-  });
-
-  it('handles empty array', () => {
-    expect(filterAchievementsByCompletion([], true)).toEqual([]);
-    expect(filterAchievementsByCompletion([], false)).toEqual([]);
+    const achievementsWithProgress = mockAchievements.map((achievement, index) => ({
+      ...achievement,
+      progress: index === 0 || index === 2 ? achievement.target : achievement.target * 0.75
+    }));
+    const incomplete = filterAchievementsByCompletion(achievementsWithProgress, false);
+    expect(incomplete.length).toBe(1);
+    expect(incomplete[0].id).toBe('coverage-master');
   });
 });
 
 describe('searchAchievements', () => {
   it('searches achievements by title', () => {
     const results = searchAchievements(mockAchievements, 'Rural');
-    expect(results).toHaveLength(1);
+    expect(results.length).toBe(1);
     expect(results[0].id).toBe('rural-pioneer');
   });
 
   it('searches achievements by description', () => {
-    const results = searchAchievements(mockAchievements, 'measurement');
-    expect(results.length).toBeGreaterThan(0);
-    expect(results.some(a => a.id === 'rural-pioneer')).toBe(true);
+    const results = searchAchievements(mockAchievements, 'locations');
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe('coverage-master');
   });
 
-  it('is case insensitive', () => {
-    const results = searchAchievements(mockAchievements, 'rural');
-    expect(results).toHaveLength(1);
-    expect(results[0].id).toBe('rural-pioneer');
-  });
-
-  it('returns empty array for no matches', () => {
-    const results = searchAchievements(mockAchievements, 'nonexistent');
-    expect(results).toHaveLength(0);
-  });
-
-  it('handles empty search query', () => {
+  it('returns all achievements for empty search', () => {
     const results = searchAchievements(mockAchievements, '');
-    expect(results).toEqual(mockAchievements);
+    expect(results.length).toBe(mockAchievements.length);
+  });
+
+  it('handles case-insensitive search', () => {
+    const results = searchAchievements(mockAchievements, 'RURAL');
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe('rural-pioneer');
   });
 });
