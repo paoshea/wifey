@@ -102,22 +102,23 @@ async function main() {
       stats: {
         create: {
           totalMeasurements: Math.floor(Math.random() * 100),
-          ruralMeasurements: Math.floor(Math.random() * 50),
-          verifiedSpots: Math.floor(Math.random() * 30),
-          helpfulActions: Math.floor(Math.random() * 20),
+          ruralMeasurements: Math.floor(Math.random() * 20),
+          verifiedSpots: Math.floor(Math.random() * 10),
+          helpfulActions: Math.floor(Math.random() * 50),
           consecutiveDays: Math.floor(Math.random() * 7),
           qualityScore: Math.random() * 100,
           accuracyRate: Math.random() * 100,
-          uniqueLocations: Math.floor(Math.random() * 40),
-          totalDistance: Math.random() * 1000,
-          contributionScore: Math.random() * 100,
-        },
+          uniqueLocations: Math.floor(Math.random() * 30),
+          totalDistance: Math.floor(Math.random() * 1000),
+          contributionScore: Math.floor(Math.random() * 1000)
+        }
       },
       streaks: {
         create: {
           currentStreak: Math.floor(Math.random() * 7),
-        },
-      },
+          longestStreak: Math.floor(Math.random() * 14)
+        }
+      }
     };
 
     await prisma.userProgress.create({

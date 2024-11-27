@@ -40,23 +40,10 @@ export interface UserProgressInput {
   unlockedAchievements: number;
   lastAchievementAt?: Date;
   stats: {
-    create: {
-      totalMeasurements: number;
-      ruralMeasurements: number;
-      verifiedSpots: number;
-      helpfulActions: number;
-      consecutiveDays: number;
-      qualityScore: number;
-      accuracyRate: number;
-      uniqueLocations: number;
-      totalDistance: number;
-      contributionScore: number;
-    };
+    create: Prisma.UserStatsCreateWithoutUserProgressInput;
   };
   streaks: {
-    create: {
-      currentStreak: number;
-    };
+    create: Prisma.UserStreakCreateWithoutUserProgressInput;
   };
 }
 

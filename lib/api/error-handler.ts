@@ -1,6 +1,8 @@
+// lib/api/error-handler.ts
+
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import { logError } from '../monitoring/sentry';
+import { trackError } from '../monitoring/sentry';
 
 export class ApiError extends Error {
   constructor(
@@ -25,7 +27,7 @@ export interface ErrorResponse {
 
 export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
   // Log error for monitoring
-  logError(error instanceof Error ? error : new Error('Unknown error'), {
+  trackError(error instanceof Error ? error : new Error('Unknown error'), {
     type: 'api_error',
     timestamp: new Date().toISOString(),
   });
@@ -247,22 +249,22 @@ export function createApiError(
 export const apiErrors = {
   notFound: (message = 'Resource not found') =>
     createApiError(404, message, 'NOT_FOUND'),
-  
+
   unauthorized: (message = 'Unauthorized') =>
     createApiError(401, message, 'UNAUTHORIZED'),
-  
+
   forbidden: (message = 'Forbidden') =>
     createApiError(403, message, 'FORBIDDEN'),
-  
+
   badRequest: (message = 'Bad request', details?: any) =>
     createApiError(400, message, 'BAD_REQUEST', details),
-  
+
   conflict: (message = 'Resource conflict', details?: any) =>
     createApiError(409, message, 'CONFLICT', details),
-  
+
   tooManyRequests: (message = 'Too many requests') =>
     createApiError(429, message, 'RATE_LIMIT_EXCEEDED'),
-  
+
   internal: (message = 'Internal server error', details?: any) =>
     createApiError(500, message, 'INTERNAL_SERVER_ERROR', details),
 };
