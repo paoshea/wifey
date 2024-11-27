@@ -19,7 +19,7 @@ export function useLocationService(): UseLocationServiceResult {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [nearbyLocations, setNearbyLocations] = useState<MarkedLocation[]>([]);
-    
+
     const { addContribution } = useGamificationStore();
     const locationService = useMemo(() => EnhancedLocationService.getInstance(), []);
 
@@ -73,14 +73,8 @@ export function useLocationService(): UseLocationServiceResult {
         setError(null);
         try {
             const coords = await getCurrentLocation();
-            const id = await addContribution(coords, coverage);
-            locationService.addLocation({
-                id,
-                coordinates: coords,
-                coverage,
-                timestamp: new Date().toISOString()
-            });
-            return id;
+            addContribution();
+            return locationService.markLocation(coords, coverage);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to mark location';
             setError(errorMessage);

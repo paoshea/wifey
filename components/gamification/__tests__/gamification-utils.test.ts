@@ -8,10 +8,10 @@ import {
   filterAchievementsByCompletion,
   searchAchievements
 } from '../../../lib/gamification/achievements';
-import { 
-  ValidatedAchievement, 
-  AchievementTier, 
-  RequirementType, 
+import {
+  ValidatedAchievement,
+  AchievementTier,
+  RequirementType,
   RequirementOperator,
   StatsMetric,
   Requirement
@@ -82,7 +82,7 @@ const mockAchievements: ValidatedAchievement[] = [
 
 describe('calculateAchievementProgress', () => {
   it('calculates correct progress percentage', () => {
-    const achievement = { 
+    const achievement = {
       ...mockAchievements[1],
       progress: 750
     };
@@ -137,7 +137,7 @@ describe('getAchievementPoints', () => {
       ...mockAchievements[2],
       progress: 50
     };
-    
+
     expect(getAchievementPoints(ruralPioneer)).toBe(100);
     expect(getAchievementPoints(speedDemon)).toBe(250);
   });

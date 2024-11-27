@@ -1,3 +1,5 @@
+// components/coverage/coverage-finder.tsx
+
 'use client';
 
 import { useEffect, useState } from 'react';

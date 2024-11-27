@@ -12,19 +12,25 @@ const COVERAGE_KEYS = {
 };
 
 // Convert CarrierCoverage to SignalMeasurement
-const mapCarrierToSignal = (coverage: CarrierCoverage, id?: string): SignalMeasurement => ({
+// Convert CarrierCoverage to SignalMeasurement
+const mapCarrierToSignal = (coverage: CarrierCoverage & { device?: { type: string; model: string; os: string } }, id?: string): SignalMeasurement => ({
   id,
   timestamp: Date.now(),
-  carrier: coverage.provider,
-  network: coverage.technology,
-  networkType: coverage.technology,
-  geolocation: {
-    lat: coverage.location.lat,
-    lng: coverage.location.lng,
+  carrier: coverage.provider || 'Unknown',
+  network: coverage.technology || '4G',
+  networkType: coverage.technology || '4G',
+  device: coverage.device || {
+    type: 'unknown',
+    model: 'unknown',
+    os: 'unknown'
   },
   signalStrength: coverage.signalStrength,
-  technology: coverage.technology,
-  provider: coverage.provider,
+  technology: coverage.technology || '4G',
+  provider: coverage.provider || 'Unknown',
+  geolocation: coverage.location || {
+    lat: 0,
+    lng: 0
+  }
 });
 
 export function useCoverageData(bounds: {
@@ -80,7 +86,7 @@ export function useCoverageData(bounds: {
         id: `temp-${Date.now()}`,
         timestamp: new Date().toISOString(),
       };
-      const signalMeasurement = mapCarrierToSignal(optimisticPoint as CarrierCoverage, optimisticPoint.id);
+      const signalMeasurement = mapCarrierToSignal(optimisticPoint as unknown as CarrierCoverage, optimisticPoint.id);
       addCoveragePoint(signalMeasurement);
 
       return { optimisticPoint: signalMeasurement };

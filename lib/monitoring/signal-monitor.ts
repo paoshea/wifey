@@ -1,15 +1,6 @@
 'use client';
 
-import type { SignalMeasurement } from '../types/monitoring';
-
-export enum SignalMonitorError {
-  UNSUPPORTED_BROWSER = 'UNSUPPORTED_BROWSER',
-  LOCATION_DENIED = 'LOCATION_DENIED',
-  PERMISSION_ERROR = 'PERMISSION_ERROR',
-  LOCATION_UNAVAILABLE = 'LOCATION_UNAVAILABLE',
-  LOCATION_TIMEOUT = 'LOCATION_TIMEOUT',
-  LOCATION_ERROR = 'LOCATION_ERROR'
-}
+import { type SignalMeasurement, SignalMonitorError } from '../types/monitoring';
 
 export class SignalMonitor {
   private isMonitoring: boolean = false;
@@ -34,14 +25,14 @@ export class SignalMonitor {
   private async checkPermissions(): Promise<boolean> {
     try {
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-      
+
       if (permissionStatus.state === 'denied') {
         throw new Error(SignalMonitorError.LOCATION_DENIED);
       }
-      
+
       return true;
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof Error && error.message in SignalMonitorError) {
         throw error;
       }
       throw new Error(SignalMonitorError.PERMISSION_ERROR);
@@ -83,22 +74,29 @@ export class SignalMonitor {
 
   private async getMeasurement(): Promise<SignalMeasurement> {
     const position = await this.getCurrentPosition();
-    
+
     // Mock signal strength measurement since we can't get real values
     const mockSignalStrength = Math.floor(Math.random() * (-50 - (-120) + 1)) + (-120);
-    
+
     return {
       timestamp: Date.now(),
       carrier: 'Unknown',
       network: 'Unknown',
       networkType: 'cellular',
-      geolocation: {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+      device: {
+        type: 'mobile',
+        model: navigator.userAgent,
+        os: navigator.platform
       },
       signalStrength: mockSignalStrength,
       technology: '4G',
       provider: 'Unknown',
+      geolocation: {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      },
+      connectionType: 'cellular',
+      isRoaming: false
     };
   }
 
@@ -120,7 +118,10 @@ export class SignalMonitor {
       this.callback(measurement);
     } catch (error) {
       this.stopMonitoring();
-      throw error;
+      if (error instanceof Error && error.message in SignalMonitorError) {
+        throw error;
+      }
+      throw new Error(SignalMonitorError.LOCATION_ERROR);
     }
 
     // Start interval
@@ -132,7 +133,7 @@ export class SignalMonitor {
         }
       } catch (error) {
         this.stopMonitoring();
-        if (error instanceof Error) {
+        if (error instanceof Error && error.message in SignalMonitorError) {
           throw error;
         }
         throw new Error(SignalMonitorError.LOCATION_ERROR);

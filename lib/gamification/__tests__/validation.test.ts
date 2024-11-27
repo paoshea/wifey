@@ -1,4 +1,12 @@
 import { validateAchievement, validateUserStats, validateAchievementRequirements, calculateProgress } from '../validation';
+import { 
+  AchievementTier, 
+  RequirementType, 
+  RequirementOperator,
+  StatsMetric,
+  StatsContent,
+  Requirement
+} from '../types';
 
 describe('Achievement Validation', () => {
   describe('validateAchievement', () => {
@@ -9,14 +17,15 @@ describe('Achievement Validation', () => {
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'MEASUREMENT_COUNT',
-          threshold: 10
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.TOTAL_MEASUREMENTS,
+          value: 10,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 10 measurements'
+        }],
+        target: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -30,14 +39,15 @@ describe('Achievement Validation', () => {
         description: 'Test Description',
         icon: 'test-icon',
         points: -100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'MEASUREMENT_COUNT',
-          threshold: 10
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.TOTAL_MEASUREMENTS,
+          value: 10,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 10 measurements'
+        }],
+        target: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -48,29 +58,33 @@ describe('Achievement Validation', () => {
 
   describe('validateUserStats', () => {
     it('should validate correct user stats', () => {
-      const validStats = {
-        totalMeasurements: 20,
-        ruralMeasurements: 5,
-        verifiedSpots: 8,
-        helpfulActions: 5,
-        consecutiveDays: 7,
-        qualityScore: 85,
-        accuracyRate: 95,
-        lastActiveAt: new Date()
+      const validStats: StatsContent = {
+        [StatsMetric.TOTAL_MEASUREMENTS]: 20,
+        [StatsMetric.RURAL_MEASUREMENTS]: 5,
+        [StatsMetric.VERIFIED_SPOTS]: 8,
+        [StatsMetric.HELPFUL_ACTIONS]: 5,
+        [StatsMetric.CONSECUTIVE_DAYS]: 7,
+        [StatsMetric.QUALITY_SCORE]: 85,
+        [StatsMetric.ACCURACY_RATE]: 95,
+        [StatsMetric.UNIQUE_LOCATIONS]: 15,
+        [StatsMetric.TOTAL_DISTANCE]: 1000,
+        [StatsMetric.CONTRIBUTION_SCORE]: 75
       };
       expect(() => validateUserStats(validStats)).not.toThrow();
     });
 
     it('should throw on negative counts', () => {
-      const invalidStats = {
-        totalMeasurements: -1,
-        ruralMeasurements: 5,
-        verifiedSpots: 8,
-        helpfulActions: 5,
-        consecutiveDays: 7,
-        qualityScore: 85,
-        accuracyRate: 95,
-        lastActiveAt: new Date()
+      const invalidStats: StatsContent = {
+        [StatsMetric.TOTAL_MEASUREMENTS]: -1,
+        [StatsMetric.RURAL_MEASUREMENTS]: 5,
+        [StatsMetric.VERIFIED_SPOTS]: 8,
+        [StatsMetric.HELPFUL_ACTIONS]: 5,
+        [StatsMetric.CONSECUTIVE_DAYS]: 7,
+        [StatsMetric.QUALITY_SCORE]: 85,
+        [StatsMetric.ACCURACY_RATE]: 95,
+        [StatsMetric.UNIQUE_LOCATIONS]: 15,
+        [StatsMetric.TOTAL_DISTANCE]: 1000,
+        [StatsMetric.CONTRIBUTION_SCORE]: 75
       };
       expect(() => validateUserStats(invalidStats))
         .toThrow(/Number must be greater than or equal to 0/);
@@ -78,37 +92,40 @@ describe('Achievement Validation', () => {
   });
 
   describe('validateAchievementRequirements', () => {
-    const validUserStats = {
-      totalMeasurements: 20,
-      ruralMeasurements: 5,
-      verifiedSpots: 8,
-      helpfulActions: 5,
-      consecutiveDays: 7,
-      qualityScore: 85,
-      accuracyRate: 95,
-      lastActiveAt: new Date()
+    const validUserStats: StatsContent = {
+      [StatsMetric.TOTAL_MEASUREMENTS]: 20,
+      [StatsMetric.RURAL_MEASUREMENTS]: 5,
+      [StatsMetric.VERIFIED_SPOTS]: 8,
+      [StatsMetric.HELPFUL_ACTIONS]: 5,
+      [StatsMetric.CONSECUTIVE_DAYS]: 7,
+      [StatsMetric.QUALITY_SCORE]: 85,
+      [StatsMetric.ACCURACY_RATE]: 95,
+      [StatsMetric.UNIQUE_LOCATIONS]: 15,
+      [StatsMetric.TOTAL_DISTANCE]: 1000,
+      [StatsMetric.CONTRIBUTION_SCORE]: 75
     };
 
-    it('should validate measurement count requirement', () => {
+    it('should validate total measurements requirement', () => {
       const achievement = {
         id: '1',
         title: 'Test Achievement',
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'MEASUREMENT_COUNT',
-          threshold: 10
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.TOTAL_MEASUREMENTS,
+          value: 10,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 10 measurements'
+        }],
+        target: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      expect(validateAchievementRequirements(achievement, validUserStats))
+      expect(validateAchievementRequirements(achievement, { stats: validUserStats }))
         .toBe(true);
     });
 
@@ -119,57 +136,60 @@ describe('Achievement Validation', () => {
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'RURAL_MEASUREMENTS',
-          threshold: 3
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.RURAL_MEASUREMENTS,
+          value: 3,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 3 rural measurements'
+        }],
+        target: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      expect(validateAchievementRequirements(achievement, validUserStats))
+      expect(validateAchievementRequirements(achievement, { stats: validUserStats }))
         .toBe(true);
     });
   });
 
   describe('calculateProgress', () => {
-    const validUserStats = {
-      totalMeasurements: 20,
-      ruralMeasurements: 5,
-      verifiedSpots: 8,
-      helpfulActions: 5,
-      consecutiveDays: 7,
-      qualityScore: 85,
-      accuracyRate: 95,
-      lastActiveAt: new Date()
+    const validUserStats: StatsContent = {
+      [StatsMetric.TOTAL_MEASUREMENTS]: 20,
+      [StatsMetric.RURAL_MEASUREMENTS]: 5,
+      [StatsMetric.VERIFIED_SPOTS]: 8,
+      [StatsMetric.HELPFUL_ACTIONS]: 5,
+      [StatsMetric.CONSECUTIVE_DAYS]: 7,
+      [StatsMetric.QUALITY_SCORE]: 85,
+      [StatsMetric.ACCURACY_RATE]: 95,
+      [StatsMetric.UNIQUE_LOCATIONS]: 15,
+      [StatsMetric.TOTAL_DISTANCE]: 1000,
+      [StatsMetric.CONTRIBUTION_SCORE]: 75
     };
 
-    it('should calculate correct progress for measurement count', () => {
+    it('should calculate correct progress for total measurements', () => {
       const achievement = {
         id: '1',
         title: 'Test Achievement',
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'MEASUREMENT_COUNT',
-          threshold: 10
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.TOTAL_MEASUREMENTS,
+          value: 10,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 10 measurements'
+        }],
+        target: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      const { current, target } = calculateProgress(achievement, validUserStats);
-      expect(current).toBe(20);
-      expect(target).toBe(10);
+      const progress = calculateProgress(achievement, { stats: validUserStats });
+      expect(progress).toBe(20);
     });
 
     it('should calculate correct progress for rural measurements', () => {
@@ -179,21 +199,21 @@ describe('Achievement Validation', () => {
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        category: 'COVERAGE_PIONEER',
-        tier: 'BRONZE',
-        rarity: 'common',
-        requirements: {
-          type: 'RURAL_MEASUREMENTS',
-          threshold: 10
-        },
-        isSecret: false,
+        tier: AchievementTier.COMMON,
+        requirements: [{
+          type: RequirementType.STAT,
+          metric: StatsMetric.RURAL_MEASUREMENTS,
+          value: 10,
+          operator: RequirementOperator.GREATER_THAN_EQUAL,
+          description: 'Complete 10 rural measurements'
+        }],
+        target: 10,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      const { current, target } = calculateProgress(achievement, validUserStats);
-      expect(current).toBe(5);
-      expect(target).toBe(10);
+      const progress = calculateProgress(achievement, { stats: validUserStats });
+      expect(progress).toBe(5);
     });
   });
 });

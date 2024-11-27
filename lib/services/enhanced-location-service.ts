@@ -24,6 +24,7 @@ export class EnhancedLocationService {
     private static instance: EnhancedLocationService;
     private nextId: number = 10000000; // Start from the first 8-digit number
     private locations: Map<string, MarkedLocation> = new Map();
+    private currentLocation: Coordinates | null = null;
 
     private constructor() {}
 
@@ -39,6 +40,11 @@ export class EnhancedLocationService {
         const id = this.nextId.toString();
         this.nextId++;
         return id;
+    }
+
+    // Update current location
+    updateCurrentLocation(coordinates: Coordinates): void {
+        this.currentLocation = coordinates;
     }
 
     // Mark a new coverage spot
@@ -57,6 +63,18 @@ export class EnhancedLocationService {
         };
 
         this.locations.set(id, location);
+        this.persistToLocalStorage();
+        return id;
+    }
+
+    // Add a new location
+    addLocation(location: Omit<MarkedLocation, 'id'>): string {
+        const id = this.generateId();
+        const newLocation: MarkedLocation = {
+            ...location,
+            id
+        };
+        this.locations.set(id, newLocation);
         this.persistToLocalStorage();
         return id;
     }
@@ -152,5 +170,10 @@ export class EnhancedLocationService {
     clearLocations(): void {
         this.locations.clear();
         this.persistToLocalStorage();
+    }
+
+    // Cleanup resources
+    cleanup(): void {
+        this.currentLocation = null;
     }
 }

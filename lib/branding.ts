@@ -2,7 +2,28 @@ export const brandConfig = {
   name: 'Wifey',
   fullName: 'Wifey - WiFi & Coverage Finder',
   description: 'Find the best WiFi and cellular coverage anywhere with real-time maps and navigation',
-  
+  url: 'https://wifey.app',
+  logo: {
+    src: '/logo.svg',
+    alt: 'Wifey Logo',
+  },
+  favicon: {
+    src: '/favicon.ico',
+    alt: 'Wifey Favicon',
+  },
+
+  gradients: {
+    primary: 'linear-gradient(to right, #3B82F6, #1E40AF)',
+    secondary: 'linear-gradient(to right, #1E40AF, #3B82F6)',
+  },
+
+  shadows: {
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+  },
+
   colors: {
     primary: {
       50: '#EFF6FF',
@@ -33,7 +54,7 @@ export const brandConfig = {
     error: '#EF4444',
     background: '#FFFFFF',
   },
-  
+
   typography: {
     fontFamily: {
       sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -51,7 +72,7 @@ export const brandConfig = {
       '5xl': '3rem',
     },
   },
-  
+
   spacing: {
     xs: '0.25rem',
     sm: '0.5rem',
@@ -61,7 +82,7 @@ export const brandConfig = {
     '2xl': '3rem',
     '3xl': '4rem',
   },
-  
+
   borderRadius: {
     sm: '0.25rem',
     md: '0.375rem',
@@ -70,21 +91,7 @@ export const brandConfig = {
     '2xl': '1rem',
     full: '9999px',
   },
-  
-  shadows: {
-    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-    md: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-  },
-  
-  // Gradients used in the app
-  gradients: {
-    primary: 'linear-gradient(to right, #3B82F6, #2563EB)',
-    secondary: 'linear-gradient(to right, #64748B, #475569)',
-    background: 'linear-gradient(to bottom right, #EFF6FF, #E0F2FE)',
-  },
-  
+
   // Animation configurations
   animations: {
     transition: {
@@ -99,7 +106,7 @@ export const brandConfig = {
       inOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
     },
   },
-  
+
   // Breakpoints for responsive design
   breakpoints: {
     sm: '640px',
@@ -108,7 +115,7 @@ export const brandConfig = {
     xl: '1280px',
     '2xl': '1536px',
   },
-  
+
   // Asset paths
   assets: {
     logo: '/logo.svg',
@@ -129,11 +136,12 @@ export type BrandBreakpoint = keyof typeof brandConfig.breakpoints;
 export type BrandSpacing = keyof typeof brandConfig.spacing;
 export type BrandRadius = keyof typeof brandConfig.borderRadius;
 export type BrandShadow = keyof typeof brandConfig.shadows;
+export type BrandShade = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 
 // Helper functions
-export const getBrandColor = (color: BrandColor, shade: number = 500) => {
+export const getBrandColor = (color: BrandColor, shade: BrandShade = 500) => {
   const colorObj = brandConfig.colors[color];
-  return typeof colorObj === 'string' ? colorObj : colorObj[shade];
+  return typeof colorObj === 'string' ? colorObj : (colorObj as Record<BrandShade, string>)[shade];
 };
 
 export const getBrandGradient = (gradient: BrandGradient) => brandConfig.gradients[gradient];
@@ -145,3 +153,25 @@ export const getSpacing = (spacing: BrandSpacing) => brandConfig.spacing[spacing
 export const getBorderRadius = (radius: BrandRadius) => brandConfig.borderRadius[radius];
 
 export const getShadow = (shadow: BrandShadow) => brandConfig.shadows[shadow];
+
+export const getIcon = (icon: keyof typeof brandConfig.assets.icons) => brandConfig.assets.icons[icon];
+
+export const getAsset = (asset: keyof typeof brandConfig.assets) => brandConfig.assets[asset];
+
+export const getTypography = (typography: keyof typeof brandConfig.typography) => brandConfig.typography[typography];
+
+export const getAnimation = (animation: keyof typeof brandConfig.animations) => brandConfig.animations[animation];
+
+export const getBreakpoints = () => brandConfig.breakpoints;
+
+export const getBreakpointStyles = () => {
+  const breakpoints = getBreakpoints();
+  return Object.keys(breakpoints).map((breakpoint) => {
+    const mediaQuery = `@media (min-width: ${breakpoints[breakpoint as keyof typeof breakpoints]})`;
+    return {
+      [mediaQuery]: {
+        [`--breakpoint-${breakpoint}`]: breakpoints[breakpoint as keyof typeof breakpoints],
+      },
+    };
+  });
+};

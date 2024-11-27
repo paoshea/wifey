@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { detectCarrier } from '@/lib/carriers/detection';
-import { gamificationService } from '@/lib/services/gamification-service';
+import { GamificationService } from '@/lib/services/gamification-service';
 import { Prisma } from '@prisma/client';
 import { SignalMeasurement } from '@/lib/types/monitoring';
 
@@ -42,6 +42,11 @@ function toSignalMeasurement(input: MeasurementInput): SignalMeasurement {
     technology: input.technology,
     provider: input.provider || 'unknown',
     connectionType: input.connectionType,
+    device: {
+      type: input.device?.platform || 'unknown',
+      model: input.device?.model || 'unknown',
+      os: input.device?.platform || 'unknown'
+    }
   };
 }
 
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
   try {
     // Get authenticated user
     const authResult = await auth();
-    
+
     if (!authResult.success) {
       return authResult.response;
     }
@@ -59,7 +64,7 @@ export async function POST(request: Request) {
     // Parse and validate request body
     const rawData = await request.json();
     const measurements = Array.isArray(rawData) ? rawData : [rawData];
-    
+
     const validationResult = BatchMeasurementsSchema.safeParse(measurements);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -132,14 +137,14 @@ export async function POST(request: Request) {
         });
 
         // Process measurement for gamification
-        await gamificationService.processMeasurement(result, userId);
+        await GamificationService.processMeasurement(result, userId);
 
         return { measurement: result, coveragePoint };
       })
     );
 
     // Get updated user progress for response
-    const userProgress = await gamificationService.getUserProgress(userId);
+    const userProgress = await GamificationService.getUserProgress(userId);
 
     return NextResponse.json({
       success: true,
@@ -161,7 +166,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const authResult = await auth();
-    
+
     if (!authResult.success) {
       return authResult.response;
     }

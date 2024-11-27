@@ -27,7 +27,8 @@ export enum RequirementOperator {
   GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
   LESS_THAN = 'LESS_THAN',
   LESS_THAN_EQUAL = 'LESS_THAN_EQUAL',
-  EQUAL = 'EQUAL'
+  EQUAL = 'EQUAL',
+  NOT_EQUAL = 'NOT_EQUAL'
 }
 
 // Requirement Schema
@@ -40,6 +41,7 @@ export const RequirementSchema = z.object({
 });
 
 export type Requirement = z.infer<typeof RequirementSchema>;
+export type AchievementRequirement = Requirement;
 
 // Stats Metric Enum
 export enum StatsMetric {
@@ -89,8 +91,10 @@ export const AchievementSchema = z.object({
   icon: z.string(),
   points: z.number(),
   tier: z.nativeEnum(AchievementTier),
-  requirements: z.array(RequirementSchema).transform(reqs => reqs as Prisma.JsonValue),
-  target: z.number().nullable(),
+  rarity: z.nativeEnum(AchievementTier),
+  requirements: z.array(RequirementSchema),
+  target: z.number(),
+  progress: z.number().default(0),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -133,14 +137,11 @@ export const AchievementProgressSchema = z.object({
   id: z.string(),
   userProgressId: z.string(),
   achievementId: z.string(),
-  progress: z.number().default(0),
-  target: z.number().nullable(),
-  completed: z.boolean().default(false),
-  unlockedAt: z.date().nullable(),
-  notifiedAt: z.date().nullable(),
+  progress: z.number(),
+  isCompleted: z.boolean(),
+  completedAt: z.date().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date(),
-  achievement: AchievementSchema
+  updatedAt: z.date()
 });
 
 export type AchievementProgress = z.infer<typeof AchievementProgressSchema>;

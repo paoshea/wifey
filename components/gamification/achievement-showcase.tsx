@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGamification } from '@/hooks/useGamification';
-import { 
-  Achievement, 
-  AchievementRequirement, 
+import {
+  Achievement,
+  AchievementRequirement,
   ValidatedAchievement,
   AchievementTier,
   RequirementType,
@@ -23,11 +23,11 @@ interface AchievementCardProps {
 }
 
 const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }: AchievementCardProps) => {
-  const rarityColors: Record<Achievement['rarity'], string> = {
-    'COMMON': 'bg-blue-600',
-    'RARE': 'bg-purple-600',
-    'EPIC': 'bg-gradient-to-r from-yellow-400 to-orange-500',
-    'LEGENDARY': 'bg-gradient-to-r from-purple-400 to-pink-500'
+  const rarityColors: Record<AchievementTier, string> = {
+    [AchievementTier.COMMON]: 'bg-blue-600',
+    [AchievementTier.RARE]: 'bg-purple-600',
+    [AchievementTier.EPIC]: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    [AchievementTier.LEGENDARY]: 'bg-gradient-to-r from-purple-400 to-pink-500'
   };
 
   const progressPercentage = Math.min((progress / target) * 100, 100);
@@ -56,7 +56,7 @@ const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }:
             <span className="text-2xl">🔒</span>
           </div>
           <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
-            <div 
+            <div
               className="bg-blue-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -83,7 +83,7 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
   const progressPercentage = Math.min((progress / target) * 100, 100);
 
   const getRequirementText = (req: AchievementRequirement): string => {
-    const operatorText = {
+    const operatorText: Record<RequirementOperator, string> = {
       [RequirementOperator.GREATER_THAN]: '>',
       [RequirementOperator.GREATER_THAN_EQUAL]: '≥',
       [RequirementOperator.LESS_THAN]: '<',
@@ -94,7 +94,8 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
 
     switch (req.type) {
       case RequirementType.STAT:
-        return `${StatsMetric[req.metric].replace(/_/g, ' ')} ${operatorText[req.operator]} ${req.value}`;
+        const metricKey = req.metric as keyof typeof StatsMetric;
+        return `${StatsMetric[metricKey]?.replace(/_/g, ' ') || req.metric} ${operatorText[req.operator]} ${req.value}`;
       case RequirementType.STREAK:
         return `Maintain a streak of ${req.value} days`;
       case RequirementType.LEVEL:
@@ -114,7 +115,7 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-xl p-6 max-w-md w-full"
         onClick={e => e.stopPropagation()}
       >
@@ -125,9 +126,9 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
             <p className="text-gray-600 capitalize">{achievement.rarity.toLowerCase()} Achievement</p>
           </div>
         </div>
-        
+
         <p className="text-gray-700 mb-4">{achievement.description}</p>
-        
+
         <div className="mt-4">
           <h3 className="font-semibold mb-2">Requirements</h3>
           {achievement.requirements.map((req, index) => (
@@ -143,7 +144,7 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
           <div className="mt-4">
             <h3 className="font-semibold mb-2">Progress</h3>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-blue-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
@@ -191,8 +192,8 @@ export const AchievementShowcase = ({ achievements = [], onAchievementClick }: A
           key={achievement.id}
           achievement={achievement}
           progress={achievement.progress}
-          target={achievement.target}
-          isUnlocked={achievement.progress >= achievement.target}
+          target={achievement.target || 0}
+          isUnlocked={achievement.progress >= (achievement.target || 0)}
           onClick={() => {
             setSelectedAchievement(achievement);
             onAchievementClick?.(achievement);
@@ -205,8 +206,8 @@ export const AchievementShowcase = ({ achievements = [], onAchievementClick }: A
           <AchievementDetailsModal
             achievement={selectedAchievement}
             progress={selectedAchievement.progress}
-            target={selectedAchievement.target}
-            isUnlocked={selectedAchievement.progress >= selectedAchievement.target}
+            target={selectedAchievement.target || 0}
+            isUnlocked={selectedAchievement.progress >= (selectedAchievement.target || 0)}
             onClose={() => setSelectedAchievement(null)}
           />
         )}

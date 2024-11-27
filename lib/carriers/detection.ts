@@ -1,4 +1,5 @@
-import { SignalMeasurement } from '../monitoring/signal-monitor';
+import { Car } from 'lucide-react';
+import { SignalMeasurement } from '../types/monitoring';
 
 interface MobileCarrier {
   id: string;
@@ -10,6 +11,26 @@ interface MobileCarrier {
     bands: string[];
   }[];
 }
+
+type CarrierCoverage = {
+  coverage: number;
+  carrier: string;
+  network: string;
+  networkType: string;
+  device: {
+    type: string;
+    model: string;
+    os: string;
+  };
+  signalStrength: number;
+  technology: '2G' | '3G' | '4G' | '5G';
+  provider: string;
+  geolocation: {
+    lat: number;
+    lng: number;
+  };
+};
+
 
 // Costa Rica carriers (as per the project's initial focus)
 const CARRIERS: MobileCarrier[] = [
@@ -108,7 +129,7 @@ async function detectFromNetworkInfo(): Promise<CarrierDetectionResult | null> {
     if (connection?.type === 'cellular') {
       // Some browsers expose carrier info
       if (connection.carrier) {
-        const carrier = CARRIERS.find(c => 
+        const carrier = CARRIERS.find(c =>
           c.name.toLowerCase().includes(connection.carrier.toLowerCase())
         );
         if (carrier) {

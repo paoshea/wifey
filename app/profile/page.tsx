@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { AwaitedReactNode, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AchievementShowcase } from '@/components/gamification/achievement-showcase';
@@ -16,13 +16,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ACHIEVEMENT_TIERS, TIER_COLORS, type AchievementTier } from '@/lib/gamification/constants';
-import { ACHIEVEMENTS } from '@/lib/gamification/achievements';
 import Image from 'next/image';
 
 // Helper function to calculate achievement progress
 function getAchievementProgress(achievement: any, stats: any): number {
   if (!achievement?.achievement?.requirements || !stats) return 0;
-  
+
   const requirements = achievement.achievement.requirements as { type: string; count: number };
   let currentValue = 0;
 
@@ -80,7 +79,7 @@ export default function ProfilePage() {
           <h1 className="text-xl font-bold">Welcome to Wifey</h1>
           <p className="text-gray-600">Please sign in to view your profile</p>
           <button
-            onClick={() => {/* TODO: Implement sign in */}}
+            onClick={() => {/* TODO: Implement sign in */ }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Sign In
@@ -182,7 +181,7 @@ export default function ProfilePage() {
 
             {activeTab === 'achievements' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress?.achievements?.map((achievement) => (
+                {progress?.achievements?.map((achievement: { achievementId: Key | null | undefined; achievement: { tier: string; title: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; description: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; }; }) => (
                   <Card key={achievement.achievementId} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">

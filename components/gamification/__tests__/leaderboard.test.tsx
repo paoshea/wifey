@@ -1,10 +1,12 @@
+// components/gamification/__tests__/leaderboard.test.tsx
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
 import { GamificationService } from '../../../lib/gamification/gamification-service';
-import { 
-  LeaderboardEntry, 
+import {
+  LeaderboardEntry,
   Achievement,
   AchievementTier,
   RequirementType,
@@ -102,14 +104,14 @@ describe('Leaderboard', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-    
+
     // Setup default mock implementation
     (GamificationService as jest.MockedClass<typeof GamificationService>).prototype.getLeaderboard.mockResolvedValue(mockEntries);
   });
 
   it('renders timeframe tabs correctly', () => {
     render(<Leaderboard />);
-    
+
     // Check if all timeframe options are present
     expect(screen.getByText('Daily')).toBeInTheDocument();
     expect(screen.getByText('Weekly')).toBeInTheDocument();
@@ -142,7 +144,7 @@ describe('Leaderboard', () => {
     );
 
     render(<Leaderboard />);
-    
+
     expect(screen.getByTestId('leaderboard-loading')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByTestId('leaderboard-loading')).not.toBeInTheDocument();

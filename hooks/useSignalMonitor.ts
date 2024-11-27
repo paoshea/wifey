@@ -1,20 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
-import { signalMonitor, SignalMeasurement } from '@/lib/monitoring/signal-monitor';
+import { signalMonitor } from '@/lib/monitoring/signal-monitor';
+import { SignalMeasurement, SignalMonitorError } from '@/lib/types/monitoring';
 
 interface UseSignalMonitorOptions {
   onMeasurement?: (measurement: SignalMeasurement) => void;
   interval?: number;
   autoStart?: boolean;
+  onError?: (error: SignalMonitorError) => void;
 }
 
 export function useSignalMonitor({
   onMeasurement,
   interval,
-  autoStart = false
+  autoStart = false,
+  onError
 }: UseSignalMonitorOptions = {}) {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [measurements, setMeasurements] = useState<SignalMeasurement[]>([]);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<SignalMonitorError | null>(null);
 
   const handleMeasurement = useCallback((measurement: SignalMeasurement) => {
     setMeasurements(prev => [...prev, measurement]);
@@ -27,10 +30,17 @@ export function useSignalMonitor({
       await signalMonitor.startMonitoring(handleMeasurement, interval);
       setIsMonitoring(true);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to start monitoring'));
+      const monitorError = err instanceof Error ? 
+        (Object.values(SignalMonitorError).includes(err.message as SignalMonitorError) ? 
+          err.message as SignalMonitorError : 
+          SignalMonitorError.LOCATION_ERROR) :
+        SignalMonitorError.LOCATION_ERROR;
+      
+      setError(monitorError);
+      onError?.(monitorError);
       setIsMonitoring(false);
     }
-  }, [handleMeasurement, interval]);
+  }, [handleMeasurement, interval, onError]);
 
   const stopMonitoring = useCallback(() => {
     signalMonitor.stopMonitoring();

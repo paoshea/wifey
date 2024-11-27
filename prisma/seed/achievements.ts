@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { AchievementRarity } from '../../lib/gamification/types';
+import { AchievementTier } from '../../lib/gamification/types';
 
 const achievements = [
   {
@@ -7,7 +7,7 @@ const achievements = [
     description: "Make your first measurement",
     points: 100,
     icon: '🎯',
-    rarity: 'common' as AchievementRarity,
+    tier: AchievementTier.COMMON,
     requirements: [
       {
         type: 'measurements',
@@ -24,7 +24,7 @@ const achievements = [
     description: "Take measurements in rural areas",
     points: 250,
     icon: '🌾',
-    rarity: 'rare' as AchievementRarity,
+    tier: AchievementTier.RARE,
     requirements: [
       {
         type: 'rural_measurements',
@@ -41,7 +41,7 @@ const achievements = [
     description: "Become a top contributor with verified measurements",
     points: 1000,
     icon: '👑',
-    rarity: 'epic' as AchievementRarity,
+    tier: AchievementTier.EPIC,
     requirements: [
       {
         type: 'verified_spots',
@@ -64,12 +64,12 @@ const achievements = [
 
 export async function seedAchievements(prisma: PrismaClient) {
   console.log('Seeding achievements...');
-  
+
   for (const achievement of achievements) {
     await prisma.achievement.create({
       data: achievement
     });
   }
-  
+
   console.log('Achievement seeding completed');
 }
