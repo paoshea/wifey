@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Signal, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SignalMonitorError, SignalMonitorErrorType } from '@/lib/types/monitoring';
 import { useSignalMonitor } from '@/hooks/useSignalMonitor';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,17 +17,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function CoverageFinder() {
   const t = useTranslations('coverage');
   const [measurements, setMeasurements] = useState<SignalMeasurement[]>([]);
-  const { error, isMonitoring, startMonitoring, stopMonitoring } = useSignalMonitor({
+  const [error, setError] = useState<SignalMonitorError | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const { isMonitoring, startMonitoring, stopMonitoring } = useSignalMonitor({
     onMeasurement: (measurement) => {
       setMeasurements((prev) => [...prev, measurement]);
     },
     interval: 2000, // Update every 2 seconds
   });
 
-  const getErrorMessage = (error: Error) => {
-    // Convert error code from UPPER_SNAKE_CASE to camelCase
-    const errorCode = error.message.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    return t(`errors.${errorCode}`);
+  const handleError = (error: SignalMonitorError) => {
+    setError(error);
+    setIsLoading(false);
+
+    switch (error.type) {
+      case SignalMonitorErrorType.UNSUPPORTED_BROWSER:
+        setErrorMessage(t('errors.unsupportedBrowser'));
+        break;
+      case SignalMonitorErrorType.LOCATION_DENIED:
+        setErrorMessage(t('errors.locationDenied'));
+        break;
+      case SignalMonitorErrorType.PERMISSION_ERROR:
+        setErrorMessage(t('errors.permissionError'));
+        break;
+      case SignalMonitorErrorType.NETWORK_ERROR:
+        setErrorMessage(t('errors.networkError'));
+        break;
+      default:
+        setErrorMessage(t('errors.unknownError'));
+    }
   };
 
   return (
@@ -50,7 +71,7 @@ export default function CoverageFinder() {
           >
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{getErrorMessage(error)}</AlertDescription>
+              <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           </motion.div>
         )}

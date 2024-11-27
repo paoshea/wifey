@@ -30,12 +30,16 @@ export function useSignalMonitor({
       await signalMonitor.startMonitoring(handleMeasurement, interval);
       setIsMonitoring(true);
     } catch (err) {
-      const monitorError = err instanceof Error ? 
-        (Object.values(SignalMonitorError).includes(err.message as SignalMonitorError) ? 
-          err.message as SignalMonitorError : 
-          SignalMonitorError.LOCATION_ERROR) :
-        SignalMonitorError.LOCATION_ERROR;
-      
+      let monitorError: SignalMonitorError;
+
+      if (err instanceof SignalMonitorError) {
+        monitorError = err;
+      } else if (err instanceof Error) {
+        monitorError = SignalMonitorError.UNKNOWN_ERROR;
+      } else {
+        monitorError = SignalMonitorError.UNKNOWN_ERROR;
+      }
+
       setError(monitorError);
       onError?.(monitorError);
       setIsMonitoring(false);

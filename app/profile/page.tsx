@@ -1,3 +1,5 @@
+// app/profile/page.tsx
+
 'use client';
 
 import { AwaitedReactNode, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from 'react';
@@ -10,12 +12,13 @@ import { cn } from '@/lib/utils';
 import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
 import { useQuery } from '@tanstack/react-query';
 import { redirect } from 'next/navigation';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy, Medal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ACHIEVEMENT_TIERS, TIER_COLORS, type AchievementTier } from '@/lib/gamification/constants';
+import type { ValidatedUserProgress } from '@/lib/gamification/types';
 import Image from 'next/image';
 
 // Helper function to calculate achievement progress
@@ -181,27 +184,36 @@ export default function ProfilePage() {
 
             {activeTab === 'achievements' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress?.achievements?.map((achievement: { achievementId: Key | null | undefined; achievement: { tier: string; title: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; description: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; }; }) => (
-                  <Card key={achievement.achievementId} className="p-4">
+                {progress?.achievements?.map((achievement) => (
+                  <Card key={achievement.id} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">
-                        {achievement.achievement.tier === ACHIEVEMENT_TIERS.PLATINUM ? (
-                          <Trophy className={`h-5 w-5 ${TIER_COLORS[achievement.achievement.tier as AchievementTier]}`} />
+                        {achievement.tier === 'LEGENDARY' ? (
+                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        ) : achievement.tier === 'EPIC' ? (
+                          <Medal className="h-5 w-5 text-purple-500" />
+                        ) : achievement.tier === 'RARE' ? (
+                          <Medal className="h-5 w-5 text-blue-500" />
                         ) : (
-                          <Medal className={`h-5 w-5 ${TIER_COLORS[achievement.achievement.tier as AchievementTier]}`} />
+                          <Star className="h-5 w-5 text-gray-500" />
                         )}
-                        <CardTitle className="text-lg">{achievement.achievement.title}</CardTitle>
+                        <CardTitle className="text-lg">{achievement.title}</CardTitle>
                       </div>
+                      <CardDescription>{achievement.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-600">{achievement.achievement.description}</p>
-                      <div className="mt-2">
-                        <Progress value={getAchievementProgress(achievement, progress?.stats)} className="h-2" />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Progress: {getAchievementProgress(achievement, progress?.stats)}%
-                        </p>
-                      </div>
+                      <Progress value={achievement.progress} className="mb-2" />
+                      <p className="text-sm text-gray-500">
+                        Progress: {Math.round(achievement.progress)}%
+                      </p>
                     </CardContent>
+                    <CardFooter>
+                      <p className="text-sm text-gray-500">
+                        {achievement.completed
+                          ? `Unlocked on ${new Date(achievement.unlockedAt!).toLocaleDateString()}`
+                          : 'Not yet unlocked'}
+                      </p>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>

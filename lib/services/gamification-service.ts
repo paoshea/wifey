@@ -16,6 +16,7 @@ import {
 } from '../gamification/types';
 
 export class GamificationService {
+  static processMeasurement: any;
   static async getUserProgress(userId: string): Promise<ValidatedUserProgress | null> {
     throw new Error('Method not implemented.');
   }
@@ -163,6 +164,28 @@ export class GamificationService {
     });
   }
 
+  async getCachedLeaderboard(timeframe: string = 'all'): Promise<ValidatedLeaderboardEntry[]> {
+    const entries = await this.prisma.leaderboardEntry.findMany({
+      where: { timeframe },
+      orderBy: { points: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          }
+        }
+      }
+    });
+
+    return entries.map(entry => LeaderboardEntrySchema.parse({
+      ...entry,
+      userName: entry.user.name,
+      userImage: entry.user.image,
+    }));
+  }
+
   async getCachedUserProgress(userId: string): Promise<ValidatedUserProgress> {
     const userProgress = await this.prisma.userProgress.findUnique({
       where: { userId },
@@ -172,6 +195,13 @@ export class GamificationService {
           include: {
             achievement: true
           }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          }
         }
       }
     });
@@ -180,7 +210,15 @@ export class GamificationService {
       throw new Error('User progress not found');
     }
 
-    return UserProgressSchema.parse(userProgress);
+    return UserProgressSchema.parse({
+      ...userProgress,
+      achievements: userProgress.achievements.map(ua => ({
+        ...ua.achievement,
+        progress: ua.progress,
+        completed: ua.completed,
+        unlockedAt: ua.unlockedAt
+      }))
+    });
   }
 }
 
@@ -188,4 +226,5 @@ const prisma = new PrismaClient();
 const gamificationService = new GamificationService(prisma);
 
 export const getCachedUserProgress = (userId: string) => gamificationService.getCachedUserProgress(userId);
+export const getCachedLeaderboard = (timeframe?: string) => gamificationService.getCachedLeaderboard(timeframe);
 export { GamificationService };

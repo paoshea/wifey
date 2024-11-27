@@ -1,3 +1,5 @@
+// api/monitoring/route.ts
+
 import { NextResponse } from 'next/server';
 import type { SignalMeasurement } from '@/lib/types/monitoring';
 
@@ -16,7 +18,7 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    
+
     if ('type' in data && data.type === 'analytics') {
       // Handle analytics events
       console.log('Analytics event:', data);
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
         { headers: corsHeaders }
       );
     }
-    
+
     return NextResponse.json(
       { success: false, error: 'Invalid data format' },
       { status: 400, headers: corsHeaders }
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
 export async function GET() {
   // TODO: Retrieve measurements from database
   // For now, return mock data
-  
+
   const mockMeasurements: SignalMeasurement[] = [
     {
       timestamp: Date.now(),
@@ -63,10 +65,15 @@ export async function GET() {
       geolocation: {
         lat: 37.7749,
         lng: -122.4194
+      },
+      device: {
+        type: '',
+        model: '',
+        os: ''
       }
     }
   ];
-  
+
   return NextResponse.json(
     { success: true, measurements: mockMeasurements },
     { headers: corsHeaders }

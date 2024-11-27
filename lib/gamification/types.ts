@@ -117,17 +117,27 @@ export type ValidatedLeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 export const UserProgressSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  totalPoints: z.number().default(0),
-  level: z.number().default(1),
-  currentXP: z.number().default(0),
-  totalXP: z.number().default(0),
-  nextLevelXP: z.number().default(100),
-  streak: z.number().default(0),
-  lastActive: z.date().default(() => new Date()),
-  unlockedAchievements: z.number().default(0),
+  totalPoints: z.number(),
+  level: z.number(),
+  currentXP: z.number(),
+  totalXP: z.number(),
+  nextLevelXP: z.number(),
+  streak: z.number(),
+  lastActive: z.date(),
+  unlockedAchievements: z.number(),
   lastAchievementAt: z.date().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
+  achievements: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    tier: z.nativeEnum(AchievementTier),
+    points: z.number(),
+    progress: z.number(),
+    completed: z.boolean(),
+    unlockedAt: z.date().nullable()
+  }))
 });
 
 export type ValidatedUserProgress = z.infer<typeof UserProgressSchema>;
