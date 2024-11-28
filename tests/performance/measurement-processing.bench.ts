@@ -105,19 +105,43 @@ describe('Measurement Processing Performance Tests', () => {
         quality: 0.95,
       };
 
-      await gamificationService.processMeasurement(testUserId, measurement);
-      await gamificationService.checkAchievements(testUserId);
+      const result = await gamificationService.processMeasurement(testUserId, measurement);
+      const achievements = await prisma.achievement.findMany();
+      await gamificationService.checkAchievements(
+        achievements,
+        result.newStats,
+        { userId: testUserId, now: new Date(), tx: prisma }
+      );
     });
 
     bench('process measurement with multiple achievement triggers', async () => {
-      // Set up conditions for multiple achievements
-      await prisma.userStats.update({
+      // Get user progress with stats
+      const userProgress = await prisma.userProgress.findUnique({
         where: { userId: testUserId },
+        include: { stats: true }
+      });
+
+      if (!userProgress?.stats) {
+        throw new Error('User stats not found');
+      }
+
+      // Update the stats JSON field
+      await prisma.userStats.update({
+        where: { id: userProgress.stats.id },
         data: {
-          totalMeasurements: 99,
-          ruralMeasurements: 49,
-          contributionScore: 990,
-        },
+          stats: {
+            totalMeasurements: 99,
+            ruralMeasurements: 49,
+            contributionScore: 990,
+            uniqueLocations: 0,
+            totalDistance: 0,
+            qualityScore: 0,
+            accuracyRate: 0,
+            verifiedSpots: 0,
+            helpfulActions: 0,
+            consecutiveDays: 0
+          }
+        }
       });
 
       const measurement = {
