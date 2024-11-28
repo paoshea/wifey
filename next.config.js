@@ -10,6 +10,8 @@ const nextConfig = {
   swcMinify: true,
   trailingSlash: true,
 
+  output: 'standalone',
+
   images: {
     domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
     remotePatterns: [
@@ -21,6 +23,7 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: true,
   },
 
   experimental: {
