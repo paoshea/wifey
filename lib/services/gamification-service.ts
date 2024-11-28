@@ -91,9 +91,10 @@ class GamificationService {
       }
 
       const achievements = await this.prisma.achievement.findMany();
-      const statsContent = userProgress.stats.stats as StatsContent;
+      const statsJson = userProgress.stats.stats;
+      const currentStats = jsonToStats(statsJson);
 
-      if (!isValidStatsContent(statsContent)) {
+      if (!isValidStatsContent(currentStats)) {
         throw new ValidationError('Invalid stats content format');
       }
 
@@ -112,7 +113,7 @@ class GamificationService {
                 throw new ValidationError(`Invalid requirement format for achievement: ${achievement.id}`);
               }
 
-              const currentValue = this.getStatValue(req.metric, statsContent);
+              const currentValue = this.getStatValue(req.metric, currentStats);
               const isMet = this.checkRequirementMet(req, currentValue);
 
               return {
@@ -131,7 +132,7 @@ class GamificationService {
             operator
           }));
 
-          const validatedReqs = validateAchievementRequirements(baseRequirements, statsContent);
+          const validatedReqs = validateAchievementRequirements(baseRequirements, currentStats);
           const tier = this.calculateTier(requirements);
 
           const validatedAchievement: ValidatedAchievement = {
@@ -210,11 +211,10 @@ class GamificationService {
   }
 
   private getStatValue(metric: string, stats: StatsContent): number {
-    const value = stats[metric as keyof StatsContent];
-    if (typeof value !== 'number') {
-      throw new ValidationError(`Invalid stat metric: ${metric}`);
+    if (!stats || typeof stats !== 'object') {
+      return 0;
     }
-    return value;
+    return (stats as Record<string, number>)[metric] || 0;
   }
 
   private checkRequirementMet(requirement: Requirement, value: number): boolean {
@@ -348,11 +348,24 @@ class GamificationService {
         const achievements = await tx.achievement.findMany();
         const notifications = await this.checkAchievements(achievements, updatedStats, context);
 
+        // Map achievement tiers to numbers
+        const tierToNumber = {
+          [AchievementTier.COMMON]: 1,
+          [AchievementTier.RARE]: 2,
+          [AchievementTier.EPIC]: 3,
+          [AchievementTier.LEGENDARY]: 4
+        };
+
         return {
           points,
           xp,
           bonuses,
-          achievements: notifications,
+          achievements: notifications.map(notification => ({
+            id: notification.achievement.id,
+            name: notification.achievement.title,
+            description: notification.achievement.description,
+            tier: tierToNumber[notification.achievement.tier as AchievementTier]
+          })),
           newLevel: level > userProgress.level ? level : undefined,
           newStats: updatedStats
         };
@@ -451,21 +464,11 @@ class GamificationService {
     page: number = 1,
     pageSize: number = 10
   ): Promise<LeaderboardResponse> {
-    type LeaderboardQueryResult = {
-      id: string;
-      points: number;
-      rank: number;
-      timeframe: string;
-      updatedAt: Date;
-      userId: string;
-      user: {
-        id: string;
-        name: string;
-        image: string | null;
-      };
-    };
+    type LeaderboardEntryWithUser = Prisma.LeaderboardEntryGetPayload<{
+      include: { user: { select: { name: true; image: true; id: true } } }
+    }>;
 
-    const entries = await this.prisma.leaderboardEntry.findMany({
+    const query: Prisma.LeaderboardEntryFindManyArgs = {
       where: {
         timeframe: timeframe as TimeFrame
       },
@@ -474,22 +477,18 @@ class GamificationService {
       },
       take: pageSize,
       skip: (page - 1) * pageSize,
-      select: {
-        id: true,
-        points: true,
-        rank: true,
-        timeframe: true,
-        updatedAt: true,
-        userId: true,
+      include: {
         user: {
           select: {
-            id: true,
             name: true,
-            image: true
+            image: true,
+            id: true
           }
         }
       }
-    }) as LeaderboardQueryResult[];
+    };
+
+    const entries = await this.prisma.leaderboardEntry.findMany(query);
 
     const total = await this.prisma.leaderboardEntry.count({
       where: {
@@ -503,7 +502,7 @@ class GamificationService {
         points: entry.points,
         rank: entry.rank,
         userId: entry.userId,
-        username: entry.user.name,
+        username: entry.user.name ?? '',
         level: 0, // These fields are required by LeaderboardEntry type
         streak: { current: 0, longest: 0 },
         contributions: 0,
@@ -543,23 +542,14 @@ class GamificationService {
         totalXP: 0,
         currentXP: 0,
         nextLevelXP: 100,
-        points: 0,
+        totalPoints: 0,
         streak: 1,
         longestStreak: 1,
+        unlockedAchievements: 0,
         lastActive: new Date(),
         stats: {
           create: {
             stats: statsToJson(initialStats) as Prisma.InputJsonValue,
-            totalMeasurements: 0,
-            ruralMeasurements: 0,
-            uniqueLocations: 0,
-            totalDistance: 0,
-            contributionScore: 0,
-            verifiedSpots: 0,
-            helpfulActions: 0,
-            consecutiveDays: 0,
-            qualityScore: 0,
-            accuracyRate: 0,
           }
         }
       },
@@ -583,30 +573,36 @@ class GamificationService {
     const currentStats = jsonToStats(stats.stats);
     const updatedStats = calculateUpdatedStats(currentStats, measurement, streak);
 
+    // Update the stats JSON field with all the measurements and metrics
+    const statsWithMetrics = {
+      ...updatedStats,
+      totalMeasurements: (currentStats.totalMeasurements || 0) + 1,
+      ruralMeasurements: measurement.isRural ? (currentStats.ruralMeasurements || 0) + 1 : (currentStats.ruralMeasurements || 0),
+      uniqueLocations: measurement.isFirstInArea ? (currentStats.uniqueLocations || 0) + 1 : (currentStats.uniqueLocations || 0),
+      consecutiveDays: streak,
+      qualityScore: (currentStats.qualityScore || 0) + (measurement.quality || 0),
+      accuracyRate: currentStats.accuracyRate || 0,
+      totalDistance: currentStats.totalDistance || 0,
+      contributionScore: currentStats.contributionScore || 0
+    };
+
     await tx.userStats.update({
       where: { userProgressId: userProgress.id },
       data: {
-        stats: statsToJson(updatedStats) as Prisma.InputJsonValue,
-        totalMeasurements: { increment: 1 },
-        ruralMeasurements: measurement.isRural ? { increment: 1 } : undefined,
-        uniqueLocations: measurement.isFirstInArea ? { increment: 1 } : undefined,
-        verifiedSpots: measurement.isVerified ? { increment: 1 } : undefined,
-        helpfulActions: measurement.isHelpful ? { increment: 1 } : undefined,
-        consecutiveDays: streak,
-        qualityScore: { increment: measurement.qualityScore || 0 },
-        accuracyRate: { increment: measurement.accuracyScore || 0 },
+        stats: statsToJson(statsWithMetrics) as Prisma.InputJsonValue
       }
     });
 
-    return updatedStats;
+    return statsWithMetrics;
   }
 
   async updateUserProgress(userProgress: UserProgress, points: number, level: number, currentXP: number, nextLevelXP: number, streak: number, context: TransactionContext, tx: Prisma.TransactionClient): Promise<UserProgress> {
     const updatedProgress = await tx.userProgress.update({
       where: { id: userProgress.id },
       data: {
-        points: userProgress.points + points,
+        totalPoints: userProgress.totalPoints + points,
         level,
+        currentXP,
         totalXP: userProgress.totalXP + currentXP,
         nextLevelXP,
         streak,
@@ -673,13 +669,9 @@ class GamificationService {
           });
 
           notifications.push({
-            achievementId: achievement.id,
-            title: achievement.title,
-            description: achievement.description,
-            icon: achievement.icon,
-            points: achievement.points,
-            tier: achievement.tier as AchievementTier,
-            rarity: achievement.tier as AchievementTier
+            achievement,
+            pointsEarned: achievement.points,
+            newLevel: undefined
           });
         } else {
           await context.tx.userAchievement.upsert({
@@ -719,13 +711,9 @@ class GamificationService {
           });
 
           notifications.push({
-            achievementId: achievement.id,
-            title: achievement.title,
-            description: achievement.description,
-            icon: achievement.icon,
-            points: achievement.points,
-            tier: achievement.tier as AchievementTier,
-            rarity: achievement.tier as AchievementTier
+            achievement,
+            pointsEarned: achievement.points,
+            newLevel: undefined
           });
         } else {
           await context.tx.userAchievement.update({
@@ -772,13 +760,11 @@ function calculateUpdatedStats(currentStats: StatsContent, measurement: Validate
     ...currentStats,
     [StatsMetric.TOTAL_MEASUREMENTS]: currentStats[StatsMetric.TOTAL_MEASUREMENTS] + 1,
     [StatsMetric.RURAL_MEASUREMENTS]: measurement.isRural ? currentStats[StatsMetric.RURAL_MEASUREMENTS] + 1 : currentStats[StatsMetric.RURAL_MEASUREMENTS],
-    [StatsMetric.VERIFIED_SPOTS]: measurement.isVerified ? currentStats[StatsMetric.VERIFIED_SPOTS] + 1 : currentStats[StatsMetric.VERIFIED_SPOTS],
-    [StatsMetric.HELPFUL_ACTIONS]: measurement.isHelpful ? currentStats[StatsMetric.HELPFUL_ACTIONS] + 1 : currentStats[StatsMetric.HELPFUL_ACTIONS],
-    [StatsMetric.CONSECUTIVE_DAYS]: streak,
-    [StatsMetric.QUALITY_SCORE]: currentStats[StatsMetric.QUALITY_SCORE] + (measurement.qualityScore || 0),
-    [StatsMetric.ACCURACY_RATE]: currentStats[StatsMetric.ACCURACY_RATE] + (measurement.accuracyScore || 0),
     [StatsMetric.UNIQUE_LOCATIONS]: measurement.isFirstInArea ? currentStats[StatsMetric.UNIQUE_LOCATIONS] + 1 : currentStats[StatsMetric.UNIQUE_LOCATIONS],
-    [StatsMetric.TOTAL_DISTANCE]: currentStats[StatsMetric.TOTAL_DISTANCE] + (measurement.totalDistance || 0),
-    [StatsMetric.CONTRIBUTION_SCORE]: currentStats[StatsMetric.CONTRIBUTION_SCORE] + (measurement.contributionScore || 0)
+    [StatsMetric.CONSECUTIVE_DAYS]: streak,
+    [StatsMetric.QUALITY_SCORE]: currentStats[StatsMetric.QUALITY_SCORE] + (measurement.quality || 0),
+    [StatsMetric.ACCURACY_RATE]: currentStats[StatsMetric.ACCURACY_RATE] + 0,
+    [StatsMetric.TOTAL_DISTANCE]: currentStats[StatsMetric.TOTAL_DISTANCE] + 0,
+    [StatsMetric.CONTRIBUTION_SCORE]: currentStats[StatsMetric.CONTRIBUTION_SCORE] + 0
   };
 }

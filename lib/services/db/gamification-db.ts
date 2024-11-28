@@ -565,7 +565,7 @@ export class GamificationDB {
   async getLeaderboard(
     timeframe: TimeFrame,
     limit = 100
-  ): Promise<Array<LeaderboardEntry & { user: { name: string | null } }>> {
+  ): Promise<Array<LeaderboardEntry & { user: { name: string | null, id: string } }>> {
     try {
       type LeaderboardQueryResult = Array<{
         id: string;
@@ -576,6 +576,7 @@ export class GamificationDB {
         updatedAt: Date;
         user: {
           name: string | null;
+          id: string;
         };
       }>;
 
@@ -596,7 +597,8 @@ export class GamificationDB {
           updatedAt: true,
           user: {
             select: {
-              name: true
+              name: true,
+              id: true
             }
           }
         }

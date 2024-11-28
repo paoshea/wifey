@@ -63,6 +63,7 @@ model UserProgress {
   level              Int       @default(1)
   currentXP          Int       @default(0)
   totalXP            Int       @default(0)
+  longestStreak      Int       @default(0)
   nextLevelXP        Int       @default(100)
   streak             Int       @default(0)
   lastActive         DateTime  @default(now())
@@ -127,9 +128,10 @@ model LeaderboardEntry {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   userId      String    @db.ObjectId
   user        User      @relation(fields: [userId], references: [id])
-  timeframe   String    // 'daily', 'weekly', 'monthly', 'allTime'
   points      Int
   rank        Int
+  timeframe   String    // 'daily', 'weekly', 'monthly', 'allTime'
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@unique([userId, timeframe])
