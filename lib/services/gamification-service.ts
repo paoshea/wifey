@@ -23,7 +23,8 @@ import {
   AchievementCheckResult,
   RequirementSchema,
   isValidStatsContent,
-  AchievementNotification
+  AchievementNotification,
+  jsonToStats
 } from '../gamification/types';
 import {
   validateStatsContent,
@@ -49,7 +50,6 @@ import {
   TransactionError
 } from '../gamification/errors';
 import { apiCache } from './api-cache';
-import { LeaderboardResponse } from './leaderboard-service';
 import { monitoringService } from '../monitoring/monitoring-service';
 import { TimeFrame } from '@/lib/services/db/validation';
 
@@ -65,6 +65,41 @@ interface MeasurementResult {
   }>;
   newLevel?: number;
   newStats: StatsContent;
+}
+
+type LeaderboardEntryWithUser = Prisma.LeaderboardEntryGetPayload<{
+  include: {
+    user: {
+      select: {
+        name: true;
+        image: true;
+        id: true;
+      }
+    }
+  }
+}>;
+
+interface LeaderboardResponse {
+  entries: Array<{
+    id: string;
+    points: number;
+    rank: number;
+    userId: string;
+    username: string;
+    level: number;
+    streak: { current: number; longest: number };
+    contributions: number;
+    badges: number;
+    image: string | null;
+    timeframe: string;
+    updatedAt: Date;
+  }>;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 class GamificationService {
@@ -91,8 +126,8 @@ class GamificationService {
       }
 
       const achievements = await this.prisma.achievement.findMany();
-      const statsJson = userProgress.stats.stats;
-      const currentStats = jsonToStats(statsJson);
+      const statsJson = userProgress.stats as unknown as { stats: Prisma.JsonValue };
+      const currentStats = jsonToStats(statsJson.stats);
 
       if (!isValidStatsContent(currentStats)) {
         throw new ValidationError('Invalid stats content format');
@@ -113,7 +148,9 @@ class GamificationService {
                 throw new ValidationError(`Invalid requirement format for achievement: ${achievement.id}`);
               }
 
-              const currentValue = this.getStatValue(req.metric, currentStats);
+              const statsJson = userProgress.stats as unknown as { stats: Prisma.JsonValue };
+              const stats = jsonToStats(statsJson.stats);
+              const currentValue = this.getStatValue(req.metric, stats);
               const isMet = this.checkRequirementMet(req, currentValue);
 
               return {
@@ -464,10 +501,6 @@ class GamificationService {
     page: number = 1,
     pageSize: number = 10
   ): Promise<LeaderboardResponse> {
-    type LeaderboardEntryWithUser = Prisma.LeaderboardEntryGetPayload<{
-      include: { user: { select: { name: true; image: true; id: true } } }
-    }>;
-
     const query: Prisma.LeaderboardEntryFindManyArgs = {
       where: {
         timeframe: timeframe as TimeFrame
@@ -475,8 +508,8 @@ class GamificationService {
       orderBy: {
         points: 'desc'
       },
-      take: pageSize,
       skip: (page - 1) * pageSize,
+      take: pageSize,
       include: {
         user: {
           select: {
@@ -488,8 +521,7 @@ class GamificationService {
       }
     };
 
-    const entries = await this.prisma.leaderboardEntry.findMany(query);
-
+    const entries = await this.prisma.leaderboardEntry.findMany(query) as LeaderboardEntryWithUser[];
     const total = await this.prisma.leaderboardEntry.count({
       where: {
         timeframe: timeframe as TimeFrame
@@ -515,7 +547,7 @@ class GamificationService {
         page,
         pageSize,
         total,
-        hasMore: (page * pageSize) < total
+        totalPages: Math.ceil(total / pageSize)
       }
     };
   }
@@ -624,19 +656,25 @@ class GamificationService {
     for (const achievement of achievements) {
       const requirements = Array.isArray(achievement.requirements)
         ? achievement.requirements
-          .filter((req): req is Requirement => {
+          .filter(req => {
             try {
-              return !!req && RequirementSchema.parse(req);
+              return !!req && RequirementSchema.safeParse(req).success;
             } catch {
               return false;
             }
           })
           .map(req => {
-            const currentValue = this.getStatValue(req.metric, userProgress.stats!.stats as StatsContent);
-            const isMet = this.checkRequirementMet(req, currentValue);
+            const requirement = req as Requirement;
+            if (!userProgress.stats || typeof userProgress.stats !== 'object') {
+              throw new Error('Invalid stats format');
+            }
+            const statsJson = userProgress.stats as unknown as { stats: Prisma.JsonValue };
+            const stats = jsonToStats(statsJson.stats);
+            const currentValue = this.getStatValue(requirement.metric, stats);
+            const isMet = this.checkRequirementMet(requirement, currentValue);
 
             return {
-              ...req,
+              ...requirement,
               currentValue,
               isMet
             } as ValidatedRequirement;
@@ -749,10 +787,6 @@ export const getCachedLeaderboard = (timeframe: string = 'allTime', page: number
 
 function statsToJson(stats: StatsContent): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(stats));
-}
-
-function jsonToStats(json: Prisma.JsonValue): StatsContent {
-  return JSON.parse(JSON.stringify(json));
 }
 
 function calculateUpdatedStats(currentStats: StatsContent, measurement: ValidatedMeasurementInput, streak: number): StatsContent {

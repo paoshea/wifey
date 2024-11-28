@@ -1,19 +1,22 @@
+// auth.ts
+
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/auth.config';
 import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
+import { UserRole } from './types/auth';
 
 type AuthResult = {
   success: true;
   session: Session;
 } | {
-  success: false;
+  success: false,
   response: NextResponse;
 };
 
 export async function auth(): Promise<AuthResult> {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user) {
     return {
       success: false,
@@ -32,23 +35,24 @@ export async function auth(): Promise<AuthResult> {
 
 export async function requireAuth(): Promise<Session> {
   const authResult = await auth();
-  
+
   if (!authResult.success) {
     throw authResult.response;
   }
-  
+
   return authResult.session;
 }
 
 export async function requireAdmin(): Promise<Session> {
   const session = await requireAuth();
-  
-  if (session.user.role !== 'admin') {
+
+  // Use the UserRole enum for comparison
+  if (session.user.role !== UserRole.ADMIN) {
     throw NextResponse.json(
       { error: 'Admin access required' },
       { status: 403 }
     );
   }
-  
+
   return session;
 }

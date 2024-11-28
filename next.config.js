@@ -1,17 +1,17 @@
-// This file sets up the configuration for Next.js
 const createNextIntlPlugin = require('next-intl/plugin');
+const webpack = require('webpack');
 
-// First create the next-intl configuration
+// Create next-intl configuration
 const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Add trailing slash configuration directly in the config
   trailingSlash: true,
-  // Configure image optimization
+
   images: {
+    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -22,15 +22,30 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  // Add static file serving configuration
+
+  experimental: {
+    serverActions: true,
+  },
+
   webpack: (config) => {
     config.module.rules.push({
       test: /\.svg$/,
-      use: ['@svgr/webpack']
+      use: ['@svgr/webpack'],
     });
+
+    // Add OpenTelemetry warnings suppression
+    config.plugins.push(
+      new webpack.ContextReplacementPlugin(
+        /@opentelemetry[\/\\]instrumentation/,
+        (data) => {
+          delete data.dependencies;
+          return data;
+        }
+      )
+    );
+
     return config;
-  }
+  },
 };
 
-// Export the config wrapped with next-intl
 module.exports = withNextIntl(nextConfig);

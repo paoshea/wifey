@@ -1,3 +1,5 @@
+// types/auth.ts
+
 import { z } from 'zod';
 
 export interface User {
@@ -14,9 +16,9 @@ export interface User {
 }
 
 export enum UserRole {
-  USER = 'user',
-  MODERATOR = 'moderator',
-  ADMIN = 'admin'
+  USER = 'USER',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN',
 }
 
 export const UserSchema = z.object({
@@ -29,7 +31,7 @@ export const UserSchema = z.object({
   emailVerified: z.date().nullable(),
   image: z.string().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 });
 
 export const UserCreateSchema = UserSchema.omit({
@@ -59,7 +61,7 @@ export const ROLE_PERMISSIONS = {
     'create:coverage',
     'update:own-coverage',
     'read:achievements',
-    'update:own-profile'
+    'update:own-profile',
   ] as const,
   [UserRole.MODERATOR]: [
     'read:coverage',
@@ -68,7 +70,7 @@ export const ROLE_PERMISSIONS = {
     'delete:coverage',
     'verify:coverage',
     'manage:achievements',
-    'manage:reports'
+    'manage:reports',
   ] as const,
   [UserRole.ADMIN]: [
     'read:coverage',
@@ -81,7 +83,7 @@ export const ROLE_PERMISSIONS = {
     'manage:system',
     'manage:achievements',
     'manage:reports',
-    'manage:analytics'
+    'manage:analytics',
   ] as const,
 } as const;
 

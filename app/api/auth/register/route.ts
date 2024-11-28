@@ -1,3 +1,6 @@
+// api/auth/register/route.ts
+
+import { UserRole } from '../../../../lib/types/auth';
 import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -16,7 +19,7 @@ const registerSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
+
     // Validate request body
     const validationResult = registerSchema.safeParse(body);
     if (!validationResult.success) {
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
         name: validatedData.name,
         email: validatedData.email,
         password: hashedPassword,
-        role: 'user',
+        role: UserRole.USER,
         preferredLanguage: validatedData.language,
       },
       select: {
@@ -62,16 +65,19 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        preferredLanguage: user.preferredLanguage,
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          preferredLanguage: user.preferredLanguage,
+        },
       },
-    }, { status: 201 });
+      { status: 201 }
+    );
   } catch (error) {
     // Log error to Sentry
     Sentry.captureException(error, {
