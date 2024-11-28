@@ -166,18 +166,31 @@ describe('Measurement Processing Performance Tests', () => {
         await tx.userProgress.update({
           where: { userId: testUserId },
           data: {
-            currentXP: { increment: 10 },
-            totalXP: { increment: 10 },
+            totalPoints: { increment: 10 },
+            currentXP: { increment: 5 },
           },
         });
 
-        await tx.userStats.update({
+        const userProgress = await tx.userProgress.findUnique({
           where: { userId: testUserId },
+          include: { stats: true }
+        });
+
+        if (!userProgress?.stats) {
+          throw new Error('User stats not found');
+        }
+
+        const currentStats = userProgress.stats.stats as any;
+        await tx.userStats.update({
+          where: { id: userProgress.stats.id },
           data: {
-            totalMeasurements: { increment: 1 },
-            ruralMeasurements: { increment: 1 },
-            contributionScore: { increment: 10 },
-          },
+            stats: {
+              ...currentStats,
+              totalMeasurements: (currentStats.totalMeasurements || 0) + 1,
+              ruralMeasurements: (currentStats.ruralMeasurements || 0) + 1,
+              contributionScore: (currentStats.contributionScore || 0) + 10
+            }
+          }
         });
       });
     });
@@ -195,15 +208,72 @@ describe('Measurement Processing Performance Tests', () => {
         }
       });
     });
+
+    bench('sequential stats updates', async () => {
+      // Process multiple measurements in sequence
+      for (let i = 0; i < 10; i++) {
+        const userProgress = await prisma.userProgress.findUnique({
+          where: { userId: testUserId },
+          include: { stats: true }
+        });
+
+        if (!userProgress?.stats) {
+          throw new Error('User stats not found');
+        }
+
+        const currentStats = userProgress.stats.stats as any;
+        await prisma.userStats.update({
+          where: { id: userProgress.stats.id },
+          data: {
+            stats: {
+              ...currentStats,
+              totalMeasurements: (currentStats.totalMeasurements || 0) + 1,
+              ruralMeasurements: (currentStats.ruralMeasurements || 0) + 1,
+              contributionScore: (currentStats.contributionScore || 0) + 10
+            }
+          }
+        });
+
+        await gamificationService.processMeasurement(testUserId, {
+          isRural: true,
+          isFirstInArea: true,
+          quality: 0.95,
+        });
+      }
+    });
   });
 
   describe('System Load Testing', () => {
     bench('high frequency measurements (100/sec)', async () => {
       const measurements = Array.from({ length: 100 }, () => ({
-        isRural: Math.random() > 0.5,
-        isFirstInArea: Math.random() > 0.7,
-        quality: 0.7 + (Math.random() * 0.3),
+        isRural: true,
+        isFirstInArea: true,
+        quality: 0.95,
       }));
+
+      // Get initial stats
+      const userProgress = await prisma.userProgress.findUnique({
+        where: { userId: testUserId },
+        include: { stats: true }
+      });
+
+      if (!userProgress?.stats) {
+        throw new Error('User stats not found');
+      }
+
+      // Update stats before processing measurements
+      const currentStats = userProgress.stats.stats as any;
+      await prisma.userStats.update({
+        where: { id: userProgress.stats.id },
+        data: {
+          stats: {
+            ...currentStats,
+            totalMeasurements: (currentStats.totalMeasurements || 0) + measurements.length,
+            ruralMeasurements: (currentStats.ruralMeasurements || 0) + measurements.length,
+            contributionScore: (currentStats.contributionScore || 0) + (measurements.length * 10)
+          }
+        }
+      });
 
       const startTime = Date.now();
       await Promise.all(
