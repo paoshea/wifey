@@ -1,7 +1,7 @@
 import { bench, describe, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { LeaderboardService } from '../../lib/services/leaderboard-service';
-import { GamificationService } from '../../lib/gamification/gamification-service';
+import { GamificationService } from '../../lib/services/gamification-service';
 
 const prisma = new PrismaClient();
 const leaderboardService = LeaderboardService.getInstance();

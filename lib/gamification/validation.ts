@@ -29,17 +29,37 @@ export const achievementIdSchema = z.string().min(1);
 export function validateAchievement(data: unknown): ValidatedAchievement {
   try {
     const validatedData = AchievementSchema.parse(data);
+    const defaultStats: Record<StatsMetric, number> = {
+      [StatsMetric.TOTAL_MEASUREMENTS]: 0,
+      [StatsMetric.RURAL_MEASUREMENTS]: 0,
+      [StatsMetric.VERIFIED_SPOTS]: 0,
+      [StatsMetric.HELPFUL_ACTIONS]: 0,
+      [StatsMetric.CONSECUTIVE_DAYS]: 0,
+      [StatsMetric.QUALITY_SCORE]: 0,
+      [StatsMetric.ACCURACY_RATE]: 0,
+      [StatsMetric.UNIQUE_LOCATIONS]: 0,
+      [StatsMetric.TOTAL_DISTANCE]: 0,
+      [StatsMetric.CONTRIBUTION_SCORE]: 0
+    };
+
     return {
       ...validatedData,
       progress: 0,
       target: 100, // Default target value
-      requirements: validatedData.requirements.map(req => ({
-        type: req.type,
-        value: req.value,
-        description: req.description,
-        metric: req.metric,
-        operator: req.operator
-      }))
+      requirements: validatedData.requirements.map(req => {
+        const currentValue = getStatValue(req.metric, defaultStats);
+        const isMet = validateRequirement(req, defaultStats);
+        
+        return {
+          type: req.type,
+          value: req.value,
+          description: req.description,
+          metric: req.metric,
+          operator: req.operator,
+          currentValue,
+          isMet
+        };
+      })
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -50,14 +70,11 @@ export function validateAchievement(data: unknown): ValidatedAchievement {
 }
 
 // Stats validation
-export function validateStats(data: unknown): StatsContent {
+export function validateStatsContent(data: unknown): StatsContent {
   try {
     return StatsContentSchema.parse(data);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw new ValidationError('Invalid stats data', error.errors);
-    }
-    throw error;
+    throw new ValidationError('Invalid stats content', error);
   }
 }
 

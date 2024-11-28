@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { GamificationService } from '../gamification-service';
+import { GamificationService } from '../../services/gamification-service';
 import { 
   AchievementTier, 
   RequirementType, 

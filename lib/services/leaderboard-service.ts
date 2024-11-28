@@ -1,83 +1,13 @@
+// lib/services/leaderboard-service.ts
+
 import { PrismaClient, Prisma, User, UserProgress, UserStreak } from '@prisma/client';
 import { apiCache } from './api-cache';
 import { createApiError } from '../api/error-handler';
+import { TimeFrame, LeaderboardEntry, LeaderboardStats, LeaderboardResponse } from '../gamification/types';
+
+export type { TimeFrame, LeaderboardEntry, LeaderboardStats, LeaderboardResponse } from '../gamification/types';
 
 const prisma = new PrismaClient();
-
-export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
-
-export interface LeaderboardUser {
-  userId: string;
-  username: string | null;
-  points: number;
-  contributions: number;
-  badges: number;
-  currentStreak: number;
-  longestStreak: number;
-  level: number;
-  image?: string | null;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  userId: string;
-  username: string;
-  points: number;
-  level: number;
-  streak: {
-    current: number;
-    longest: number;
-  };
-  contributions: number;
-  badges: number;
-  image?: string | null;
-}
-
-export interface LeaderboardStats {
-  totalUsers: number;
-  totalContributions: number;
-  topContributor: string;
-  mostBadges: string;
-  longestStreak: number;
-  highestLevel: number;
-}
-
-export interface LeaderboardResponse {
-  entries: LeaderboardEntry[];
-  pagination: {
-    total: number;
-    page: number;
-    pageSize: number;
-    hasMore: boolean;
-  };
-  stats?: LeaderboardStats;
-}
-
-interface StatsContent {
-  [key: string]: number;
-}
-
-interface DateFilterType {
-  gte?: Date;
-  lt?: Date;
-  lte?: Date;
-}
-
-interface MeasurementDateFilter {
-  timestamp?: DateFilterType;
-}
-
-interface LeaderboardUserStats {
-  stats: Prisma.JsonValue;
-}
-
-type UserProgressWithRelations = Prisma.UserProgressGetPayload<{
-  include: {
-    user: true;
-    stats: true;
-    userBadges: true;
-  }
-}>;
 
 export class LeaderboardService {
   private static instance: LeaderboardService;
@@ -103,14 +33,15 @@ export class LeaderboardService {
       throw createApiError(400, 'Page size exceeds maximum allowed');
     }
 
+    const cacheKey = `leaderboard:${timeframe}:${page}:${pageSize}:${includeStats}`;
+    const skip = (page - 1) * pageSize;
     const actualPageSize = Math.min(pageSize, this.MAX_PAGE_SIZE);
-    const skip = (page - 1) * actualPageSize;
-    const dateFilter = this.getDateFilter(timeframe);
 
-    const cacheKey = `leaderboard:${timeframe}:${page}:${actualPageSize}:${includeStats}`;
-    return await apiCache.fetch<LeaderboardResponse>(
+    return apiCache.fetch(
       cacheKey,
       async () => {
+        const dateFilter = this.getDateFilter(timeframe);
+
         const [total, userProgress] = await Promise.all([
           prisma.userProgress.count({
             where: {
@@ -134,6 +65,7 @@ export class LeaderboardService {
               }
             },
             select: {
+              id: true,
               userId: true,
               totalPoints: true,
               level: true,
@@ -161,29 +93,16 @@ export class LeaderboardService {
             },
             skip,
             take: actualPageSize
-          }) as Promise<Array<{
-            userId: string;
-            totalPoints: number;
-            level: number;
-            streak: number;
-            user: {
-              name: string | null;
-              email: string | null;
-              image: string | null;
-            } | null;
-            stats: {
-              stats: Prisma.JsonValue;
-            } | null;
-            userBadges: Array<{ id: string }>;
-          }>>
+          })
         ]);
 
         const entries: LeaderboardEntry[] = userProgress.map((progress, index) => {
           const username = progress.user?.name ?? progress.user?.email?.split('@')[0] ?? 'Anonymous';
-          const stats = (progress.stats?.stats as StatsContent) ?? {};
+          const stats = (progress.stats?.stats as { [key: string]: number }) ?? {};
           const currentStreak = progress.streak ?? 0;
 
           return {
+            id: progress.id,
             rank: skip + index + 1,
             userId: progress.userId,
             username,
@@ -191,11 +110,11 @@ export class LeaderboardService {
             level: progress.level,
             streak: {
               current: currentStreak,
-              longest: currentStreak
+              longest: currentStreak // Using current streak as longest since we don't track longest separately
             },
-            contributions: stats.measurements ?? 0,
+            contributions: stats.totalMeasurements ?? 0,
             badges: progress.userBadges?.length ?? 0,
-            image: progress.user?.image ?? null
+            image: progress.user?.image
           };
         });
 
@@ -205,7 +124,7 @@ export class LeaderboardService {
             total,
             page,
             pageSize: actualPageSize,
-            hasMore: skip + entries.length < total
+            hasMore: skip + actualPageSize < total
           }
         };
 
@@ -219,7 +138,7 @@ export class LeaderboardService {
     );
   }
 
-  private getDateFilter(timeframe: TimeFrame): MeasurementDateFilter {
+  private getDateFilter(timeframe: TimeFrame): { timestamp?: { gte?: Date; lt?: Date; lte?: Date } } {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -272,7 +191,7 @@ export class LeaderboardService {
     return apiCache.fetch(
       cacheKey,
       async () => {
-        const dateFilter: MeasurementDateFilter = this.getDateFilter(timeframe);
+        const dateFilter: { timestamp?: { gte?: Date; lt?: Date; lte?: Date } } = this.getDateFilter(timeframe);
 
         const userProgress = await prisma.userProgress.findUnique({
           where: { userId },
@@ -319,7 +238,7 @@ export class LeaderboardService {
 
   private async getLeaderboardStats(
     tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use">,
-    dateFilter: MeasurementDateFilter
+    dateFilter: { timestamp?: { gte?: Date; lt?: Date; lte?: Date } }
   ): Promise<LeaderboardStats> {
     const cacheKey = `leaderboard-stats:${JSON.stringify(dateFilter)}`;
     return await apiCache.fetch<LeaderboardStats>(

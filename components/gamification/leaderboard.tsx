@@ -4,9 +4,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GamificationService } from '@/lib/gamification/gamification-service';
-import { AchievementTier } from '@/lib/gamification/types';
-import { LeaderboardEntry, TimeFrame, leaderboardService } from '@/lib/services/leaderboard-service';
+import { GamificationService } from '@/lib/services/gamification-service';
+import { AchievementTier, LeaderboardEntry, TimeFrame, LeaderboardResponse } from '@/lib/gamification/types';
+import { leaderboardService } from '@/lib/services/leaderboard-service';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';

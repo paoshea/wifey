@@ -1,4 +1,4 @@
-import { GamificationService } from '@lib/gamification/gamification-service';
+import { GamificationService } from '@/lib/services/gamification-service';
 import { mockDeep, MockProxy } from 'jest-mock-extended';
 import { PrismaClient } from '@prisma/client';
 

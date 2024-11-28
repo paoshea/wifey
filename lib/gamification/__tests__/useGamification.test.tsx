@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useGamification } from '../hooks/useGamification';
-import { GamificationService } from '../gamification-service';
+import { GamificationService } from '../../services/gamification-service';
 import { 
   ValidatedAchievement,
   ValidatedUserStats,
@@ -10,7 +10,7 @@ import {
 } from '../types';
 
 // Mock the GamificationService
-jest.mock('../gamification-service');
+jest.mock('../../services/gamification-service');
 
 describe('useGamification', () => {
   const mockUserId = 'test-user-id';

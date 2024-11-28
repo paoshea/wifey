@@ -1,4 +1,4 @@
-// measurements/route.ts
+// app/api/measurements/route.ts
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -8,6 +8,9 @@ import { detectCarrier } from '@/lib/carriers/detection';
 import { GamificationService } from '@/lib/services/gamification-service';
 import { Prisma } from '@prisma/client';
 import { SignalMeasurement } from '@/lib/types/monitoring';
+
+// Initialize services
+const gamificationService = new GamificationService(prisma);
 
 // Validation schema for measurements
 const MeasurementSchema = z.object({
@@ -139,14 +142,14 @@ export async function POST(request: Request) {
         });
 
         // Process measurement for gamification
-        await GamificationService.processMeasurement(result, userId);
+        await gamificationService.processMeasurement(userId, result);
 
         return { measurement: result, coveragePoint };
       })
     );
 
     // Get updated user progress for response
-    const userProgress = await GamificationService.getUserProgress(userId);
+    const userProgress = await gamificationService.getUserProgress(userId);
 
     return NextResponse.json({
       success: true,

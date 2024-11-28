@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '@/lib/test-utils';
-import { GamificationService } from '@/lib/gamification/gamification-service';
+import { GamificationService } from '@/lib/services/gamification-service';
 import { ProgressVisualization } from '../progress-visualization';
 import { AchievementShowcase } from '../achievement-showcase';
 import { Leaderboard } from '../leaderboard';
@@ -18,7 +18,7 @@ import {
 import { validateUserProgress, validateAchievement } from '@/lib/gamification/validation';
 
 // Mock the GamificationService
-jest.mock('@/lib/gamification/gamification-service', () => ({
+jest.mock('@/lib/services/gamification-service', () => ({
   GamificationService: jest.fn().mockImplementation(() => ({
     getLeaderboard: jest.fn().mockResolvedValue([
       {

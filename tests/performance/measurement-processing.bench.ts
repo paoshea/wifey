@@ -1,6 +1,6 @@
 import { bench, describe } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { GamificationService } from '../../lib/gamification/gamification-service';
+import { GamificationService } from '../../lib/services/gamification-service';
 
 const prisma = new PrismaClient();
 const gamificationService = new GamificationService(prisma);

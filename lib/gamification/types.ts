@@ -309,5 +309,49 @@ export interface TransactionContext {
   now: Date;
 }
 
+// Leaderboard Types
+export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
+
+export interface LeaderboardEntry {
+  id: string;
+  rank: number;
+  userId: string;
+  username: string;
+  points: number;
+  level: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  contributions: number;
+  badges: number;
+  image?: string | null;
+  timeframe?: string;
+  updatedAt?: Date;
+  displayName?: string;
+  topAchievements?: Achievement[];
+  avatarUrl?: string | null;
+}
+
+export interface LeaderboardStats {
+  totalUsers: number;
+  totalContributions: number;
+  topContributor: string;
+  mostBadges: string;
+  longestStreak: number;
+  highestLevel: number;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  };
+  stats?: LeaderboardStats;
+}
+
 // Export Prisma Types
-export type { Achievement, UserProgress, UserStats, ValidatedLeaderboardEntry };
+export type { Achievement, UserProgress, UserStats };

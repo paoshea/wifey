@@ -4,14 +4,15 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Leaderboard } from '../leaderboard';
-import { GamificationService } from '../../../lib/gamification/gamification-service';
+import { GamificationService } from '@/lib/services/gamification-service';
 import {
   ValidatedLeaderboardEntry,
   Achievement,
   AchievementTier,
   RequirementType,
   RequirementOperator,
-  StatsMetric
+  StatsMetric,
+  LeaderboardResponse
 } from '../../../lib/gamification/types';
 import { validateAchievement } from '../../../lib/gamification/validation';
 import { PrismaClient } from '@prisma/client';
@@ -101,7 +102,7 @@ type MockLeaderboardEntry = ValidatedLeaderboardEntry & {
 };
 
 // Mock GamificationService
-jest.mock('../../../lib/gamification/gamification-service', () => {
+jest.mock('@/lib/services/gamification-service', () => {
   const mockEntries: MockLeaderboardEntry[] = [
     {
       id: '1',
@@ -186,41 +187,73 @@ describe('Leaderboard', () => {
 
   it('displays loading state while fetching data', async () => {
     // Mock a delayed response
-    const delayedMockEntries: MockLeaderboardEntry[] = [
-      {
-        id: '1',
-        userId: 'user1',
-        timeframe: 'daily',
-        points: 1000,
-        rank: 1,
-        updatedAt: new Date(),
-        displayName: 'User 1',
-        topAchievements: [],
-        avatarUrl: 'avatar1.jpg'
-      },
-      {
-        id: '2',
-        userId: 'user2',
-        timeframe: 'daily',
-        points: 900,
-        rank: 2,
-        updatedAt: new Date(),
-        displayName: 'User 2',
-        topAchievements: [],
-        avatarUrl: 'avatar2.jpg'
-      },
-      {
-        id: '3',
-        userId: 'user3',
-        timeframe: 'daily',
-        points: 800,
-        rank: 3,
-        updatedAt: new Date(),
-        displayName: 'User 3',
-        topAchievements: [],
-        avatarUrl: undefined
+    const delayedMockEntries: LeaderboardResponse = {
+      entries: [
+        {
+          id: '1',
+          userId: 'user1',
+          username: 'User 1',
+          timeframe: 'daily',
+          points: 1000,
+          rank: 1,
+          level: 5,
+          streak: {
+            current: 7,
+            longest: 14
+          },
+          contributions: 150,
+          badges: 10,
+          updatedAt: new Date(),
+          displayName: 'User 1',
+          topAchievements: mockAchievements,
+          avatarUrl: 'avatar1.jpg'
+        },
+        {
+          id: '2',
+          userId: 'user2',
+          username: 'User 2',
+          timeframe: 'daily',
+          points: 900,
+          rank: 2,
+          level: 4,
+          streak: {
+            current: 5,
+            longest: 10
+          },
+          contributions: 120,
+          badges: 8,
+          updatedAt: new Date(),
+          displayName: 'User 2',
+          topAchievements: [],
+          avatarUrl: 'avatar2.jpg'
+        },
+        {
+          id: '3',
+          userId: 'user3',
+          username: 'User 3',
+          timeframe: 'daily',
+          points: 800,
+          rank: 3,
+          level: 3,
+          streak: {
+            current: 3,
+            longest: 8
+          },
+          contributions: 90,
+          badges: 6,
+          updatedAt: new Date(),
+          displayName: 'User 3',
+          topAchievements: [],
+          avatarUrl: undefined
+        }
+      ],
+      pagination: {
+        total: 3,
+        page: 1,
+        pageSize: 10,
+        hasMore: false
       }
-    ];
+    };
 
     mockGamificationService.getLeaderboard.mockImplementation(
       () => new Promise(resolve => setTimeout(() => resolve(delayedMockEntries), 100))

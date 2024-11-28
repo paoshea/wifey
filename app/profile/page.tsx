@@ -19,9 +19,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { TIER_COLORS } from '@/lib/gamification/constants';
-import { type ValidatedUserProgress, AchievementTier } from '@/lib/gamification/types';
+import { type ValidatedUserProgress, AchievementTier, RequirementType, StatsMetric } from '@/lib/gamification/types';
 import { Achievement, UserProgress, UserStats } from '@prisma/client';
-import { RequirementType, StatsMetric } from '@/lib/gamification/types';
 
 // Type for achievement in user progress
 type UserAchievement = {
@@ -176,7 +175,7 @@ export default function ProfilePage() {
 
             {activeTab === 'achievements' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress?.achievements?.map((achievement) => (
+                {progress?.achievements?.map((achievement: UserAchievement) => (
                   <Card key={achievement.id} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">
