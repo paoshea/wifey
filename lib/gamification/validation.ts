@@ -49,7 +49,7 @@ export function validateAchievement(data: unknown): ValidatedAchievement {
       requirements: validatedData.requirements.map(req => {
         const currentValue = getStatValue(req.metric, defaultStats);
         const isMet = validateRequirement(req, defaultStats);
-        
+
         return {
           type: req.type,
           value: req.value,
@@ -169,16 +169,17 @@ export function validateAchievementRequirements(
 // Measurement validation
 export const measurementSchema = z.object({
   isRural: z.boolean(),
+  isFirstInArea: z.boolean(),
   location: z.object({
     lat: z.number(),
     lng: z.number()
-  }).optional(),
+  }),
   quality: z.number().min(0).max(100),
   device: z.object({
     type: z.string(),
     model: z.string(),
     os: z.string()
-  })
+  }).optional()
 });
 
 export function validateMeasurement(data: unknown) {
@@ -190,6 +191,16 @@ export function validateMeasurement(data: unknown) {
     }
     throw error;
   }
+}
+
+// Level calculation
+export function calculateLevel(xp: number): number {
+  return Math.floor(Math.sqrt(xp / 100)) + 1;
+}
+
+// Required XP calculation
+export function calculateRequiredXP(level: number): number {
+  return Math.pow(level - 1, 2) * 100;
 }
 
 // Error handling

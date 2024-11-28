@@ -56,33 +56,24 @@ export function validateStatsContent(stats: StatsContent) {
 
 // Requirement validation
 export function validateRequirement(requirement: { metric: StatsMetric; operator: RequirementOperator; value: number }, stats: StatsContent | null): boolean {
-  if (!stats) {
-    return false;
-  }
+  if (!stats) return false;
 
-  const validatedStats = validateStatsContent(stats);
-  if (!validatedStats.success) {
-    return false;
-  }
-
-  const value = validatedStats.data[requirement.metric];
-  if (typeof value !== 'number') {
-    return false;
-  }
+  const value = stats[requirement.metric];
+  if (typeof value !== 'number') return false;
 
   switch (requirement.operator) {
+    case RequirementOperator.GREATER_THAN:
+      return value > requirement.value;
+    case RequirementOperator.GREATER_THAN_EQUAL:
+      return value >= requirement.value;
+    case RequirementOperator.LESS_THAN:
+      return value < requirement.value;
+    case RequirementOperator.LESS_THAN_EQUAL:
+      return value <= requirement.value;
     case RequirementOperator.EQUAL:
       return value === requirement.value;
     case RequirementOperator.NOT_EQUAL:
       return value !== requirement.value;
-    case RequirementOperator.GREATER_THAN:
-      return value > requirement.value;
-    case RequirementOperator.LESS_THAN:
-      return value < requirement.value;
-    case RequirementOperator.GREATER_THAN_EQUAL:
-      return value >= requirement.value;
-    case RequirementOperator.LESS_THAN_EQUAL:
-      return value <= requirement.value;
     default:
       return false;
   }
@@ -90,46 +81,21 @@ export function validateRequirement(requirement: { metric: StatsMetric; operator
 
 // Achievement requirements validation
 export function validateAchievementRequirements(achievement: Achievement, context: { stats: StatsContent | null }) {
-  if (!context.stats) {
+  if (!achievement.requirements || !Array.isArray(achievement.requirements)) {
     return false;
   }
 
-  const validatedStats = validateStatsContent(context.stats);
-  if (!validatedStats.success) {
-    return false;
-  }
-
-  const validatedAchievement = validateAchievement(achievement);
-  if (!validatedAchievement.success) {
-    return false;
-  }
-
-  const requirements = validatedAchievement.data.requirements;
-  return requirements.every(req => validateRequirement(req, validatedStats.data));
+  return achievement.requirements.every(req => validateRequirement(req, context.stats));
 }
 
 // Progress calculation
 export function calculateProgress(achievement: Achievement, context: { stats: StatsContent | null }) {
-  if (!context.stats) {
+  if (!achievement.requirements || !Array.isArray(achievement.requirements)) {
     return 0;
   }
 
-  const validatedStats = validateStatsContent(context.stats);
-  if (!validatedStats.success) {
-    return 0;
-  }
-
-  const validatedAchievement = validateAchievement(achievement);
-  if (!validatedAchievement.success) {
-    return 0;
-  }
-
-  // Calculate progress based on requirements
-  const requirements = validatedAchievement.data.requirements;
-  const totalRequirements = requirements.length;
-  const metRequirements = requirements.filter(req => validateRequirement(req, validatedStats.data)).length;
-
-  return Math.floor((metRequirements / totalRequirements) * 100);
+  const metRequirements = achievement.requirements.filter(req => validateRequirement(req, context.stats));
+  return (metRequirements.length / achievement.requirements.length) * 100;
 }
 
 // Level calculation
@@ -151,12 +117,18 @@ export function validateMeasurementInput(data: unknown): ValidatedMeasurementInp
     location: z.object({
       lat: z.number().min(-90).max(90),
       lng: z.number().min(-180).max(180)
-    })
+    }),
+    device: z.object({
+      type: z.string(),
+      model: z.string(),
+      os: z.string()
+    }).optional()
   });
 
   const result = schema.safeParse(data);
   if (!result.success) {
-    throw new Error('Invalid measurement input');
+    const fieldErrors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+    throw new Error(`Invalid measurement input: ${fieldErrors}`);
   }
 
   return result.data;
