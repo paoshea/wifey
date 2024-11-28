@@ -168,6 +168,20 @@ function convertToRequirements(jsonReqs: Prisma.InputJsonValue): Requirement[] {
     }));
 }
 
+// Default stats for new users
+const defaultStats: StatsContent = {
+  totalMeasurements: 0,
+  ruralMeasurements: 0,
+  uniqueLocations: 0,
+  totalDistance: 0,
+  contributionScore: 0,
+  qualityScore: 0,
+  accuracyRate: 0,
+  verifiedSpots: 0,
+  helpfulActions: 0,
+  consecutiveDays: 0
+};
+
 export class GamificationDB {
   private prisma: PrismaClient;
 
@@ -208,7 +222,6 @@ export class GamificationDB {
       // Convert achievements to ValidatedAchievement type
       const validatedAchievements = progress.achievements.map(ua => {
         const achievement = ua.achievement;
-        // Convert JsonValue to InputJsonValue by providing a default empty object if null
         const requirements = convertToRequirements(achievement.requirements ?? {});
 
         // Convert requirements to ValidatedRequirements with default values
@@ -218,13 +231,25 @@ export class GamificationDB {
           isMet: false // This should be calculated based on user's progress
         }));
 
+        const achievementProgress = calculateAchievementProgress(
+          userStats ?? {
+            id: '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            stats: {},
+            userProgressId: progress.id
+          },
+          progress,
+          achievement
+        );
+
         const validatedAchievement: ValidatedAchievement = {
           ...achievement,
           requirements: validatedRequirements,
-          progress: 0, // Calculate actual progress if needed
-          target: 100, // This should be set based on achievement requirements
+          progress: achievementProgress.progress,
+          target: achievement.target ?? 100,
           tier: achievement.tier as AchievementTier,
-          rarity: achievement.tier as AchievementTier // Assuming tier is used as rarity
+          rarity: achievement.tier as AchievementTier
         };
 
         return {
@@ -233,8 +258,6 @@ export class GamificationDB {
           unlockedAt: ua.unlockedAt
         };
       });
-
-      const stats = userStats ? validateStats(userStats.stats) : null;
 
       return {
         ...progress,
@@ -364,32 +387,15 @@ export class GamificationDB {
         throw new Error(`User progress not found for user ${userId}`);
       }
 
-      const defaultStats: StatsContent = {
-        totalMeasurements: 0,
-        ruralMeasurements: 0,
-        uniqueLocations: 0,
-        totalDistance: 0,
-        contributionScore: 0,
-        verifiedSpots: 0,
-        helpfulActions: 0,
-        consecutiveDays: 0,
-        qualityScore: 0,
-        accuracyRate: 0
-      };
-
       const userStats = await this.prisma.userStats.upsert({
         where: { userProgressId: progress.id },
         create: {
-          ...defaultStats,
-          ...stats,
-          userProgress: {
-            connect: {
-              id: progress.id
-            }
-          }
+          userProgressId: progress.id,
+          stats: defaultStats as Prisma.InputJsonValue
         },
         update: {
-          ...stats
+          stats: validateStats(stats.stats as Prisma.InputJsonValue),
+          updatedAt: new Date()
         }
       });
 
@@ -419,23 +425,10 @@ export class GamificationDB {
         throw new Error(`User progress not found for user ${userId}`);
       }
 
-      const defaultStats: StatsContent = {
-        totalMeasurements: 0,
-        ruralMeasurements: 0,
-        uniqueLocations: 0,
-        totalDistance: 0,
-        contributionScore: 0,
-        verifiedSpots: 0,
-        helpfulActions: 0,
-        consecutiveDays: 0,
-        qualityScore: 0,
-        accuracyRate: 0
-      };
-
       const userStats = await this.prisma.userStats.create({
         data: {
           userProgressId: progress.id,
-          stats: defaultStats as Prisma.InputJsonValue
+          stats: defaultStats
         }
       });
 
@@ -468,25 +461,10 @@ export class GamificationDB {
       }
 
       // Create or update the user achievement
-      const userAchievement = await this.prisma.userAchievement.upsert({
-        where: {
-          userProgressId_achievementId: {
-            userProgressId: progress.id,
-            achievementId
-          }
-        },
-        create: {
-          userProgressId: progress.id,
+      const userAchievement = await this.prisma.userAchievement.create({
+        data: {
           achievementId: achievementId,
-          progress: 100,
-          target: 100,
-          completed: true,
-          unlockedAt: new Date()
-        },
-        update: {
-          progress: 100,
-          target: 100,
-          completed: true,
+          userProgressId: progress.id,
           unlockedAt: new Date()
         },
         include: {
@@ -502,21 +480,38 @@ export class GamificationDB {
 
   public async getUserAchievements(userId: string): Promise<Achievement[]> {
     try {
-      userIdSchema.parse(userId);
-
-      // Get user progress first
       const progress = await this.prisma.userProgress.findUnique({
-        where: { userId }
+        where: { userId },
+        include: {
+          achievements: {
+            include: {
+              achievement: true
+            }
+          }
+        }
       });
 
       if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
+        return [];
       }
 
-      // Map UserAchievement to Achievement
-      return progress.achievements.map(ua => ua.achievement);
+      // Convert achievements to return type
+      return progress.achievements.map(ua => {
+        const achievement = ua.achievement;
+        const requirements = convertToRequirements(achievement.requirements ?? {});
+
+        return {
+          ...achievement,
+          requirements: requirements as unknown as Prisma.JsonValue,
+          target: achievement.target ?? null
+        };
+      });
+
     } catch (error) {
-      handleValidationError(error);
+      monitoringService.logError(error, 'error', userId, {
+        context: 'getUserAchievements'
+      });
+      return [];
     }
   }
 
@@ -572,30 +567,43 @@ export class GamificationDB {
     limit = 100
   ): Promise<Array<LeaderboardEntry & { user: Pick<User, 'name'> }>> {
     try {
-      if (limit < 1 || limit > 1000) {
-        throw new Error('Limit must be between 1 and 1000');
-      }
+      type LeaderboardQueryResult = Array<{
+        id: string;
+        userId: string;
+        points: number;
+        rank: number;
+        timeframe: string;
+        updatedAt: Date;
+        user: {
+          name: string;
+        };
+      }>;
 
-      const entries = await this.prisma.leaderboardEntry.findMany({
+      const leaderboard = await this.prisma.leaderboardEntry.findMany({
         where: {
           timeframe
         },
+        orderBy: {
+          points: 'desc'
+        },
+        take: limit,
         include: {
           user: {
             select: {
               name: true
             }
           }
-        },
-        orderBy: {
-          points: 'desc'
-        },
-        take: limit
-      });
+        }
+      }) as unknown as LeaderboardQueryResult;
 
-      return entries;
+      return leaderboard;
     } catch (error) {
-      handleValidationError(error);
+      monitoringService.logError(error, 'error', '', {
+        context: 'getLeaderboard',
+        timeframe,
+        limit
+      });
+      return [];
     }
   }
 
@@ -630,18 +638,7 @@ export class GamificationDB {
         currentStats = await prismaClient.userStats.create({
           data: {
             userProgressId: progress.id,
-            stats: {
-              totalMeasurements: 0,
-              ruralMeasurements: 0,
-              uniqueLocations: 0,
-              totalDistance: 0,
-              contributionScore: 0,
-              verifiedSpots: 0,
-              helpfulActions: 0,
-              consecutiveDays: 0,
-              qualityScore: 0,
-              accuracyRate: 0
-            } as Prisma.InputJsonValue
+            stats: defaultStats as Prisma.InputJsonValue
           }
         });
       }
@@ -650,9 +647,16 @@ export class GamificationDB {
       const newStats = calculateUpdatedStats(currentStats, measurement);
       validateUserStats(newStats);
 
-      const updatedStats = await prismaClient.userStats.update({
+      const updatedStats = await prismaClient.userStats.upsert({
         where: { userProgressId: progress.id },
-        data: newStats
+        create: {
+          userProgressId: progress.id,
+          stats: defaultStats as Prisma.InputJsonValue
+        },
+        update: {
+          stats: validateStats((newStats ?? defaultStats) as Prisma.InputJsonValue),
+          updatedAt: new Date()
+        }
       });
 
       if (!updatedStats) {
@@ -706,35 +710,55 @@ export class GamificationDB {
       });
 
       // Check which achievements should be unlocked
-      const eligibleAchievements = allAchievements.filter(achievement => {
-        // Add your achievement eligibility logic here
-        return determineEligibleAchievements(stats, updatedProgress).includes(achievement.id);
-      });
+      const eligibleAchievements = allAchievements.filter(achievement =>
+        determineEligibleAchievements(stats, updatedProgress).includes(achievement.id)
+      );
 
-      // Unlock eligible achievements
       for (const achievement of eligibleAchievements) {
-        const achievementResult = calculateAchievementProgress(stats, updatedProgress, achievement);
-        await prismaClient.userAchievement.upsert({
+        // Check if achievement is already unlocked
+        const existingAchievement = await prismaClient.userAchievement.findUnique({
           where: {
             userProgressId_achievementId: {
               userProgressId: progress.id,
               achievementId: achievement.id
             }
-          },
-          create: {
-            userProgressId: progress.id,
+          }
+        });
+
+        if (existingAchievement) {
+          continue;
+        }
+
+        // Create user achievement
+        const userAchievement = await prismaClient.userAchievement.create({
+          data: {
             achievementId: achievement.id,
-            progress: achievementResult.progress,
-            target: achievement.target,
-            completed: achievementResult.completed,
-            unlockedAt: achievementResult.completed ? new Date() : null,
-            requirements: achievement.requirements ?? {}, // Default to empty object if null
+            userProgressId: progress.id,
+            unlockedAt: new Date()
           },
-          update: {
-            progress: achievementResult.progress,
-            target: achievement.target,
-            completed: achievementResult.completed,
-            unlockedAt: achievementResult.completed ? new Date() : null
+          include: {
+            achievement: true
+          }
+        });
+
+        if (!userAchievement) {
+          monitoringService.logError(
+            new Error(`Failed to create user achievement for user ${progress.userId}`),
+            'error',
+            progress.userId,
+            { context: 'checkAndUpdateAchievements', achievementId: achievement.id }
+          );
+          continue;
+        }
+
+        // Update user progress
+        const points = userAchievement.achievement.points || 0;
+        await prismaClient.userProgress.update({
+          where: { id: progress.id },
+          data: {
+            totalPoints: { increment: points },
+            unlockedAchievements: { increment: 1 },
+            lastAchievementAt: new Date()
           }
         });
       }
