@@ -1,6 +1,6 @@
 // prisma/seed.ts
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import { seedAchievements } from './seed/achievements';
 import { WifiHotspotInput, UserInput, UserProgressInput } from './types';
 
@@ -62,21 +62,21 @@ async function main() {
       name: 'Test User 1',
       email: 'test1@example.com',
       password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy', // hashed 'password123'
-      role: 'user',
+      role: UserRole.USER,
       preferredLanguage: 'en',
     },
     {
       name: 'Test User 2',
       email: 'test2@example.com',
       password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
-      role: 'user',
+      role: UserRole.USER,
       preferredLanguage: 'en',
     },
     {
       name: 'Test User 3',
       email: 'test3@example.com',
       password: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
-      role: 'user',
+      role: UserRole.USER,
       preferredLanguage: 'en',
     },
   ];

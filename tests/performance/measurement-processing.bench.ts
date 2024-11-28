@@ -1,3 +1,5 @@
+// tests/performance/measurement-processing.bench.ts
+
 import { bench, describe } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { GamificationService } from '../../lib/services/gamification-service';
@@ -14,6 +16,8 @@ describe('Measurement Processing Performance Tests', () => {
       data: {
         name: 'Performance Test User',
         email: 'perf-test@example.com',
+        password: 'testpass123',
+        role: 'USER'
       },
     });
     testUserId = user.id;
@@ -182,7 +186,7 @@ describe('Measurement Processing Performance Tests', () => {
         measurements.map(m => gamificationService.processMeasurement(testUserId, m))
       );
       const endTime = Date.now();
-      
+
       console.log(`Processed 100 measurements in ${endTime - startTime}ms`);
     });
   });

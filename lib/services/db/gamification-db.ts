@@ -302,9 +302,9 @@ export class GamificationDB {
         newTotal: newTotalPoints,
         newLevel: level
       });
-      await tracker.end(true);
+      await tracker.end();
     } catch (error) {
-      await tracker.end(false);
+      await tracker.end();
       await monitoringService.logError(error, 'error', userId, { points });
       throw error;
     }
@@ -328,10 +328,10 @@ export class GamificationDB {
         calculatedLevel: level,
         nextLevelXP: xpRequired
       });
-      tracker.end(true);
+      tracker.end();
       return { level, nextLevelXP: xpRequired };
     } catch (error) {
-      tracker.end(false);
+      tracker.end();
       monitoringService.logError(error, 'error', undefined, { currentXP });
       throw error;
     }
@@ -574,6 +574,7 @@ export class GamificationDB {
         rank: number;
         timeframe: string;
         updatedAt: Date;
+        createdAt: Date;
         user: {
           name: string | null;
           id: string;
@@ -595,6 +596,7 @@ export class GamificationDB {
           rank: true,
           timeframe: true,
           updatedAt: true,
+          createdAt: true,
           user: {
             select: {
               name: true,
@@ -831,6 +833,7 @@ export class GamificationDB {
           userId: progress.userId,
           timeframe,
           rank,
+          points: progress.totalPoints,
           date: new Date()
         }
       });
@@ -868,15 +871,16 @@ export class GamificationDB {
         data: {
           userId,
           rank: rank + 1,
-          timeframe
+          timeframe,
+          points: userProgress.totalPoints
         }
       });
 
       tracker.addMetadata({ timeframe, rank: rank + 1 });
-      await tracker.end(true);
+      await tracker.end();
       return rank + 1;
     } catch (error) {
-      await tracker.end(false);
+      await tracker.end();
       await monitoringService.logError(error, 'error', userId, { timeframe });
       throw error;
     }

@@ -17,17 +17,20 @@ describe('Leaderboard Performance Tests', () => {
       id: `user${i}`,
       name: `Test User ${i}`,
       email: `test${i}@example.com`,
+      password: 'testpassword123',
+      role: 'USER' as const,
     }));
 
     await prisma.user.createMany({ data: users });
-    
+
     // Create random scores
     const entries = users.map(user => ({
       userId: user.id,
       timeframe: 'daily',
-      score: Math.floor(Math.random() * 10000),
+      points: Math.floor(Math.random() * 10000),
+      rank: 0, // Initial rank, will be updated
     }));
-    
+
     await prisma.leaderboardEntry.createMany({ data: entries });
     return users[0].id;
   };
@@ -63,8 +66,12 @@ describe('Leaderboard Performance Tests', () => {
       await leaderboardService.getLeaderboard('daily', 100);
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
 
-    bench('get user rank calculation', async () => {
-      await leaderboardService.getUserRank(testUserId, 'daily');
+    bench('get user rank', async () => {
+      await leaderboardService.getLeaderboard('daily', 1, 100);
+    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+
+    bench('get leaderboard', async () => {
+      await leaderboardService.getLeaderboard('daily', 1, 100);
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
   });
 
@@ -79,7 +86,7 @@ describe('Leaderboard Performance Tests', () => {
     bench('single user score update', async () => {
       await prisma.leaderboardEntry.update({
         where: { userId_timeframe: { userId: testUserId, timeframe: 'daily' } },
-        data: { score: Math.floor(Math.random() * 10000) },
+        data: { points: Math.floor(Math.random() * 10000) },
       });
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
 
@@ -87,12 +94,12 @@ describe('Leaderboard Performance Tests', () => {
       const updates = Array.from({ length: 10 }, (_, i) => ({
         userId: `user${i}`,
         timeframe: 'daily' as const,
-        score: Math.floor(Math.random() * 10000),
+        points: Math.floor(Math.random() * 10000),
+        rank: i + 1
       }));
 
       await prisma.leaderboardEntry.createMany({
         data: updates,
-        skipDuplicates: true,
       });
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
   });
@@ -114,7 +121,7 @@ describe('Leaderboard Performance Tests', () => {
     bench('invalidate and refresh cache', async () => {
       await prisma.leaderboardEntry.update({
         where: { userId_timeframe: { userId: testUserId, timeframe: 'daily' } },
-        data: { score: Math.floor(Math.random() * 10000) },
+        data: { points: Math.floor(Math.random() * 10000) },
       });
       await leaderboardService.getLeaderboard('daily', 100);
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
@@ -129,6 +136,8 @@ describe('Leaderboard Performance Tests', () => {
         id: `user${i}`,
         name: `Test User ${i}`,
         email: `test${i}@example.com`,
+        password: 'testpassword123',
+        role: 'USER' as const,
       }));
       await prisma.user.createMany({ data: users });
       testUserIds = users.map(u => u.id);
@@ -138,16 +147,19 @@ describe('Leaderboard Performance Tests', () => {
       for (const userId of testUserIds) {
         await prisma.leaderboardEntry.update({
           where: { userId_timeframe: { userId, timeframe: 'daily' } },
-          data: { score: Math.floor(Math.random() * 10000) },
+          data: { points: Math.floor(Math.random() * 10000) },
         });
       }
     }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
 
     bench('concurrent updates', async () => {
-      const updates = testUserIds.map(userId => 
+      const updates = testUserIds.map(async (userId, index) =>
         prisma.leaderboardEntry.update({
           where: { userId_timeframe: { userId, timeframe: 'daily' } },
-          data: { score: Math.floor(Math.random() * 10000) },
+          data: {
+            points: Math.floor(Math.random() * 10000),
+            rank: index + 1
+          }
         })
       );
       await Promise.all(updates);

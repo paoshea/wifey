@@ -151,3 +151,19 @@ export type Severity = z.infer<typeof errorLogSchema.shape.severity>;
 export function createValidationError(message: string): ValidationError {
   return new ValidationError(message);
 }
+
+export function getStartDateForTimeframe(timeframe: TimeFrame): Date {
+  const now = new Date();
+  switch (timeframe) {
+    case 'daily':
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    case 'weekly':
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case 'monthly':
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case 'allTime':
+      return new Date(0); // Beginning of Unix epoch
+    default:
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000); // Default to last 24h
+  }
+}

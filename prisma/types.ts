@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, UserRole } from '@prisma/client';
 
 export type GeoPoint = {
   type: 'Point';
@@ -19,7 +19,7 @@ export interface UserInput {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role: UserRole;
   preferredLanguage: string;
   image?: string;
   emailVerified?: Date;
