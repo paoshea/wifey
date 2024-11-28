@@ -20,7 +20,8 @@ import {
   AchievementProgress,
   ValidatedMeasurementInput,
   TransactionContext,
-  AchievementCheckResult
+  AchievementCheckResult,
+  RequirementSchema
 } from '../gamification/types';
 import {
   validateStatsContent,
@@ -47,7 +48,7 @@ import { apiCache } from './api-cache';
 import { LeaderboardResponse } from './leaderboard-service';
 
 class GamificationService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   // Achievement Management
   async getAchievements(userId: string): Promise<ValidatedAchievement[]> {
@@ -73,31 +74,31 @@ class GamificationService {
       );
 
       // Ensure requirements is an array and map each requirement
-      const requirements = Array.isArray(achievement.requirements) 
+      const requirements = Array.isArray(achievement.requirements)
         ? achievement.requirements.map(req => {
-            if (!req) return null;
-            try {
-              const currentValue = this.getStatValue(req.metric, userProgress.stats!.stats as StatsContent);
-              const isMet = this.checkRequirementMet(req, currentValue);
-              
-              return {
-                type: req.type as RequirementType,
-                value: req.value as number,
-                description: req.description as string,
-                metric: req.metric as string,
-                operator: req.operator as RequirementOperator,
-                currentValue,
-                isMet
-              } as ValidatedRequirement;
-            } catch {
-              return null;
-            }
-          }).filter((req): req is ValidatedRequirement => req !== null)
+          if (!req) return null;
+          try {
+            const currentValue = this.getStatValue(req.metric, userProgress.stats!.stats as StatsContent);
+            const isMet = this.checkRequirementMet(req, currentValue);
+
+            return {
+              type: req.type as RequirementType,
+              value: req.value as number,
+              description: req.description as string,
+              metric: req.metric as string,
+              operator: req.operator as RequirementOperator,
+              currentValue,
+              isMet
+            } as ValidatedRequirement;
+          } catch {
+            return null;
+          }
+        }).filter((req): req is ValidatedRequirement => req !== null)
         : [];
 
       // Validate requirements
       const validatedReqs = validateAchievementRequirements(requirements, userProgress.stats!.stats as StatsContent);
-      
+
       const validatedAchievement: ValidatedAchievement = {
         id: achievement.id,
         title: achievement.title,
@@ -402,8 +403,36 @@ class GamificationService {
 
   async checkAchievements(achievements: Achievement[], updatedStats: StatsContent, context: TransactionContext): Promise<AchievementNotification[]> {
     const notifications: AchievementNotification[] = [];
+    const userProgress = await this.getUserProgress(context.userId);
+    
+    if (!userProgress || !userProgress.stats) {
+      throw new UserProgressNotFoundError(context.userId);
+    }
 
     for (const achievement of achievements) {
+      const requirements = Array.isArray(achievement.requirements) 
+        ? achievement.requirements
+            .filter((req): req is Requirement => {
+              try {
+                return !!req && RequirementSchema.parse(req);
+              } catch {
+                return false;
+              }
+            })
+            .map(req => {
+              const currentValue = this.getStatValue(req.metric, userProgress.stats!.stats as StatsContent);
+              const isMet = this.checkRequirementMet(req, currentValue);
+              
+              return {
+                ...req,
+                currentValue,
+                isMet
+              } as ValidatedRequirement;
+            })
+        : [];
+
+      if (requirements.length === 0) continue;
+
       const userAchievement = await context.tx.userAchievement.findUnique({
         where: {
           userProgressId_achievementId: {
@@ -414,7 +443,6 @@ class GamificationService {
       });
 
       if (!userAchievement) {
-        const requirements = achievement.requirements as Requirement[];
         const progress = calculateProgress(requirements, updatedStats);
 
         if (progress >= 1) {
@@ -457,7 +485,6 @@ class GamificationService {
           });
         }
       } else {
-        const requirements = achievement.requirements as Requirement[];
         const progress = calculateProgress(requirements, updatedStats);
 
         if (progress >= 1 && !userAchievement.completed) {
@@ -528,5 +555,5 @@ export const gamificationService = new GamificationService(prisma);
 
 // Export helper functions that use the singleton instance
 export const getCachedUserProgress = (userId: string) => gamificationService.getCachedUserProgress(userId);
-export const getCachedLeaderboard = (timeframe: string = 'allTime', page: number = 1, pageSize: number = 10) => 
+export const getCachedLeaderboard = (timeframe: string = 'allTime', page: number = 1, pageSize: number = 10) =>
   gamificationService.getCachedLeaderboard(timeframe, page, pageSize);
