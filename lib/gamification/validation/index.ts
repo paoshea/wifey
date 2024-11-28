@@ -85,7 +85,11 @@ export function validateAchievementRequirements(achievement: Achievement, contex
     return false;
   }
 
-  return achievement.requirements.every(req => validateRequirement(req, context.stats));
+  return achievement.requirements.every(req => {
+    if (typeof req !== 'object' || req === null) return false;
+    const requirement = req as { metric: StatsMetric; operator: RequirementOperator; value: number };
+    return validateRequirement(requirement, context.stats);
+  });
 }
 
 // Progress calculation
@@ -94,8 +98,13 @@ export function calculateProgress(achievement: Achievement, context: { stats: St
     return 0;
   }
 
-  const metRequirements = achievement.requirements.filter(req => validateRequirement(req, context.stats));
-  return (metRequirements.length / achievement.requirements.length) * 100;
+  const validRequirements = achievement.requirements.filter(req => {
+    if (typeof req !== 'object' || req === null) return false;
+    const requirement = req as { metric: StatsMetric; operator: RequirementOperator; value: number };
+    return validateRequirement(requirement, context.stats);
+  });
+
+  return (validRequirements.length / achievement.requirements.length) * 100;
 }
 
 // Level calculation
