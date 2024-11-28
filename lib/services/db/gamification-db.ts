@@ -1,3 +1,5 @@
+// lib/services/db/gamification-db.ts
+
 import { PrismaClient, Prisma } from '@prisma/client';
 import { monitoringService } from '../../monitoring/monitoring-service';
 import type {
@@ -17,22 +19,33 @@ import {
   handleValidationError,
   validateMeasurement,
 } from './validation';
+import { 
+  RequirementType, 
+  RequirementOperator,
+  jsonToStats,
+  StatsContent,
+  isValidStatsContent
+} from '../../gamification/types';
 
 const prisma = new PrismaClient();
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
-interface StatsContent {
-  totalMeasurements: number;
-  ruralMeasurements: number;
-  uniqueLocations: number;
-  totalDistance: number;
-  contributionScore: number;
-  qualityScore: number;
-  accuracyRate: number;
-  verifiedSpots: number;
-  helpfulActions: number;
-  consecutiveDays: number;
+interface Requirement {
+  type: RequirementType;
+  value: number;
+  description: string;
+  metric: string;
+  operator: RequirementOperator;
+}
+
+interface AchievementWithTypedRequirements extends Omit<Achievement, 'requirements'> {
+  requirements: Requirement[];
+}
+
+interface ValidatedAchievement extends Omit<Achievement, 'requirements'> {
+  requirements: Requirement[];
+  progress: number;
 }
 
 interface BaseUserProgress {
@@ -91,18 +104,64 @@ function calculateUpdatedProgress(currentProgress: UserProgress, measurement: Me
   const newTotalXP = (currentProgress.totalXP || 0) + xpGained;
   const newLevel = Math.floor(Math.sqrt(newTotalXP / 100)) + 1;
   const newNextLevelXP = Math.pow(newLevel, 2) * 100;
-  
+
   return {
     currentXP: newXP,
     totalXP: newTotalXP,
     level: newLevel,
     nextLevelXP: newNextLevelXP,
-    streak: currentProgress.streak || 1,
-    lastActive: new Date(),
-    totalPoints: currentProgress.totalPoints + (measurement.isRural ? 2 : 1),
-    unlockedAchievements: currentProgress.unlockedAchievements,
-    lastAchievementAt: currentProgress.lastAchievementAt,
+    lastActive: new Date()
   };
+}
+
+// Add type guard for StatsContent
+function isStatsContent(value: unknown): value is StatsContent {
+  if (typeof value !== 'object' || value === null) return false;
+  
+  const stats = value as Partial<StatsContent>;
+  return (
+    typeof stats.totalMeasurements === 'number' &&
+    typeof stats.ruralMeasurements === 'number' &&
+    typeof stats.uniqueLocations === 'number' &&
+    typeof stats.totalDistance === 'number' &&
+    typeof stats.contributionScore === 'number' &&
+    typeof stats.qualityScore === 'number' &&
+    typeof stats.accuracyRate === 'number' &&
+    typeof stats.verifiedSpots === 'number' &&
+    typeof stats.helpfulActions === 'number' &&
+    typeof stats.consecutiveDays === 'number'
+  );
+}
+
+function validateStats(stats: Prisma.JsonValue): StatsContent {
+  return jsonToStats(stats);
+}
+
+function isValidRequirement(req: unknown): req is Requirement {
+  if (typeof req !== 'object' || req === null) return false;
+  const r = req as Partial<Requirement>;
+  return (
+    typeof r.type === 'string' &&
+    typeof r.value === 'number' &&
+    typeof r.description === 'string' &&
+    typeof r.metric === 'string' &&
+    typeof r.operator === 'string' &&
+    Object.values(RequirementType).includes(r.type as RequirementType) &&
+    Object.values(RequirementOperator).includes(r.operator as RequirementOperator)
+  );
+}
+
+function convertToRequirements(jsonReqs: Prisma.JsonValue): Requirement[] {
+  if (!Array.isArray(jsonReqs)) return [];
+  return jsonReqs
+    .filter(isValidRequirement)
+    .map(req => ({
+      type: req.type as RequirementType,
+      value: req.value,
+      description: req.description,
+      metric: req.metric,
+      operator: req.operator as RequirementOperator
+    }));
 }
 
 export class GamificationDB {
@@ -113,75 +172,63 @@ export class GamificationDB {
   }
 
   // User Progress Methods
-  async getUserProgress(userId: string): Promise<UserProgress & { 
-    stats: UserStats; 
+  async getUserProgress(userId: string): Promise<(UserProgress & {
+    stats: UserStats | null;
     achievements: Array<{
       achievementId: string;
-      achievement: Achievement;
+      achievement: ValidatedAchievement;
       unlockedAt: Date | null;
     }>;
-  }> {
+  }) | null> {
     try {
       userIdSchema.parse(userId);
+
       const progress = await this.prisma.userProgress.findUnique({
         where: { userId },
         include: {
-          stats: true,
           achievements: {
             include: {
               achievement: true
             }
-          }
-        },
+          },
+          stats: true
+        }
       });
 
       if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
+        return null;
       }
 
-      // Create default stats if they don't exist
-      if (!progress.stats) {
-        const stats = await this.prisma.userStats.create({
-          data: {
-            userProgressId: progress.id,
-            totalMeasurements: 0,
-            ruralMeasurements: 0,
-            uniqueLocations: 0,
-            totalDistance: 0,
-            contributionScore: 0,
-            verifiedSpots: 0,
-            helpfulActions: 0,
-            consecutiveDays: 0,
-            qualityScore: 0,
-            accuracyRate: 0,
-          },
-        });
-        return { 
-          ...progress, 
-          stats,
-          achievements: progress.achievements.map(ua => ({
-            achievementId: ua.achievementId,
-            achievement: ua.achievement,
-            unlockedAt: ua.completedAt
-          }))
+      const userStats = progress.stats;
+
+      // Convert achievements to ValidatedAchievement type
+      const validatedAchievements = progress.achievements.map(ua => {
+        const achievement = ua.achievement;
+        const requirements = convertToRequirements(achievement.requirements);
+        
+        const validatedAchievement: ValidatedAchievement = {
+          ...achievement,
+          requirements,
+          progress: 0, // Calculate actual progress if needed
+          tier: achievement.tier as AchievementTier,
+          rarity: achievement.tier as AchievementTier // Assuming tier is used as rarity
         };
-      }
+
+        return {
+          achievementId: ua.achievementId,
+          achievement: validatedAchievement,
+          unlockedAt: ua.unlockedAt
+        };
+      });
+
+      const stats = userStats ? validateStats(userStats.stats) : null;
 
       return {
         ...progress,
-        achievements: progress.achievements.map(ua => ({
-          achievementId: ua.achievementId,
-          achievement: ua.achievement,
-          unlockedAt: ua.completedAt
-        }))
-      } as UserProgress & { 
-        stats: UserStats; 
-        achievements: Array<{
-          achievementId: string;
-          achievement: Achievement;
-          unlockedAt: Date | null;
-        }>;
+        stats: progress.stats,
+        achievements: validatedAchievements
       };
+
     } catch (error) {
       handleValidationError(error);
       throw error;
@@ -215,10 +262,10 @@ export class GamificationDB {
         }
       });
 
-      tracker.addMetadata({ 
+      tracker.addMetadata({
         pointsAdded: points,
         newTotal: newTotalPoints,
-        newLevel: level 
+        newLevel: level
       });
       await tracker.end(true);
     } catch (error) {
@@ -241,10 +288,10 @@ export class GamificationDB {
         xpRequired = Math.floor(baseXP * Math.pow(multiplier, level - 1));
       }
 
-      tracker.addMetadata({ 
+      tracker.addMetadata({
         currentXP,
         calculatedLevel: level,
-        nextLevelXP: xpRequired 
+        nextLevelXP: xpRequired
       });
       tracker.end(true);
       return { level, nextLevelXP: xpRequired };
@@ -262,7 +309,7 @@ export class GamificationDB {
     try {
       userIdSchema.parse(userId);
       validateUserProgress(data);
-      
+
       const progress = await this.prisma.userProgress.upsert({
         where: { userId },
         update: {
@@ -276,14 +323,13 @@ export class GamificationDB {
           updatedAt: new Date(),
         },
       });
-      
+
       if (!progress) {
         throw new Error(`Failed to create or update user progress for user ${userId}`);
       }
       return progress;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -342,7 +388,6 @@ export class GamificationDB {
       return updatedStats;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -396,7 +441,6 @@ export class GamificationDB {
       return userAchievement.achievement;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -406,14 +450,7 @@ export class GamificationDB {
 
       // Get user progress first
       const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        include: {
-          achievements: {
-            include: {
-              achievement: true
-            }
-          }
-        }
+        where: { userId }
       });
 
       if (!progress) {
@@ -424,7 +461,6 @@ export class GamificationDB {
       return progress.achievements.map(ua => ua.achievement);
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -472,7 +508,6 @@ export class GamificationDB {
       return entry;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -505,7 +540,6 @@ export class GamificationDB {
       return entries;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -589,7 +623,6 @@ export class GamificationDB {
       };
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -649,7 +682,6 @@ export class GamificationDB {
       }
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -684,7 +716,6 @@ export class GamificationDB {
       return history;
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 
@@ -715,7 +746,6 @@ export class GamificationDB {
       });
     } catch (error) {
       handleValidationError(error);
-      throw error;
     }
   }
 

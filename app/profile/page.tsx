@@ -12,43 +12,35 @@ import { cn } from '@/lib/utils';
 import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
 import { useQuery } from '@tanstack/react-query';
 import { redirect } from 'next/navigation';
+import Image from 'next/image';
 import { Trophy, Medal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { ACHIEVEMENT_TIERS, TIER_COLORS, type AchievementTier } from '@/lib/gamification/constants';
-import type { ValidatedUserProgress } from '@/lib/gamification/types';
-import Image from 'next/image';
+import { TIER_COLORS } from '@/lib/gamification/constants';
+import { type ValidatedUserProgress, AchievementTier } from '@/lib/gamification/types';
+import { Achievement, UserProgress, UserStats } from '@prisma/client';
+import { RequirementType, StatsMetric } from '@/lib/gamification/types';
+
+// Type for achievement in user progress
+type UserAchievement = {
+  id: string;
+  title: string;
+  description: string;
+  tier: AchievementTier;
+  points: number;
+  progress: number;
+  completed: boolean;
+  unlockedAt: Date | null;
+};
 
 // Helper function to calculate achievement progress
-function getAchievementProgress(achievement: any, stats: any): number {
-  if (!achievement?.achievement?.requirements || !stats) return 0;
-
-  const requirements = achievement.achievement.requirements as { type: string; count: number };
-  let currentValue = 0;
-
-  switch (requirements.type) {
-    case 'rural_measurements':
-      currentValue = stats.ruralMeasurements || 0;
-      break;
-    case 'unique_locations':
-      currentValue = stats.uniqueLocations || 0;
-      break;
-    case 'measurements':
-      currentValue = stats.totalMeasurements || 0;
-      break;
-    case 'helping_others':
-      currentValue = stats.helpfulActions || 0;
-      break;
-    case 'consistency':
-      currentValue = stats.consecutiveDays || 0;
-      break;
-    default:
-      return 0;
-  }
-
-  return Math.min(100, Math.round((currentValue / requirements.count) * 100));
+function getAchievementProgress(
+  achievement: UserAchievement
+): number {
+  if (!achievement) return 0;
+  return achievement.progress;
 }
 
 const tabs = [
@@ -188,11 +180,11 @@ export default function ProfilePage() {
                   <Card key={achievement.id} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">
-                        {achievement.tier === 'LEGENDARY' ? (
+                        {achievement.tier === AchievementTier.LEGENDARY ? (
                           <Trophy className="h-5 w-5 text-yellow-500" />
-                        ) : achievement.tier === 'EPIC' ? (
+                        ) : achievement.tier === AchievementTier.EPIC ? (
                           <Medal className="h-5 w-5 text-purple-500" />
-                        ) : achievement.tier === 'RARE' ? (
+                        ) : achievement.tier === AchievementTier.RARE ? (
                           <Medal className="h-5 w-5 text-blue-500" />
                         ) : (
                           <Star className="h-5 w-5 text-gray-500" />
@@ -202,9 +194,9 @@ export default function ProfilePage() {
                       <CardDescription>{achievement.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Progress value={achievement.progress} className="mb-2" />
+                      <Progress value={getAchievementProgress(achievement)} className="mb-2" />
                       <p className="text-sm text-gray-500">
-                        Progress: {Math.round(achievement.progress)}%
+                        Progress: {Math.round(getAchievementProgress(achievement))}%
                       </p>
                     </CardContent>
                     <CardFooter>

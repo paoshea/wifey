@@ -31,6 +31,8 @@ export enum RequirementOperator {
   NOT_EQUAL = 'NOT_EQUAL'
 }
 
+export type LeaderboardTimeframe = 'daily' | 'weekly' | 'monthly' | 'allTime';
+
 // Requirement Schema
 export const RequirementSchema = z.object({
   type: z.nativeEnum(RequirementType),
@@ -57,31 +59,46 @@ export enum StatsMetric {
   CONTRIBUTION_SCORE = 'contributionScore'
 }
 
-// Stats content schema (for the JSON stats field)
+// Stats Content Schema
 export const StatsContentSchema = z.object({
-  [StatsMetric.TOTAL_MEASUREMENTS]: z.number().default(0),
-  [StatsMetric.RURAL_MEASUREMENTS]: z.number().default(0),
-  [StatsMetric.VERIFIED_SPOTS]: z.number().default(0),
-  [StatsMetric.HELPFUL_ACTIONS]: z.number().default(0),
-  [StatsMetric.CONSECUTIVE_DAYS]: z.number().default(0),
-  [StatsMetric.QUALITY_SCORE]: z.number().default(0),
-  [StatsMetric.ACCURACY_RATE]: z.number().default(0),
-  [StatsMetric.UNIQUE_LOCATIONS]: z.number().default(0),
-  [StatsMetric.TOTAL_DISTANCE]: z.number().default(0),
-  [StatsMetric.CONTRIBUTION_SCORE]: z.number().default(0)
-}).transform(stats => stats as Prisma.JsonValue);
+  totalMeasurements: z.number(),
+  ruralMeasurements: z.number(),
+  uniqueLocations: z.number(),
+  totalDistance: z.number(),
+  contributionScore: z.number(),
+  qualityScore: z.number(),
+  accuracyRate: z.number(),
+  verifiedSpots: z.number(),
+  helpfulActions: z.number(),
+  consecutiveDays: z.number()
+});
+
+export type StatsContent = z.infer<typeof StatsContentSchema>;
+
+// Convert raw stats to Prisma.JsonValue
+export const statsToJson = (stats: StatsContent): Prisma.JsonValue => {
+  return stats as Prisma.JsonValue;
+};
+
+// Convert Prisma.JsonValue to StatsContent
+export const jsonToStats = (json: Prisma.JsonValue): StatsContent => {
+  const result = StatsContentSchema.safeParse(json);
+  if (!result.success) {
+    throw new Error(`Invalid stats format: ${result.error.message}`);
+  }
+  return result.data;
+};
 
 // User Stats Schema (matching Prisma schema)
 export const UserStatsSchema = z.object({
   id: z.string(),
   userProgressId: z.string(),
-  stats: StatsContentSchema,
+  stats: StatsContentSchema.transform(statsToJson),
   createdAt: z.date(),
   updatedAt: z.date()
 });
 
 export type ValidatedUserStats = z.infer<typeof UserStatsSchema>;
-export type StatsContent = z.infer<typeof StatsContentSchema>;
 
 // Achievement Schema (matching Prisma schema)
 export const AchievementSchema = z.object({
@@ -93,13 +110,22 @@ export const AchievementSchema = z.object({
   tier: z.nativeEnum(AchievementTier),
   rarity: z.nativeEnum(AchievementTier),
   requirements: z.array(RequirementSchema),
-  target: z.number(),
-  progress: z.number().default(0),
   createdAt: z.date(),
   updatedAt: z.date()
 });
 
-export type ValidatedAchievement = z.infer<typeof AchievementSchema>;
+export interface ValidatedRequirement extends Requirement {
+  currentValue: number;
+  isMet: boolean;
+}
+
+export interface ValidatedAchievement extends Omit<Achievement, 'requirements'> {
+  requirements: ValidatedRequirement[];
+  progress: number;
+  target: number;
+  rarity: AchievementTier;
+  tier: AchievementTier;
+}
 
 // LeaderboardEntry Schema
 export const LeaderboardEntrySchema = z.object({
@@ -128,6 +154,7 @@ export const UserProgressSchema = z.object({
   lastAchievementAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  stats: StatsContentSchema.transform(statsToJson),
   achievements: z.array(z.object({
     id: z.string(),
     title: z.string(),
@@ -148,10 +175,12 @@ export const AchievementProgressSchema = z.object({
   userProgressId: z.string(),
   achievementId: z.string(),
   progress: z.number(),
+  target: z.number().optional(),
   isCompleted: z.boolean(),
   completedAt: z.date().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
+  achievement: z.lazy(() => AchievementSchema)
 });
 
 export type AchievementProgress = z.infer<typeof AchievementProgressSchema>;
@@ -177,7 +206,7 @@ export interface FormattedActivityData {
 }
 
 // Filter and Sort Types
-export type SortOption = 'tier' | 'progress' | 'unlocked';
+export type SortOption = 'tier' | 'progress' | 'date' | 'unlocked';
 
 export interface AchievementFilter {
   completed?: boolean;
@@ -275,10 +304,10 @@ export function isValidAchievementProgress(data: unknown): data is AchievementPr
 
 // Transaction Context Type
 export interface TransactionContext {
-  tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
+  tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
   userId: string;
   now: Date;
 }
 
 // Export Prisma Types
-export type { Achievement, UserProgress, UserStats };
+export type { Achievement, UserProgress, UserStats, ValidatedLeaderboardEntry };

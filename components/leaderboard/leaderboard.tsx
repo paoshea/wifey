@@ -44,7 +44,7 @@ function LeaderboardRow({ entry, highlight = false }: { entry: LeaderboardEntry;
 
       <div className="flex-shrink-0 ml-4">
         <Avatar>
-          <AvatarImage src={entry.image} alt={entry.username} />
+          <AvatarImage src={entry.image || undefined} alt={entry.username} />
           <AvatarFallback>{entry.username.charAt(0)}</AvatarFallback>
         </Avatar>
       </div>

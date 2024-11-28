@@ -1,22 +1,33 @@
+// components/gamification/gamification-service.ts
+
 import { PrismaClient } from '@prisma/client';
-import { 
-  Achievement, 
-  AchievementTier, 
-  RequirementType, 
+import {
+  Achievement,
+  AchievementTier,
+  RequirementType,
   RequirementOperator,
   StatsMetric,
   ValidatedAchievement,
+  ValidatedRequirement,
   LeaderboardTimeframe,
   StatsContent,
   UserProgress,
-  LeaderboardEntry
-} from './types';
+  Requirement
+} from '../../lib/gamification/types';
 import { validateAchievementRequirements } from './validation/achievement-validation';
 import { validateRequirement } from './validation/requirement-validation';
 import { z } from 'zod';
 
+export interface LeaderboardEntry {
+  userId: string;
+  name: string | null;
+  image: string | null;
+  points: number;
+  achievements: Achievement[];
+}
+
 export class GamificationService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   async getAchievements(userId: string): Promise<ValidatedAchievement[]> {
     const userProgress = await this.prisma.userProgress.findUnique({
@@ -33,35 +44,84 @@ export class GamificationService {
       throw new Error('User stats not found');
     }
 
-    const achievements = await this.prisma.achievement.findMany({
-      include: { requirements: true }
-    });
+    const achievements = await this.prisma.achievement.findMany();
 
     return achievements.map(achievement => {
       const userAchievement = userProgress.achievements.find(
         ua => ua.achievementId === achievement.id
       );
 
+      // Ensure requirements is an array and map each requirement
+      const requirements = Array.isArray(achievement.requirements) 
+        ? achievement.requirements.map(req => {
+            if (!req) return null;
+            try {
+              const currentValue = this.getStatValue(req.metric, userProgress.stats!.stats as StatsContent);
+              const isMet = this.checkRequirementMet(req, currentValue);
+              
+              return {
+                type: req.type as RequirementType,
+                value: req.value as number,
+                description: req.description as string,
+                metric: req.metric as string,
+                operator: req.operator as RequirementOperator,
+                currentValue,
+                isMet
+              } as ValidatedRequirement;
+            } catch {
+              return null;
+            }
+          }).filter((req): req is ValidatedRequirement => req !== null)
+        : [];
+
       // Validate requirements
-      const validatedRequirements = validateAchievementRequirements(
-        achievement.requirements,
-        userProgress.stats.stats as StatsContent
-      );
-
-      if (!validatedRequirements.success) {
-        throw new Error(`Invalid requirements for achievement ${achievement.id}`);
-      }
-
-      return {
-        ...achievement,
-        progress: userAchievement?.progress ?? 0,
-        requirements: validatedRequirements.data
+      const validatedReqs = validateAchievementRequirements(requirements, userProgress.stats!.stats as StatsContent);
+      
+      const validatedAchievement: ValidatedAchievement = {
+        id: achievement.id,
+        title: achievement.title,
+        description: achievement.description,
+        icon: achievement.icon,
+        points: achievement.points,
+        tier: achievement.tier as AchievementTier,
+        rarity: achievement.tier as AchievementTier,
+        requirements: validatedReqs.data,
+        target: achievement.target ?? 0,
+        progress: validatedReqs.progress,
+        createdAt: achievement.createdAt,
+        updatedAt: achievement.updatedAt
       };
+
+      return validatedAchievement;
     });
   }
 
+  private getStatValue(metric: string, stats: StatsContent): number {
+    const metricKey = metric as keyof StatsContent;
+    return stats[metricKey] ?? 0;
+  }
+
+  private checkRequirementMet(requirement: Requirement, value: number): boolean {
+    switch (requirement.operator) {
+      case RequirementOperator.GREATER_THAN:
+        return value > requirement.value;
+      case RequirementOperator.GREATER_THAN_EQUAL:
+        return value >= requirement.value;
+      case RequirementOperator.LESS_THAN:
+        return value < requirement.value;
+      case RequirementOperator.LESS_THAN_EQUAL:
+        return value <= requirement.value;
+      case RequirementOperator.EQUAL:
+        return value === requirement.value;
+      case RequirementOperator.NOT_EQUAL:
+        return value !== requirement.value;
+      default:
+        return false;
+    }
+  }
+
   async updateProgress(
-    userId: string, 
+    userId: string,
     stats: Partial<StatsContent>
   ): Promise<UserProgress> {
     const userProgress = await this.prisma.userProgress.findUnique({
@@ -113,15 +173,10 @@ export class GamificationService {
     timeframe: LeaderboardTimeframe
   ): Promise<LeaderboardEntry[]> {
     const leaderboard = await this.prisma.userProgress.findMany({
-      orderBy: { points: 'desc' },
+      orderBy: { totalPoints: 'desc' },
       take: 100,
       include: {
-        user: {
-          select: {
-            username: true,
-            avatarUrl: true
-          }
-        },
+        user: true,
         achievements: {
           include: { achievement: true },
           orderBy: { progress: 'desc' },
@@ -130,23 +185,12 @@ export class GamificationService {
       }
     });
 
-    if (!leaderboard) {
-      return [];
-    }
-
-    return leaderboard.map((entry, index) => ({
+    return leaderboard.map(entry => ({
       userId: entry.userId,
-      username: entry.user?.username ?? 'Unknown User',
-      points: entry.points,
-      level: entry.level,
-      rank: index + 1,
-      topAchievements: entry.achievements.map(ua => ({
-        ...ua.achievement,
-        progress: ua.progress
-      })),
-      avatarUrl: entry.user?.avatarUrl ?? null,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt
+      name: entry.user?.name ?? null,
+      image: entry.user?.image ?? null,
+      points: entry.totalPoints,
+      achievements: entry.achievements.map(a => a.achievement)
     }));
   }
 }

@@ -1,6 +1,6 @@
-// components/gamification/gamification-service.ts
+// lib/services/gamification-service.ts
 
-import { PrismaClient, Achievement, UserProgress } from '@prisma/client';
+import { PrismaClient, Achievement, UserProgress, UserStats, Prisma } from '@prisma/client';
 import { calculateProgress, validateAchievement, checkRequirementMet } from '../gamification/validation';
 import {
   StatsContent,
@@ -12,10 +12,15 @@ import {
   AchievementSchema,
   StatsContentSchema,
   UserProgressSchema,
-  ValidatedUserProgress
+  ValidatedUserProgress,
+  isValidStatsContent,
+  StatsMetric,
+  Requirement
 } from '../gamification/types';
+import { apiCache } from '../cache/api-cache';
+import { LeaderboardResponse } from '../services/leaderboard-service';
 
-export class GamificationService {
+class GamificationService {
   static processMeasurement: any;
   static async getUserProgress(userId: string): Promise<ValidatedUserProgress | null> {
     throw new Error('Method not implemented.');
@@ -33,31 +38,54 @@ export class GamificationService {
       throw new Error('User progress not found');
     }
 
-    // Update stats
-    const currentStats: StatsContent = userProgress.stats?.stats as StatsContent || {};
-    const updatedStats = StatsContentSchema.parse({
-      ...currentStats,
-      ...newStats
-    } as StatsContent);
+    // Initialize default stats
+    const defaultStats: Record<StatsMetric, number> = {
+      [StatsMetric.TOTAL_MEASUREMENTS]: 0,
+      [StatsMetric.RURAL_MEASUREMENTS]: 0,
+      [StatsMetric.VERIFIED_SPOTS]: 0,
+      [StatsMetric.HELPFUL_ACTIONS]: 0,
+      [StatsMetric.CONSECUTIVE_DAYS]: 0,
+      [StatsMetric.QUALITY_SCORE]: 0,
+      [StatsMetric.ACCURACY_RATE]: 0,
+      [StatsMetric.UNIQUE_LOCATIONS]: 0,
+      [StatsMetric.TOTAL_DISTANCE]: 0,
+      [StatsMetric.CONTRIBUTION_SCORE]: 0
+    };
+
+    // Parse existing stats if they exist
+    const existingStats = userProgress.stats?.stats
+      ? (StatsContentSchema.parse(userProgress.stats.stats) as Record<StatsMetric, number>)
+      : defaultStats;
+
+    // Merge with new stats and validate
+    const mergedStats = StatsContentSchema.parse({
+      ...existingStats,
+      ...Object.entries(newStats).reduce((acc, [key, value]) => ({
+        ...acc,
+        [key]: value
+      }), {} as Record<StatsMetric, number>)
+    }) as Prisma.JsonValue;
 
     // Update or create user stats
     await this.prisma.userStats.upsert({
       where: { userProgressId: userProgress.id },
       create: {
         userProgressId: userProgress.id,
-        stats: updatedStats
+        stats: mergedStats
       },
       update: {
-        stats: updatedStats
+        stats: mergedStats
       }
     });
 
     // Check achievements
-    const achievements = await this.checkAchievements(userId, updatedStats);
+    const achievements = await this.checkAchievements(userId, existingStats);
 
     // Update achievements
     for (const achievement of achievements) {
       const validatedAchievement = validateAchievement(achievement);
+      const requirements = validatedAchievement.requirements as Requirement[];
+
       await this.prisma.userAchievement.upsert({
         where: {
           userProgressId_achievementId: {
@@ -68,16 +96,63 @@ export class GamificationService {
         create: {
           userProgressId: userProgress.id,
           achievementId: validatedAchievement.id,
-          progress: calculateProgress(validatedAchievement.requirements, updatedStats),
+          progress: calculateProgress(requirements, existingStats),
           completed: false
         },
         update: {
-          progress: calculateProgress(validatedAchievement.requirements, updatedStats)
+          progress: calculateProgress(requirements, existingStats)
         }
       });
     }
 
     return userProgress;
+  }
+
+  private async checkAchievements(userId: string, stats: Record<StatsMetric, number>): Promise<Achievement[]> {
+    const achievements = await this.prisma.achievement.findMany({
+      where: {
+        userAchievements: {
+          none: {
+            userProgress: {
+              userId
+            },
+            completed: true
+          }
+        }
+      }
+    });
+
+    return achievements.filter(achievement => {
+      const requirements = achievement.requirements as Requirement[];
+      return checkRequirementMet(requirements, stats);
+    });
+  }
+
+  async getLeaderboard(timeframe: string = 'all'): Promise<ValidatedLeaderboardEntry[]> {
+    const entries = await this.prisma.leaderboardEntry.findMany({
+      where: {
+        timeframe
+      },
+      orderBy: {
+        points: 'desc'
+      },
+      take: 100,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        }
+      }
+    });
+
+    return entries.map(entry => LeaderboardEntrySchema.parse({
+      ...entry,
+      userName: entry.user.name,
+      userImage: entry.user.image
+    }));
   }
 
   async updateLeaderboardEntry(userId: string, data: { points: number; timeframe: string }): Promise<ValidatedLeaderboardEntry> {
@@ -112,25 +187,6 @@ export class GamificationService {
       }
     });
     return higherScores + 1;
-  }
-
-  private async checkAchievements(userId: string, stats: StatsContent): Promise<Achievement[]> {
-    const achievements = await this.prisma.achievement.findMany({
-      where: {
-        userAchievements: {
-          none: {
-            userProgress: {
-              userId
-            },
-            completed: true
-          }
-        }
-      }
-    });
-
-    return achievements.filter(achievement =>
-      checkRequirementMet(achievement.requirements, stats)
-    );
   }
 
   async getAchievements(userId: string): Promise<Achievement[]> {
@@ -222,9 +278,32 @@ export class GamificationService {
   }
 }
 
+export async function getCachedUserProgress(userId: string): Promise<ValidatedUserProgress | null> {
+  const cacheKey = `user-progress:${userId}`;
+  return await apiCache.fetch<ValidatedUserProgress | null>(
+    cacheKey,
+    async () => {
+      return await GamificationService.getUserProgress(userId);
+    },
+    300 // 5 minutes TTL
+  );
+}
+
+export async function getCachedLeaderboard(timeframe: string = 'allTime', page: number = 1, pageSize: number = 10): Promise<LeaderboardResponse> {
+  const cacheKey = `leaderboard:${timeframe}:${page}:${pageSize}`;
+  return await apiCache.fetch<LeaderboardResponse>(
+    cacheKey,
+    async () => {
+      return await GamificationService.getLeaderboard(timeframe, page, pageSize);
+    },
+    300 // 5 minutes TTL
+  );
+}
+
+// Export the class
+export { GamificationService };
+
+// Export a singleton instance
 const prisma = new PrismaClient();
 const gamificationService = new GamificationService(prisma);
-
-export const getCachedUserProgress = (userId: string) => gamificationService.getCachedUserProgress(userId);
-export const getCachedLeaderboard = (timeframe?: string) => gamificationService.getCachedLeaderboard(timeframe);
-export { GamificationService };
+export { gamificationService };

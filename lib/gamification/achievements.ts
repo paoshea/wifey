@@ -140,6 +140,17 @@ export function calculateMeasurementPoints(params: {
   return { points, xp, bonuses };
 }
 
+// Achievement progress calculation
+export function calculateAchievementProgress(achievement: { progress: number; target: number }): number {
+  if (!achievement.target) return 0;
+  return Math.min(achievement.progress / achievement.target, 1);
+}
+
+// Achievement completion check
+export function isAchievementCompleted(achievement: { progress: number; target: number }): boolean {
+  return calculateAchievementProgress(achievement) >= 1;
+}
+
 // Achievement XP calculation
 export function calculateAchievementXP(tier: AchievementTier): number {
   switch (tier) {
