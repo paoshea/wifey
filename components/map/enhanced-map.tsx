@@ -39,34 +39,34 @@ function MapFallback() {
 // Map bounds updater component
 function BoundsUpdater({ onBoundsChange }: { onBoundsChange: (bounds: L.LatLngBounds) => void }) {
   const map = useMap();
-  
+
   useEffect(() => {
     const handleMoveEnd = () => {
       onBoundsChange(map.getBounds());
     };
-    
+
     map.on('moveend', handleMoveEnd);
     return () => {
       map.off('moveend', handleMoveEnd);
     };
   }, [map, onBoundsChange]);
-  
+
   return null;
 }
 
-interface EnhancedMapProps {
+export interface EnhancedMapProps {
   initialCenter: [number, number];
   initialZoom: number;
   onMapLoad?: () => void;
   className?: string;
 }
 
-export default function EnhancedMap({
+export const EnhancedMap = ({
   initialCenter,
   initialZoom,
   onMapLoad,
   className = '',
-}: EnhancedMapProps) {
+}: EnhancedMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [coverage, setCoverage] = useState<CarrierCoverage[]>([]);
@@ -98,12 +98,16 @@ export default function EnhancedMap({
     debouncedFetchCoverage(bounds);
   }, [debouncedFetchCoverage]);
 
-  // Performance monitoring
+  // Track map load time
   useEffect(() => {
     if (isMapLoaded) {
-      performanceMonitor.trackMetric('mapLoadTime', performance.now());
+      const loadTime = performance.now();
+      performanceMonitor.trackMetric('map-load-time', loadTime, {
+        initialCenter,
+        initialZoom
+      });
     }
-  }, [isMapLoaded]);
+  }, [isMapLoaded, initialCenter, initialZoom]);
 
   // Offline support initialization
   useEffect(() => {
@@ -134,17 +138,20 @@ export default function EnhancedMap({
         spiderfyOnMaxZoom
         showCoverageOnHover
       >
-        {coverage.map((point, index) => (
+        {coverage.map((point) => (
           <Marker
-            key={`${point.lat}-${point.lng}-${index}`}
-            position={[point.lat, point.lng]}
+            key={`${point.location.lat}-${point.location.lng}`}
+            position={[point.location.lat, point.location.lng]}
             icon={coverageIcon}
           >
             <Popup>
               <div className="p-2">
-                <h3 className="font-semibold">Coverage Point</h3>
-                <p>Signal Strength: {point.signalStrength}%</p>
-                <p>Provider: {point.carrier}</p>
+                <h3 className="font-semibold">{point.provider}</h3>
+                <p>Signal: {point.signalStrength}dBm</p>
+                <p>Technology: {point.technology}</p>
+                {point.reliability && (
+                  <p>Reliability: {point.reliability.toFixed(1)}%</p>
+                )}
               </div>
             </Popup>
           </Marker>

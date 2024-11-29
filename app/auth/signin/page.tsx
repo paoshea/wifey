@@ -99,7 +99,7 @@ export default function SignIn() {
               disabled={isLoading}
               onClick={() => signIn('github', { callbackUrl })}
             >
-              <Icons.gitHub className="mr-2 h-4 w-4" />
+              <Icons.github className="mr-2 h-4 w-4" />
               Continue with GitHub
             </Button>
           </div>

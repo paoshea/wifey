@@ -1,5 +1,4 @@
 export interface CarrierCoverage {
-  [key: string]: unknown;  // Allow any type for dynamic properties
   provider: string;
   signalStrength: number;
   technology: '2G' | '3G' | '4G' | '5G';

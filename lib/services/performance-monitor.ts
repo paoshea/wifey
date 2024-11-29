@@ -151,6 +151,13 @@ export class PerformanceMonitor {
     }
   }
 
+  /**
+   * Track a performance metric
+   */
+  trackMetric(name: string, value: number, metadata?: Record<string, any>) {
+    this.recordMetric(name, value, metadata);
+  }
+
   getMetrics(
     name?: string,
     timeRange?: { start: number; end: number }
