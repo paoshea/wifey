@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         const result = await prisma.measurement.create({
           data: {
             userId,
-            type: 'signal',
+            type: 'coverage',
             value: measurement.signalStrength,
             latitude: measurement.location.lat,
             longitude: measurement.location.lng,
@@ -108,16 +108,14 @@ export async function POST(request: Request) {
         });
 
         // Process the measurement for gamification
-        await gamificationService.processMeasurement({
-          userId,
-          type: 'signal',
+        await gamificationService.processMeasurement(userId, {
+          type: 'coverage',
           value: measurement.signalStrength,
           latitude: measurement.location.lat,
           longitude: measurement.location.lng,
           isRural: false,
           isFirstInArea: false, // This will be calculated by a background job
-          operator: provider,
-          networkType: measurement.technology,
+          operator: provider
         });
 
         return result;
