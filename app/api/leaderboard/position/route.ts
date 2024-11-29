@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/auth.config';
-import { gamificationService } from '@/lib/services/gamification-service';
+import { gamificationService, type GamificationService } from '@/lib/services/gamification-service';
 
 export async function GET(req: NextRequest) {
   try {

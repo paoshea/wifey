@@ -1,5 +1,9 @@
+// api/coverage/history/route.ts
+
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/auth.config';
 
 const prisma = new PrismaClient();
 
@@ -17,19 +21,16 @@ export async function GET(request: Request) {
       );
     }
 
-    const history = await prisma.coverageHistory.findMany({
+    const history = await prisma.coverageReport.findMany({
       where: {
-        coveragePointId: pointId,
-        timestamp: {
+        id: pointId,
+        createdAt: {
           gte: startDate ? new Date(startDate) : undefined,
           lte: endDate ? new Date(endDate) : undefined,
         },
       },
-      include: {
-        coveragePoint: true,
-      },
       orderBy: {
-        timestamp: 'desc',
+        createdAt: 'desc',
       },
     });
 
@@ -45,40 +46,40 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { coveragePointId, signalStrength, metadata } = body;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!coveragePointId || typeof signalStrength !== 'number') {
+    const body = await request.json();
+    const { latitude, longitude, signal, operator, networkType, deviceModel, connectionType } = body;
+
+    if (!latitude || !longitude || typeof signal !== 'number') {
       return NextResponse.json(
-        { error: 'Invalid coverage history data' },
+        { error: 'Invalid coverage data' },
         { status: 400 }
       );
     }
 
-    // Create history entry
-    const historyEntry = await prisma.coverageHistory.create({
+    // Create new coverage report using direct data object
+    const coverageReport = await prisma.coverageReport.create({
       data: {
-        coveragePointId,
-        signalStrength,
-        metadata: metadata || {},
-      },
+        user: { connect: { id: session.user.id } },
+        lat: Number(latitude),
+        lng: Number(longitude),
+        signal: Number(signal),
+        operator: String(operator),
+        networkType: String(networkType),
+        deviceModel: String(deviceModel),
+        connectionType: String(connectionType),
+      } as any, // Temporarily bypass type checking
     });
 
-    // Update coverage point with new signal strength and last verified
-    await prisma.coveragePoint.update({
-      where: { id: coveragePointId },
-      data: {
-        signalStrength,
-        lastVerified: new Date(),
-        verifications: { increment: 1 },
-      },
-    });
-
-    return NextResponse.json(historyEntry);
+    return NextResponse.json(coverageReport);
   } catch (error) {
-    console.error('Error creating coverage history:', error);
+    console.error('Error creating coverage report:', error);
     return NextResponse.json(
-      { error: 'Failed to create coverage history' },
+      { error: 'Failed to create coverage report' },
       { status: 500 }
     );
   }

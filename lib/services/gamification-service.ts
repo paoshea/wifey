@@ -379,6 +379,39 @@ export class GamificationService {
     }
   }
 
+  async getLeaderboardPosition(userId: string): Promise<{ position: number; totalUsers: number }> {
+    try {
+      // Get all users ordered by points
+      const users = await this.prisma.user.findMany({
+        select: {
+          id: true,
+          stats: {
+            select: {
+              points: true
+            }
+          }
+        },
+        orderBy: {
+          stats: {
+            points: 'desc'
+          }
+        }
+      });
+
+      // Find the position of the user
+      const position = users.findIndex(user => user.id === userId) + 1;
+      const totalUsers = users.length;
+
+      return {
+        position,
+        totalUsers
+      };
+    } catch (error) {
+      console.error('Error getting leaderboard position:', error);
+      throw new GamificationError('Failed to get leaderboard position');
+    }
+  }
+
   private parseRequirements(achievement: Achievement): Requirement[] {
     try {
       const requirements = achievement.requirements as unknown as Array<{
@@ -468,6 +501,9 @@ export class GamificationService {
     };
   }
 }
+
+// Export the class type
+export type { GamificationService };
 
 // Export singleton instance
 export const gamificationService = new GamificationService();
