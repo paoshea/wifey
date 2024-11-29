@@ -19,19 +19,23 @@ import {
 import { Icons } from '@/components/ui/icons';
 
 interface UserNavProps {
-  user: Pick<User, 'name' | 'image' | 'email'>;
+  user?: Pick<User, 'name' | 'image' | 'email'>;
 }
 
 export function UserNav({ user }: UserNavProps) {
   const router = useRouter();
   const initials = user?.name?.split(' ').map((n) => n[0]).join('') || user?.email?.[0] || '?';
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.image || ''} alt={user.name || ''} />
+            <AvatarImage src={user?.image || ''} alt={user?.name || ''} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -39,9 +43,9 @@ export function UserNav({ user }: UserNavProps) {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-sm font-medium leading-none">{user?.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -67,7 +71,10 @@ export function UserNav({ user }: UserNavProps) {
           className="cursor-pointer"
           onSelect={async (event) => {
             event.preventDefault();
-            await signOut({ redirect: true, callbackUrl: '/auth/signin' });
+            await signOut({
+              callbackUrl: '/',
+            });
+            router.refresh();
           }}
         >
           <Icons.logout className="mr-2 h-4 w-4" />

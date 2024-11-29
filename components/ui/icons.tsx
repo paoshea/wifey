@@ -15,6 +15,9 @@ export const Icons = {
   user: dynamic(() => import('lucide-react').then((mod) => mod.User)),
   settings: dynamic(() => import('lucide-react').then((mod) => mod.Settings)),
   logout: dynamic(() => import('lucide-react').then((mod) => mod.LogOut)),
+  dashboard: dynamic(() => import('lucide-react').then((mod) => mod.LayoutDashboard)),
+  map: dynamic(() => import('lucide-react').then((mod) => mod.Map)),
+  trophy: dynamic(() => import('lucide-react').then((mod) => mod.Trophy)),
   google: ({ ...props }: LucideProps) => (
     <svg role="img" viewBox="0 0 24 24" {...props}>
       <path
