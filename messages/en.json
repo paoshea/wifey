@@ -135,8 +135,14 @@
   "onboarding": {
     "welcome": {
       "title": "Welcome to Wifey",
-      "description": "Help others stay connected by sharing coverage spots and finding reliable connections anywhere.",
+      "description": "Your community-driven WiFi and coverage companion",
       "getStarted": "Get Started"
+    },
+    "joinTribe": {
+      "title": "Join the Wifey Tribe",
+      "description": "Connect with a vibrant community of users who share their experiences and help each other stay connected.",
+      "joinButton": "Join Our Community",
+      "joinDisclaimer": "Join thousands of members already making a difference"
     },
     "coverage": {
       "intro": {

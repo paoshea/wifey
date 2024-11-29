@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Medal, Star, Signal, MapPin, History } from 'lucide-react';
 import AchievementDisplay from '@/components/coverage/achievement-display';
 import { useGamificationStore } from '@/lib/store/gamification-store';
+import { Leaderboard } from '@/components/leaderboard/leaderboard';
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -39,6 +40,7 @@ export default function Dashboard() {
           <TabsTrigger value="achievements">Achievements</TabsTrigger>
           <TabsTrigger value="contributions">Contributions</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -143,6 +145,10 @@ export default function Dashboard() {
               {/* Add activity timeline here */}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="leaderboard">
+          <Leaderboard />
         </TabsContent>
       </Tabs>
     </div>

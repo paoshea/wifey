@@ -1,6 +1,11 @@
 import { Metadata } from 'next';
 import { Roboto } from 'next/font/google';
 import ClientProviders from '@/components/ClientProviders';
+import { Inter } from 'next/font/google';
+import { Providers } from './providers';
+import { Navbar } from '@/components/layout/navbar';
+import { NotificationCenter } from '@/components/notifications/notification-center';
+import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
 const roboto = Roboto({
@@ -8,6 +13,8 @@ const roboto = Roboto({
   subsets: ['latin'],
   display: 'swap',
 });
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Wifey - Find Coverage & WiFi',
@@ -30,8 +37,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={roboto.className}>
-        <ClientProviders>{children}</ClientProviders>
+      <body className={inter.className}>
+        <Providers>
+          <div className="min-h-screen bg-background">
+            <Navbar />
+            <div className="fixed top-4 right-4 z-50">
+              <NotificationCenter />
+            </div>
+            <main className="container mx-auto px-4 py-8">
+              <ClientProviders>{children}</ClientProviders>
+            </main>
+          </div>
+          <Analytics />
+        </Providers>
       </body>
     </html>
   );

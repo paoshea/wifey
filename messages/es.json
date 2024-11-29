@@ -3,7 +3,23 @@
     "home": "Inicio",
     "coverageFinder": "Buscador de Cobertura",
     "register": "Registrarse",
-    "login": "Iniciar Sesión"
+    "login": "Iniciar Sesión",
+    "coverage": "Cobertura",
+    "wifi": "WiFi",
+    "explore": "Explorar",
+    "community": "Unirse a la Comunidad",
+    "reportCoverage": "Reporte Rápido",
+    "report": {
+      "button": "Hacer un Reporte",
+      "title": "Reportar Punto de Cobertura",
+      "description": "Ayuda a la comunidad marcando un punto con buena cobertura o WiFi.",
+      "cellular": "Cobertura Celular",
+      "wifi": "Punto de WiFi",
+      "submit": "Marcar este Punto",
+      "success": "¡Gracias por tu reporte!",
+      "appreciationMessage": "Tu contribución ayuda a mejorar nuestro mapa de cobertura.",
+      "joinMessage": "¡Únete a nuestra comunidad para seguir tus contribuciones!"
+    }
   },
   "home": {
     "title": "Encuentra Cobertura",
@@ -100,9 +116,46 @@
   "onboarding": {
     "welcome": {
       "title": "Bienvenido a Wifey",
-      "description": "Tu compañero inteligente para encontrar la mejor conectividad",
-      "explore": "Explorar funciones",
+      "description": "Tu compañero de WiFi y cobertura impulsado por la comunidad",
       "getStarted": "Comenzar"
+    },
+    "joinTribe": {
+      "title": "Únete a la Tribu Wifey",
+      "subtitle": "Sé parte de una comunidad global",
+      "description": "Conéctate con miles de personas que comparten tu pasión por mantenerse conectados",
+      "featuredNow": "Destacado Ahora",
+      "stats": {
+        "members": "10K+ Miembros",
+        "cities": "50+ Ciudades",
+        "experiences": "1M+ Experiencias Compartidas"
+      },
+      "benefits": {
+        "connect": {
+          "title": "Conecta",
+          "description": "Conoce a personas con intereses similares"
+        },
+        "share": {
+          "title": "Comparte",
+          "description": "Intercambia experiencias valiosas"
+        },
+        "achieve": {
+          "title": "Logra",
+          "description": "Gana insignias y clasificaciones"
+        },
+        "grow": {
+          "title": "Crece",
+          "description": "Aprende de la comunidad"
+        }
+      },
+      "joinButton": "Únete a la Tribu",
+      "disclaimer": "Al unirte, aceptas nuestros términos y condiciones",
+      "activeMembers": "Miembros Activos",
+      "activeCities": "Ciudades Activas"
+    },
+    "coverageIntro": {
+      "title": "Encuentra la Mejor Cobertura",
+      "description": "Descubre puntos de cobertura celular y WiFi cerca de ti",
+      "startExploring": "Comenzar a Explorar"
     },
     "features": {
       "title": "Funciones Potentes",
@@ -221,5 +274,20 @@
     "skip": "Omitir",
     "next": "Siguiente",
     "back": "Atrás"
+  },
+  "gamification": {
+    "points": "Puntos",
+    "level": "Nivel",
+    "badges": "Insignias",
+    "achievements": "Logros",
+    "leaderboard": "Tabla de Clasificación",
+    "progress": "Progreso",
+    "nextLevel": "Siguiente Nivel",
+    "pointsToNext": "Puntos para el siguiente nivel",
+    "recentActivity": "Actividad Reciente",
+    "contributions": "Contribuciones",
+    "rewards": "Recompensas",
+    "unlocked": "Desbloqueado",
+    "locked": "Bloqueado"
   }
 }

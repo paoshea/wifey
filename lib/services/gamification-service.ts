@@ -52,6 +52,7 @@ import {
 import { apiCache } from './api-cache';
 import { monitoringService } from '../monitoring/monitoring-service';
 import { TimeFrame } from '@/lib/services/db/validation';
+import { notificationService } from './notification-service';
 
 interface MeasurementResult {
   points: number;
@@ -770,6 +771,220 @@ class GamificationService {
     }
 
     return notifications;
+  }
+
+  private calculateStreakPoints(streakDays: number): number {
+    let multiplier = 1;
+    if (streakDays >= 365) multiplier = 5;
+    else if (streakDays >= 90) multiplier = 4;
+    else if (streakDays >= 30) multiplier = 3;
+    else if (streakDays >= 14) multiplier = 2;
+    else if (streakDays >= 7) multiplier = 1.5;
+
+    const basePoints = 10;
+    return Math.floor(basePoints * multiplier);
+  }
+
+  async checkStreakAchievements(userId: string, streakDays: number): Promise<Achievement[]> {
+    const achievements: Achievement[] = [];
+    const streakMilestones = [
+      { days: 1, title: 'First Check-in', points: 10, emoji: '🌱' },
+      { days: 7, title: 'Weekly Warrior', points: 50, emoji: '🔥' },
+      { days: 14, title: 'Fortnight Fighter', points: 100, emoji: '⚔️' },
+      { days: 30, title: 'Monthly Master', points: 250, emoji: '👑' },
+      { days: 90, title: 'Quarterly Champion', points: 1000, emoji: '🏆' },
+      { days: 180, title: 'Half-Year Hero', points: 2500, emoji: '🌟' },
+      { days: 365, title: 'Yearly Legend', points: 5000, emoji: '👑' }
+    ];
+
+    for (const milestone of streakMilestones) {
+      if (streakDays >= milestone.days) {
+        const existingAchievement = await this.prisma.achievement.findFirst({
+          where: {
+            userId,
+            type: 'STREAK',
+            title: milestone.title
+          }
+        });
+
+        if (!existingAchievement) {
+          const achievement = await this.prisma.achievement.create({
+            data: {
+              userId,
+              type: 'STREAK',
+              title: milestone.title,
+              description: `Maintained a ${milestone.days}-day streak!`,
+              points: milestone.points,
+              metadata: {
+                days: milestone.days,
+                emoji: milestone.emoji
+              }
+            }
+          });
+
+          // Create achievement notification
+          await notificationService.createAchievementNotification(
+            userId,
+            milestone.title,
+            milestone.points
+          );
+
+          achievements.push(achievement);
+
+          // Update user's total points
+          await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+              points: {
+                increment: milestone.points
+              }
+            }
+          });
+        }
+      }
+    }
+
+    return achievements;
+  }
+
+  async checkSpecialAchievements(userId: string): Promise<Achievement[]> {
+    const achievements: Achievement[] = [];
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        achievements: true,
+        posts: true,
+        comments: true
+      }
+    });
+
+    if (!user) return achievements;
+
+    const specialAchievements = [
+      {
+        type: 'ENGAGEMENT',
+        title: 'Social Butterfly',
+        description: 'Made your first comment',
+        condition: user.comments.length >= 1,
+        points: 25,
+        emoji: '🦋'
+      },
+      {
+        type: 'CONTENT',
+        title: 'Content Creator',
+        description: 'Created your first post',
+        condition: user.posts.length >= 1,
+        points: 50,
+        emoji: '✍️'
+      },
+      {
+        type: 'POINTS',
+        title: 'Point Collector',
+        description: 'Earned 1000 points',
+        condition: user.points >= 1000,
+        points: 100,
+        emoji: '💎'
+      },
+      {
+        type: 'ENGAGEMENT',
+        title: 'Community Pillar',
+        description: 'Made 100 comments',
+        condition: user.comments.length >= 100,
+        points: 500,
+        emoji: '🏛️'
+      }
+    ];
+
+    for (const achievement of specialAchievements) {
+      if (achievement.condition) {
+        const existingAchievement = await this.prisma.achievement.findFirst({
+          where: {
+            userId,
+            type: achievement.type,
+            title: achievement.title
+          }
+        });
+
+        if (!existingAchievement) {
+          const newAchievement = await this.prisma.achievement.create({
+            data: {
+              userId,
+              type: achievement.type,
+              title: achievement.title,
+              description: achievement.description,
+              points: achievement.points,
+              metadata: {
+                emoji: achievement.emoji
+              }
+            }
+          });
+
+          // Create achievement notification
+          await notificationService.createAchievementNotification(
+            userId,
+            achievement.title,
+            achievement.points
+          );
+
+          achievements.push(newAchievement);
+
+          // Update user's total points
+          await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+              points: {
+                increment: achievement.points
+              }
+            }
+          });
+        }
+      }
+    }
+
+    return achievements;
+  }
+
+  async getLeaderboardPosition(userId: string): Promise<{
+    position: number;
+    totalUsers: number;
+  }> {
+    const users = await this.prisma.user.findMany({
+      orderBy: {
+        points: 'desc'
+      },
+      select: {
+        id: true,
+        points: true
+      }
+    });
+
+    const position = users.findIndex((user) => user.id === userId) + 1;
+    return {
+      position,
+      totalUsers: users.length
+    };
+  }
+
+  async getLeaderboard(limit: number = 10): Promise<User[]> {
+    return this.prisma.user.findMany({
+      orderBy: {
+        points: 'desc'
+      },
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        points: true,
+        achievements: {
+          select: {
+            type: true,
+            title: true,
+            metadata: true
+          }
+        }
+      }
+    });
   }
 }
 

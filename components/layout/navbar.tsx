@@ -13,6 +13,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import Logo from '@/components/ui/logo';
+import { useSession } from 'next-auth/react';
+import { NotificationCenter } from '@/components/notifications/notification-center';
+import { UserNav } from './user-nav';
+import { MobileNav } from './mobile-nav';
 
 const links = [
   { href: '/', label: 'home', icon: Home },
@@ -30,6 +34,7 @@ export default function Navbar() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportType, setReportType] = useState<'wifi' | 'coverage'>('coverage');
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const { data: session } = useSession();
 
   const handleReport = () => {
     setReportSubmitted(true);
@@ -108,6 +113,14 @@ export default function Navbar() {
               <span className="sm:hidden">Report</span>
             </Button>
           </div>
+
+          {/* Authenticated User Links */}
+          {session?.user && (
+            <div className="flex items-center space-x-2">
+              <NotificationCenter />
+              <UserNav user={session.user} />
+            </div>
+          )}
         </div>
       </div>
 
