@@ -90,79 +90,45 @@ export async function POST(request: Request) {
             userId,
             type: 'signal',
             value: measurement.signalStrength,
-            unit: 'level',
-            location: measurement.location as Prisma.InputJsonValue,
+            latitude: measurement.location.lat,
+            longitude: measurement.location.lng,
             timestamp: new Date(measurement.timestamp),
-            device: measurement.device || {} as Prisma.InputJsonValue,
+            deviceInfo: measurement.device || {} as Prisma.InputJsonValue,
             metadata: {
               technology: measurement.technology,
               provider,
               connectionType: measurement.connectionType,
             } as Prisma.InputJsonValue,
+            networkType: measurement.technology,
+            operator: provider,
+            signalStrength: Math.round(measurement.signalStrength * 100), // Convert 0-4 to 0-100 scale
+            points: 10,
+            isRural: false, // This will be calculated by a background job
           },
         });
 
-        // Create or update coverage point
-        const coveragePoint = await prisma.coveragePoint.upsert({
-          where: {
-            provider_type_location_unique: {
-              provider,
-              type: 'cellular',
-              location: measurement.location as Prisma.InputJsonValue,
-            }
-          },
-          update: {
-            signalStrength: measurement.signalStrength,
-            technology: measurement.technology,
-            reliability: 1.0,
-            lastVerified: new Date(),
-            verifications: {
-              increment: 1
-            },
-            metadata: {
-              technology: measurement.technology,
-              provider,
-              connectionType: measurement.connectionType,
-            } as Prisma.InputJsonValue,
-          },
-          create: {
-            location: measurement.location as Prisma.InputJsonValue,
-            signalStrength: measurement.signalStrength,
-            provider,
-            type: 'cellular',
-            technology: measurement.technology,
-            reliability: 1.0,
-            userId,
-            metadata: {
-              technology: measurement.technology,
-              provider,
-              connectionType: measurement.connectionType,
-            } as Prisma.InputJsonValue,
-          },
+        // Process the measurement for gamification
+        await gamificationService.processMeasurement({
+          userId,
+          type: 'signal',
+          value: measurement.signalStrength,
+          latitude: measurement.location.lat,
+          longitude: measurement.location.lng,
+          isRural: false,
+          isFirstInArea: false, // This will be calculated by a background job
+          operator: provider,
+          networkType: measurement.technology,
         });
 
-        // Process measurement for gamification
-        await gamificationService.processMeasurement(userId, result);
-
-        return { measurement: result, coveragePoint };
+        return result;
       })
     );
 
-    // Get updated user progress for response
-    const userProgress = await gamificationService.getUserProgress(userId);
-
-    return NextResponse.json({
-      success: true,
-      processed: results.length,
-      measurements: results,
-      gamification: {
-        progress: userProgress,
-      },
-    });
+    return NextResponse.json({ success: true, results });
   } catch (error) {
     console.error('Error processing measurements:', error);
     return NextResponse.json(
-      { error: 'Failed to process measurements' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -177,50 +143,37 @@ export async function GET(request: Request) {
     }
 
     const userId = authResult.session.user.id;
+    const searchParams = new URL(request.url).searchParams;
+    
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type');
-    const startTime = searchParams.get('startTime');
-    const endTime = searchParams.get('endTime');
-    const provider = searchParams.get('provider');
+    const [measurements, total] = await Promise.all([
+      prisma.measurement.findMany({
+        where: { userId },
+        orderBy: { timestamp: 'desc' },
+        take: limit,
+        skip,
+      }),
+      prisma.measurement.count({
+        where: { userId },
+      }),
+    ]);
 
-    const query: any = {
-      userId,
-      type: type || 'signal',
-    };
-
-    if (startTime || endTime) {
-      query.timestamp = {};
-      if (startTime) query.timestamp.gte = new Date(Number(startTime));
-      if (endTime) query.timestamp.lte = new Date(Number(endTime));
-    }
-
-    if (provider) {
-      query.metadata = {
-        path: ['provider'],
-        equals: provider,
-      };
-    }
-
-    const measurements = await prisma.measurement.findMany({
-      where: query,
-      orderBy: { timestamp: 'desc' },
-      take: 100,
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+    return NextResponse.json({
+      measurements,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        currentPage: page,
+        perPage: limit,
       },
     });
-
-    return NextResponse.json(measurements);
   } catch (error) {
     console.error('Error fetching measurements:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch measurements' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

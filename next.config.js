@@ -45,13 +45,15 @@ const nextConfig = {
       };
     }
 
-    // Ignore OpenTelemetry warnings in development
-    if (process.env.NODE_ENV === 'development') {
-      config.ignoreWarnings = [
-        { module: /@opentelemetry/ },
-        { module: /node_modules/ },
-      ];
-    }
+    // Ignore OpenTelemetry warnings
+    config.ignoreWarnings = [
+      {
+        module: /node_modules\/@opentelemetry/,
+        message: /the request of a dependency is an expression/,
+      },
+      // Keep existing warning ignores
+      ...(config.ignoreWarnings || []),
+    ];
 
     return config;
   },
