@@ -497,5 +497,35 @@
       "join": "Join Now",
       "explore": "Explore Features"
     }
+  },
+  "settings": {
+    "notifications": {
+      "title": "Notification Settings",
+      "authRequired": "Authentication Required",
+      "authRequiredDescription": "Please sign in to access notification settings",
+      "general": {
+        "title": "General Settings",
+        "push": "Push Notifications",
+        "pushDescription": "Receive instant updates on your device",
+        "email": "Email Notifications",
+        "emailDescription": "Get important updates in your inbox"
+      },
+      "categories": {
+        "title": "Notification Categories",
+        "coverage": "Coverage Updates",
+        "coverageDescription": "Get notified about cellular coverage changes in your area",
+        "wifi": "WiFi Hotspots",
+        "wifiDescription": "Notifications about new or updated WiFi locations",
+        "achievements": "Achievements",
+        "achievementsDescription": "Stay updated on your badges and rewards",
+        "nearby": "Nearby Alerts",
+        "nearbyDescription": "Get notified about network coverage near you"
+      },
+      "saveButton": "Save Settings",
+      "saveSuccess": "Settings Saved",
+      "saveSuccessDescription": "Your notification preferences have been updated",
+      "saveError": "Error Saving Settings",
+      "saveErrorDescription": "There was a problem saving your settings. Please try again."
+    }
   }
 }
