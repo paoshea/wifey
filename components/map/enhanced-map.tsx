@@ -8,6 +8,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import * as L from 'leaflet';
 import { MapService } from '@/lib/services/map/map-service';
 import { CarrierCoverage } from '@/lib/carriers/types';
+import { CoverageSearchResult } from '@/lib/types';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { performanceMonitor } from '@/lib/services/performance-monitor';
 import 'leaflet/dist/leaflet.css';
@@ -59,6 +60,7 @@ export interface EnhancedMapProps {
   initialZoom: number;
   onMapLoad?: () => void;
   className?: string;
+  searchResult?: CoverageSearchResult | null;
 }
 
 export const EnhancedMap = ({
@@ -66,6 +68,7 @@ export const EnhancedMap = ({
   initialZoom,
   onMapLoad,
   className = '',
+  searchResult = null
 }: EnhancedMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -97,6 +100,13 @@ export const EnhancedMap = ({
   const handleBoundsChange = useCallback((bounds: L.LatLngBounds) => {
     debouncedFetchCoverage(bounds);
   }, [debouncedFetchCoverage]);
+
+  // Update coverage when search result changes
+  useEffect(() => {
+    if (searchResult) {
+      setCoverage(searchResult.coverage);
+    }
+  }, [searchResult]);
 
   // Track map load time
   useEffect(() => {

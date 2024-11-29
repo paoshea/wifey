@@ -33,7 +33,7 @@ interface CoverageFinderProps {
 
 export function CoverageFinder({ initialLocation }: CoverageFinderProps) {
   const { toast } = useToast();
-  const [searchResults, setSearchResults] = useState<CoverageSearchResult[]>([]);
+  const [searchResult, setSearchResult] = useState<CoverageSearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm({
@@ -58,20 +58,13 @@ export function CoverageFinder({ initialLocation }: CoverageFinderProps) {
         throw new Error('Failed to search coverage');
       }
 
-      const results = await response.json();
-      setSearchResults(results);
-      
-      if (results.length === 0) {
-        toast({
-          title: 'No Results Found',
-          description: 'Try expanding your search radius or changing location',
-          variant: 'default',
-        });
-      }
+      const result = await response.json();
+      setSearchResult(result);
     } catch (error) {
+      console.error('Error searching coverage:', error);
       toast({
         title: 'Error',
-        description: 'Failed to search coverage points',
+        description: 'Failed to search coverage. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -189,7 +182,7 @@ export function CoverageFinder({ initialLocation }: CoverageFinderProps) {
               : [10.2, -84.3]
           }
           initialZoom={12}
-          searchResults={searchResults}
+          searchResult={searchResult}
         />
       </div>
     </div>
