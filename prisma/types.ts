@@ -2,8 +2,6 @@ import type {
   Prisma,
   PrismaClient,
   UserRole,
-  OperatorType,
-  ComparisonOperator,
   User,
   WifiSpot,
   CoverageReport,
@@ -16,8 +14,6 @@ export type {
   Prisma,
   PrismaClient,
   UserRole,
-  OperatorType,
-  ComparisonOperator,
   User,
   WifiSpot,
   CoverageReport,
@@ -61,12 +57,48 @@ export type AchievementOrderByWithRelationInput = Prisma.AchievementOrderByWithR
 export type UserStreakOrderByWithRelationInput = Prisma.UserStreakOrderByWithRelationInput;
 
 // Filter Types
+export enum OperatorType {
+  EQUALS = 'equals',
+  CONTAINS = 'contains',
+  STARTS_WITH = 'startsWith',
+  ENDS_WITH = 'endsWith'
+}
+
+export enum ComparisonOperator {
+  GT = 'gt',
+  LT = 'lt',
+  GTE = 'gte',
+  LTE = 'lte',
+  EQ = 'eq'
+}
+
 export type DateTimeFilter = Prisma.DateTimeFilter;
 export type StringFilter = Prisma.StringFilter;
 export type IntFilter = Prisma.IntFilter;
 export type FloatFilter = Prisma.FloatFilter;
 export type BoolFilter = Prisma.BoolFilter;
-export type JsonFilter = Prisma.JsonFilter;
+
+export type JsonFilter = Prisma.JsonValue;
+export type JsonObject = Prisma.JsonObject;
+export type JsonArray = Prisma.JsonArray;
+
+export function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function isJsonArray(value: unknown): value is JsonArray {
+  return Array.isArray(value);
+}
+
+export function isJsonValue(value: unknown): value is JsonFilter {
+  if (value === null) return true;
+  if (typeof value === 'string') return true;
+  if (typeof value === 'number') return true;
+  if (typeof value === 'boolean') return true;
+  if (isJsonObject(value)) return true;
+  if (isJsonArray(value)) return true;
+  return false;
+}
 
 // Payload Types with Relations
 export type UserWithRelations = Prisma.UserGetPayload<{

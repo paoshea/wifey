@@ -1,64 +1,150 @@
 import { PrismaClient } from '@prisma/client';
-import { AchievementCreateInput } from '../types';
+import { ComparisonOperator } from '../types';
 
-const achievementTemplates: Omit<AchievementCreateInput, 'userId'>[] = [
+export interface AchievementRequirement {
+  type: 'achievement';
+  metric: string;
+  operator: ComparisonOperator;
+  value: number;
+  description: string;
+}
+
+export interface AchievementTemplate {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  icon: string;
+  requirements: AchievementRequirement[];
+}
+
+const achievementTemplates: AchievementTemplate[] = [
   {
-    title: "First Steps",
-    description: "Make your first WiFi spot measurement",
+    id: 'first-steps',
+    title: 'First Steps',
+    description: 'Begin your journey by making your first measurement',
     points: 100,
-    type: "wifi_spots",
-    threshold: 1,
-    icon: "🎯",
-    unlockedAt: null
+    icon: '🎯',
+    requirements: [
+      {
+        type: 'achievement',
+        metric: 'totalMeasurements',
+        operator: ComparisonOperator.GTE,
+        value: 1,
+        description: 'Make your first measurement'
+      }
+    ]
   },
   {
-    title: "Rural Explorer",
-    description: "Take measurements in rural areas",
-    points: 250,
-    type: "coverage_reports",
-    threshold: 10,
-    icon: "🌾",
-    unlockedAt: null
-  },
-  {
-    title: "Coverage Champion",
-    description: "Become a top contributor with verified measurements",
-    points: 1000,
-    type: "coverage_reports",
-    threshold: 50,
-    icon: "👑",
-    unlockedAt: null
-  },
-  {
-    title: "Streak Master",
-    description: "Maintain a daily streak of measurements",
+    id: 'consistent-contributor',
+    title: 'Consistent Contributor',
+    description: 'Maintain a 7-day measurement streak',
     points: 500,
-    type: "streak",
-    threshold: 7,
-    icon: "🔥",
-    unlockedAt: null
+    icon: '🔥',
+    requirements: [
+      {
+        type: 'achievement',
+        metric: 'consecutiveDays',
+        operator: ComparisonOperator.GTE,
+        value: 7,
+        description: 'Maintain a streak of 7 days'
+      }
+    ]
+  },
+  {
+    id: 'quality-master',
+    title: 'Quality Master',
+    description: 'Achieve a high quality score across your measurements',
+    points: 300,
+    icon: '⭐',
+    requirements: [
+      {
+        type: 'achievement',
+        metric: 'qualityScore',
+        operator: ComparisonOperator.GTE,
+        value: 90,
+        description: 'Maintain a quality score of 90 or higher'
+      }
+    ]
+  },
+  {
+    id: 'rural-explorer',
+    title: 'Rural Explorer',
+    description: 'Map connectivity in rural areas',
+    points: 400,
+    icon: '🌾',
+    requirements: [
+      {
+        type: 'achievement',
+        metric: 'ruralMeasurements',
+        operator: ComparisonOperator.GTE,
+        value: 10,
+        description: 'Make 10 measurements in rural areas'
+      }
+    ]
+  },
+  {
+    id: 'distance-champion',
+    title: 'Distance Champion',
+    description: 'Cover significant distance while mapping',
+    points: 300,
+    icon: '🏃',
+    requirements: [
+      {
+        type: 'achievement',
+        metric: 'totalDistance',
+        operator: ComparisonOperator.GTE,
+        value: 100,
+        description: 'Cover 100km while making measurements'
+      }
+    ]
   }
 ];
 
-export async function seedAchievements(prisma: PrismaClient) {
-  console.log('Seeding achievements...');
+export async function seedAchievements(prisma: PrismaClient, userId: string) {
+  const achievements = [];
 
-  // Get all users
-  const users = await prisma.user.findMany();
+  for (const template of achievementTemplates) {
+    const achievement = await prisma.achievement.create({
+      data: {
+        id: template.id,
+        title: template.title,
+        description: template.description,
+        points: template.points,
+        icon: template.icon,
+        user: {
+          connect: {
+            id: userId
+          }
+        },
+        requirements: {
+          create: template.requirements.map(req => ({
+            type: req.type,
+            metric: req.metric,
+            operator: req.operator,
+            value: req.value,
+            description: req.description
+          }))
+        }
+      },
+      include: {
+        requirements: true
+      }
+    });
 
-  // Create achievements for each user
-  for (const user of users) {
-    for (const template of achievementTemplates) {
-      const achievement: AchievementCreateInput = {
-        ...template,
-        userId: user.id
-      };
-      
-      await prisma.achievement.create({
-        data: achievement
-      });
-    }
+    achievements.push(achievement);
   }
 
-  console.log('Achievement seeding completed');
+  return achievements;
+}
+
+export async function createDefaultAchievements(prisma: PrismaClient, userId: string) {
+  try {
+    const achievements = await seedAchievements(prisma, userId);
+    console.log(`Created ${achievements.length} achievements for user ${userId}`);
+    return achievements;
+  } catch (error) {
+    console.error('Error creating default achievements:', error);
+    throw error;
+  }
 }

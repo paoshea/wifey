@@ -3,8 +3,15 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/auth.config';
 import { gamificationService } from '@/lib/services/gamification-service';
 import { TimeFrame } from '@/lib/gamification/types';
+import { z } from 'zod';
 
-export async function GET(req: NextRequest) {
+const LeaderboardQuerySchema = z.object({
+  timeframe: z.nativeEnum(TimeFrame).optional().default(TimeFrame.ALL_TIME),
+  limit: z.coerce.number().min(1).max(100).optional().default(10),
+  page: z.coerce.number().min(1).optional().default(1)
+});
+
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -15,17 +22,24 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const limit = Number(req.nextUrl.searchParams.get('limit')) || 10;
-    const timeframe = (req.nextUrl.searchParams.get('timeframe') as TimeFrame) || TimeFrame.ALL_TIME;
-    const page = Number(req.nextUrl.searchParams.get('page')) || 1;
+    const { searchParams } = new URL(request.url);
+    const query = LeaderboardQuerySchema.parse({
+      timeframe: searchParams.get('timeframe'),
+      limit: searchParams.get('limit'),
+      page: searchParams.get('page')
+    });
 
-    const leaderboard = await gamificationService.getLeaderboard(timeframe, page, limit);
+    const response = await gamificationService.getLeaderboard(
+      query.timeframe,
+      query.page,
+      query.limit
+    );
 
-    return NextResponse.json(leaderboard);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: 'Failed to fetch leaderboard' },
       { status: 500 }
     );
   }

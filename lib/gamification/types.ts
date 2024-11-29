@@ -5,37 +5,35 @@ import { type Achievement, type UserProgress, type UserStats, type PrismaClient,
 export enum StatsMetric {
   TOTAL_MEASUREMENTS = 'totalMeasurements',
   RURAL_MEASUREMENTS = 'ruralMeasurements',
-  VERIFIED_SPOTS = 'verifiedSpots',
-  HELPFUL_ACTIONS = 'helpfulActions',
-  CONSECUTIVE_DAYS = 'consecutiveDays',
-  QUALITY_SCORE = 'qualityScore',
-  ACCURACY_RATE = 'accuracyRate',
   UNIQUE_LOCATIONS = 'uniqueLocations',
   TOTAL_DISTANCE = 'totalDistance',
-  CONTRIBUTION_SCORE = 'contributionScore'
+  CONTRIBUTION_SCORE = 'contributionScore',
+  QUALITY_SCORE = 'qualityScore',
+  ACCURACY_RATE = 'accuracyRate',
+  VERIFIED_SPOTS = 'verifiedSpots',
+  HELPFUL_ACTIONS = 'helpfulActions'
 }
 
 export enum RequirementType {
-  STAT = 'STAT',
-  STREAK = 'STREAK',
-  LEVEL = 'LEVEL',
-  ACHIEVEMENT = 'ACHIEVEMENT'
+  STAT = 'stat',
+  ACHIEVEMENT = 'achievement',
+  COLLECTION = 'collection'
 }
 
 export enum RequirementOperator {
-  GREATER_THAN = 'GREATER_THAN',
-  LESS_THAN = 'LESS_THAN',
-  EQUAL = 'EQUAL',
-  NOT_EQUAL = 'NOT_EQUAL',
-  GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
-  LESS_THAN_EQUAL = 'LESS_THAN_EQUAL'
+  GT = 'gt',
+  GTE = 'gte',
+  LT = 'lt',
+  LTE = 'lte',
+  EQ = 'eq'
 }
 
 export enum AchievementTier {
-  BRONZE = 'BRONZE',
-  SILVER = 'SILVER',
-  GOLD = 'GOLD',
-  PLATINUM = 'PLATINUM'
+  BRONZE = 'bronze',
+  COMMON = 'common',
+  RARE = 'rare',
+  EPIC = 'epic',
+  LEGENDARY = 'legendary'
 }
 
 export enum TimeFrame {
@@ -46,108 +44,15 @@ export enum TimeFrame {
 }
 
 // Core Types
-export type LeaderboardTimeframe = 'daily' | 'weekly' | 'monthly' | 'allTime';
+export interface MeasurementStats {
+  isUnique: boolean;
+  distance: number;
+  contributionScore: number;
+  qualityScore: number;
+  accuracy?: number;
+}
 
-// Schemas
-export const RequirementSchema = z.object({
-  type: z.nativeEnum(RequirementType),
-  metric: z.string(),
-  value: z.number(),
-  operator: z.nativeEnum(RequirementOperator),
-  description: z.string()
-});
-
-export type AchievementRequirement = z.infer<typeof RequirementSchema>;
-
-export const StatsContentSchema = z.object({
-  totalMeasurements: z.number(),
-  ruralMeasurements: z.number(),
-  uniqueLocations: z.number(),
-  totalDistance: z.number(),
-  contributionScore: z.number(),
-  qualityScore: z.number(),
-  accuracyRate: z.number(),
-  verifiedSpots: z.number(),
-  helpfulActions: z.number(),
-  consecutiveDays: z.number()
-});
-
-export const AchievementSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  icon: z.string(),
-  points: z.number(),
-  tier: z.nativeEnum(AchievementTier),
-  rarity: z.nativeEnum(AchievementTier),
-  requirements: z.array(RequirementSchema),
-  createdAt: z.date(),
-  updatedAt: z.date()
-});
-
-export const UserStatsSchema = z.object({
-  id: z.string(),
-  userProgressId: z.string(),
-  stats: StatsContentSchema.transform(statsToJson),
-  createdAt: z.date(),
-  updatedAt: z.date()
-});
-
-export const UserProgressSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  totalPoints: z.number(),
-  level: z.number(),
-  currentXP: z.number(),
-  totalXP: z.number(),
-  nextLevelXP: z.number(),
-  streak: z.number(),
-  lastActive: z.date(),
-  unlockedAchievements: z.number(),
-  lastAchievementAt: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  stats: StatsContentSchema.transform(statsToJson),
-  achievements: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string(),
-    tier: z.nativeEnum(AchievementTier),
-    points: z.number(),
-    progress: z.number(),
-    completed: z.boolean(),
-    unlockedAt: z.date().nullable()
-  }))
-});
-
-export const MeasurementInputSchema = z.object({
-  type: z.enum(['wifi', 'coverage']),
-  value: z.number(),
-  latitude: z.number(),
-  longitude: z.number(),
-  accuracy: z.number().optional(),
-  altitude: z.number().optional(),
-  speed: z.number().optional(),
-  deviceInfo: z.record(z.string(), z.any()).optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-  ssid: z.string().optional(),
-  bssid: z.string().optional(),
-  frequency: z.number().optional(),
-  channel: z.number().optional(),
-  security: z.string().optional(),
-  operator: z.string().optional(),
-  networkType: z.string().optional(),
-  signalStrength: z.number().optional(),
-  isRural: z.boolean(),
-  isFirstInArea: z.boolean(),
-  distance: z.number().optional()
-});
-
-// Inferred Types
-export type Requirement = z.infer<typeof RequirementSchema>;
-export type StatsContent = z.infer<typeof StatsContentSchema>;
-export type MeasurementInput = z.infer<typeof MeasurementInputSchema>;
-export type ValidatedMeasurementInput = {
+export interface ValidatedMeasurementInput {
   type: 'wifi' | 'coverage';
   value: number;
   latitude: number;
@@ -157,9 +62,182 @@ export type ValidatedMeasurementInput = {
   quality?: number;
   operator?: string;
   accuracy?: number;
-};
+  stats: MeasurementStats;
+  streak: number;
+}
+
+export interface MeasurementBonus {
+  name: string;
+  value: number;
+  description: string;
+}
+
+export interface MeasurementPoints {
+  value: number;
+  xp: number;
+  bonuses: Record<string, number>;
+}
+
+export interface MeasurementResult {
+  points: MeasurementPoints;
+}
+
+export interface UserStats {
+  stats: {
+    points: number;
+    totalMeasurements: number;
+    ruralMeasurements: number;
+    uniqueLocations: number;
+    totalDistance: number;
+    contributionScore: number;
+    qualityScore: number;
+    accuracyRate: number;
+    verifiedSpots: number;
+    helpfulActions: number;
+    consecutiveDays: number;
+  };
+}
+
+export interface AchievementRequirement {
+  metric: StatsMetric;
+  operator: RequirementOperator;
+  value: number;
+  type: RequirementType;
+  description: string;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  tier: AchievementTier;
+  requirements: AchievementRequirement[];
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  progress?: number;
+  isCompleted?: boolean;
+}
+
+export interface ValidatedAchievement extends Achievement {
+  progress: number;
+  isCompleted: boolean;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  points: number;
+  rank: number;
+  stats: {
+    totalMeasurements: number;
+    contributionScore: number;
+    qualityScore: number;
+  };
+}
+
+export interface LeaderboardResponse {
+  timeframe: TimeFrame;
+  entries: LeaderboardEntry[];
+  totalUsers: number;
+  userRank?: number;
+}
+
+// Schemas
+export const MeasurementStatsSchema = z.object({
+  isUnique: z.boolean(),
+  distance: z.number(),
+  contributionScore: z.number(),
+  qualityScore: z.number(),
+  accuracy: z.number().optional()
+});
+
+export const ValidatedMeasurementInputSchema = z.object({
+  type: z.enum(['wifi', 'coverage']),
+  value: z.number(),
+  latitude: z.number(),
+  longitude: z.number(),
+  isRural: z.boolean(),
+  isFirstInArea: z.boolean(),
+  quality: z.number().optional(),
+  operator: z.string().optional(),
+  accuracy: z.number().optional(),
+  stats: MeasurementStatsSchema,
+  streak: z.number()
+});
+
+export const MeasurementPointsSchema = z.object({
+  value: z.number(),
+  xp: z.number(),
+  bonuses: z.record(z.string(), z.number())
+});
+
+export const MeasurementResultSchema = z.object({
+  points: MeasurementPointsSchema
+});
+
+export const UserStatsSchema = z.object({
+  stats: z.object({
+    points: z.number(),
+    totalMeasurements: z.number(),
+    ruralMeasurements: z.number(),
+    uniqueLocations: z.number(),
+    totalDistance: z.number(),
+    contributionScore: z.number(),
+    qualityScore: z.number(),
+    accuracyRate: z.number(),
+    verifiedSpots: z.number(),
+    helpfulActions: z.number(),
+    consecutiveDays: z.number()
+  })
+});
+
+export const AchievementRequirementSchema = z.object({
+  metric: z.nativeEnum(StatsMetric),
+  operator: z.nativeEnum(RequirementOperator),
+  value: z.number(),
+  type: z.nativeEnum(RequirementType),
+  description: z.string()
+});
+
+export const AchievementSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  tier: z.nativeEnum(AchievementTier),
+  requirements: z.array(AchievementRequirementSchema),
+  userId: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  progress: z.number().optional(),
+  isCompleted: z.boolean().optional()
+});
+
+export const LeaderboardEntrySchema = z.object({
+  userId: z.string(),
+  username: z.string(),
+  points: z.number(),
+  rank: z.number(),
+  stats: z.object({
+    totalMeasurements: z.number(),
+    contributionScore: z.number(),
+    qualityScore: z.number()
+  })
+});
+
+export const LeaderboardResponseSchema = z.object({
+  timeframe: z.nativeEnum(TimeFrame),
+  entries: z.array(LeaderboardEntrySchema),
+  totalUsers: z.number(),
+  userRank: z.number().optional()
+});
+
+// Inferred Types
+export type Requirement = z.infer<typeof AchievementRequirementSchema>;
+export type StatsContent = z.infer<typeof UserStatsSchema>['stats'];
+export type MeasurementInput = z.infer<typeof ValidatedMeasurementInputSchema>;
+export type ValidatedMeasurementInput = z.infer<typeof ValidatedMeasurementInputSchema>;
 export type ValidatedUserStats = z.infer<typeof UserStatsSchema>;
-export type ValidatedUserProgress = z.infer<typeof UserProgressSchema>;
 export type ValidatedAchievement = {
   id: string;
   title: string;
@@ -178,7 +256,7 @@ export type ValidatedAchievement = {
   }[];
   progress: number;
   target: number;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  tier: 'BRONZE' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 };
 
 // Utility Types
@@ -187,18 +265,12 @@ export type StatsUpdate = {
 };
 
 // Result Types
-export interface MeasurementResult {
-  points: number;
-  achievements: AchievementNotification[];
-  stats: StatsContent;
-}
-
 export interface AchievementNotification {
   achievementId: string;
   title: string;
   description: string;
   points: number;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  tier: 'BRONZE' | 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 }
 
 // Re-export Prisma types
@@ -206,11 +278,11 @@ export type { Achievement, UserProgress, UserStats };
 
 // Type Guards
 export function isValidStatsContent(data: unknown): data is StatsContent {
-  return StatsContentSchema.safeParse(data).success;
+  return UserStatsSchema.safeParse(data).success;
 }
 
 export function isValidMeasurementInput(data: unknown): data is MeasurementInput {
-  return MeasurementInputSchema.safeParse(data).success;
+  return ValidatedMeasurementInputSchema.safeParse(data).success;
 }
 
 // Helper Functions
@@ -219,9 +291,9 @@ export const statsToJson = (stats: StatsContent): Prisma.JsonValue => {
 };
 
 export const jsonToStats = (json: Prisma.JsonValue): StatsContent => {
-  const result = StatsContentSchema.safeParse(json);
+  const result = UserStatsSchema.safeParse(json);
   if (!result.success) {
     throw new Error(`Invalid stats format: ${result.error.message}`);
   }
-  return result.data;
+  return result.data.stats;
 };
