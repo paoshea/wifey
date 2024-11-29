@@ -19,21 +19,14 @@ type PrismaCoverageReport = Prisma.CoverageReportGetPayload<{}>;
 
 interface CoveragePoint {
   id: string;
-  operator: string;
   latitude: number;
   longitude: number;
   signal: number;
-  networkType: string;
-  rsrp?: number | null;
-  rsrq?: number | null;
-  rssi?: number | null;
-  rssnr?: number | null;
   speed?: number | null;
   createdAt: Date;
 }
 
 interface ProviderAnalysis {
-  provider: string;
   avgSignal: number;
   avgSpeed: number | null;
   points: number;
@@ -66,15 +59,9 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        operator: true,
         latitude: true,
         longitude: true,
         signal: true,
-        networkType: true,
-        rsrp: true,
-        rsrq: true,
-        rssi: true,
-        rssnr: true,
         speed: true,
         createdAt: true,
       },
@@ -89,9 +76,7 @@ export async function GET(request: NextRequest) {
     const providerMap = new Map<string, ProviderAnalysis>();
     
     points.forEach((point) => {
-      const provider = point.operator;
-      const current = providerMap.get(provider) || {
-        provider,
+      const current = providerMap.get('default') || {
         avgSignal: 0,
         avgSpeed: 0,
         points: 0,
@@ -103,7 +88,7 @@ export async function GET(request: NextRequest) {
       }
       current.points++;
 
-      providerMap.set(provider, current);
+      providerMap.set('default', current);
     });
 
     return NextResponse.json({

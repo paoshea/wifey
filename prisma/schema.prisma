@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -105,46 +102,43 @@ model WifiSpot {
 }
 
 model CoverageReport {
-  id              String       @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String       @db.ObjectId
-  latitude        Float
-  longitude       Float
-  signal          Float        // Signal strength in dBm
-  speed           Float?       // Speed in m/s
-  accuracy        Float?       // GPS accuracy in meters
-  altitude        Float?       // Altitude in meters
-  operator        OperatorType // Mobile operator
-  networkType     String       // e.g., "LTE", "5G", "3G"
-  deviceModel     String       // Device model name
-  isRoaming       Boolean      @default(false)
-  isIndoor        Boolean      @default(false)
-  batteryLevel    Float?       // Battery level percentage
-  temperature     Float?       // Device temperature in Celsius
-  connectionType  String       // e.g., "cellular", "wifi"
-  cellId          String?      // Cell tower identifier
-  mcc             String?      // Mobile Country Code
-  mnc             String?      // Mobile Network Code
-  lac             String?      // Location Area Code
-  rsrp            Float?       // Reference Signal Received Power (4G/5G)
-  rsrq            Float?       // Reference Signal Received Quality (4G/5G)
-  rssi            Float?       // Received Signal Strength Indicator
-  rssnr           Float?       // Reference Signal Signal-to-Noise Ratio
-  cqi             Int?         // Channel Quality Indicator
-  timingAdvance   Int?         // Timing advance value
-  asu             Int?         // Arbitrary Strength Unit
-  distance        Float?       // Distance from previous measurement in meters
-  isRural         Boolean      @default(false)
-  points          Int          @default(10) // Gamification points earned
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  user            User         @relation(fields: [userId], references: [id])
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  latitude       Float
+  longitude      Float
+  signal         Float
+  speed          Float?
+  operator       String
+  networkType    String
+  deviceModel    String
+  connectionType String
+  createdAt      DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([latitude, longitude])
-  @@index([operator])
-  @@index([createdAt])
-  @@index([networkType])
+}
+
+model CoveragePoint {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime          @default(now())
+  
+  history     CoverageHistory[]
+
+  @@index([latitude, longitude])
+}
+
+model CoverageHistory {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  coveragePointId String         @db.ObjectId
+  timestamp       DateTime       @default(now())
+
+  coveragePoint   CoveragePoint @relation(fields: [coveragePointId], references: [id])
+
+  @@index([coveragePointId])
 }
 
 model Achievement {

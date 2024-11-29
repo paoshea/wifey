@@ -4,33 +4,17 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
+import { Prisma } from '@prisma/client';
 
 const contributionSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
-  operator: z.enum(['KOLBI', 'MOVISTAR', 'CLARO', 'LIBERTY']),
-  signal: z.number().min(-150).max(0),
+  signal: z.number().min(-150).max(0), // Signal strength in dBm
   speed: z.number().optional(),
-  accuracy: z.number().optional(),
-  altitude: z.number().optional(),
-  networkType: z.string(),
-  deviceModel: z.string(),
-  isRoaming: z.boolean().optional(),
-  isIndoor: z.boolean().optional(),
-  batteryLevel: z.number().optional(),
-  temperature: z.number().optional(),
-  connectionType: z.string(),
-  cellId: z.string().optional(),
-  mcc: z.string().optional(),
-  mnc: z.string().optional(),
-  lac: z.string().optional(),
-  rsrp: z.number().optional(),
-  rsrq: z.number().optional(),
-  rssi: z.number().optional(),
-  rssnr: z.number().optional(),
-  cqi: z.number().int().optional(),
-  timingAdvance: z.number().int().optional(),
-  asu: z.number().int().optional(),
+  operator: z.string(),        // Required field
+  networkType: z.string(),     // Required field
+  deviceModel: z.string(),     // Required field
+  connectionType: z.string(),  // Required field
 });
 
 export async function POST(request: NextRequest) {
@@ -47,33 +31,15 @@ export async function POST(request: NextRequest) {
     const coverageReport = await prisma.coverageReport.create({
       data: {
         userId: session.user.id,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        operator: data.operator,
+        lat: data.latitude,
+        lng: data.longitude,
         signal: data.signal,
         speed: data.speed,
-        accuracy: data.accuracy,
-        altitude: data.altitude,
+        operator: data.operator,
         networkType: data.networkType,
         deviceModel: data.deviceModel,
-        isRoaming: data.isRoaming ?? false,
-        isIndoor: data.isIndoor ?? false,
-        batteryLevel: data.batteryLevel,
-        temperature: data.temperature,
         connectionType: data.connectionType,
-        cellId: data.cellId,
-        mcc: data.mcc,
-        mnc: data.mnc,
-        lac: data.lac,
-        rsrp: data.rsrp,
-        rsrq: data.rsrq,
-        rssi: data.rssi,
-        rssnr: data.rssnr,
-        cqi: data.cqi,
-        timingAdvance: data.timingAdvance,
-        asu: data.asu,
-        points: 10, // Default points for contribution
-      },
+      } as Prisma.CoverageReportUncheckedCreateInput,
     });
 
     // Update user stats
@@ -96,6 +62,7 @@ export async function POST(request: NextRequest) {
       message: 'Coverage report submitted successfully',
       coverageReport,
     });
+
   } catch (error) {
     console.error('Coverage contribution error:', error);
     if (error instanceof z.ZodError) {
