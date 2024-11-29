@@ -6,6 +6,7 @@ import { getMessages } from 'next-intl/server';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Navbar } from '@/components/layout/navbar';
+import { NotificationCenter } from '@/components/ui/notification-center'; // Added import statement
 import { locales, type SupportedLocale } from '@/lib/i18n/config';
 import '../globals.css';
 
@@ -68,7 +69,12 @@ export default async function LocaleLayout({
           <ThemeProvider>
             <div className="relative min-h-screen flex flex-col">
               <Navbar />
-              <main className="flex-grow">{children}</main>
+              <div className="fixed top-4 right-4 z-50">
+                <NotificationCenter />
+              </div>
+              <main className="flex-grow container mx-auto px-4 py-8">
+                {children}
+              </main>
               <Toaster />
             </div>
           </ThemeProvider>

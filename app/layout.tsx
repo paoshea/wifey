@@ -40,13 +40,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <div className="min-h-screen bg-background">
-            <Navbar />
-            <div className="fixed top-4 right-4 z-50">
-              <NotificationCenter />
-            </div>
-            <main className="container mx-auto px-4 py-8">
-              <ClientProviders>{children}</ClientProviders>
-            </main>
+            {children}
           </div>
           <Analytics />
         </Providers>
