@@ -21,12 +21,10 @@ export function Providers({ locale, messages, children }: ProvidersProps) {
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="relative min-h-screen flex flex-col">
             <Navbar />
-            <div className="fixed top-4 right-4 z-50">
-              <NotificationCenter />
-            </div>
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow">
               {children}
             </main>
+            <NotificationCenter />
             <Toaster />
           </div>
         </NextIntlClientProvider>

@@ -1,33 +1,23 @@
 import { Metadata } from 'next';
-import { Roboto } from 'next/font/google';
-import ClientProviders from '@/components/ClientProviders';
 import { Inter } from 'next/font/google';
-import { Providers } from './providers';
-import { Navbar } from '@/components/layout/navbar';
-import { NotificationCenter } from '@/components/notifications/notification-center';
+import { Providers } from './[locale]/providers';
 import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
-const roboto = Roboto({
-  weight: ['400', '700'],
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-inter',
+  preload: true,
+  adjustFontFallback: true,
 });
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Wifey - Find Coverage & WiFi',
   description: 'Find cellular coverage points and free WiFi hotspots near you',
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
-    other: {
-      rel: 'apple-touch-icon-precomposed',
-      url: '/logo.svg',
-    },
-  },
+  keywords: ['wifi', 'cellular coverage', 'network coverage', 'free wifi', 'hotspots'],
+  authors: [{ name: 'Wifey Team' }],
+  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({
@@ -35,5 +25,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <html lang="en" className={`${inter.variable} font-sans antialiased`}>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+        <Analytics />
+      </body>
+    </html>
+  );
 }

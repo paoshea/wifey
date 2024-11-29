@@ -9,7 +9,7 @@ import { useSession } from 'next-auth/react'
 import type { Notification, NotificationPreferences, NotificationType } from '@/types/notifications'
 import { Dialog } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface NotificationGroup {
@@ -239,12 +239,9 @@ export function NotificationCenter() {
 
             {notifications.length > 0 && (
               <div className="p-4 border-t">
-                <button
-                  onClick={() => markAsRead(notifications.map((n) => n.id))}
-                  className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
+                <Button onClick={() => markAsRead(notifications.map((n) => n.id))}>
                   Mark all as read
-                </button>
+                </Button>
               </div>
             )}
           </motion.div>
