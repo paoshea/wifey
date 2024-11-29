@@ -1,16 +1,25 @@
-"use client";
+'use client';
 
-import { SessionProvider } from "next-auth/react";
-import { IntlProvider } from "next-intl";
+import { ThemeProvider } from 'next-themes';
+import { SessionProvider } from 'next-auth/react';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function ClientProviders({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return (
-        <SessionProvider>
-            <IntlProvider locale="en">{children}</IntlProvider>
-        </SessionProvider>
-    );
+  return (
+    <SessionProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        {children}
+        <Toaster />
+      </ThemeProvider>
+    </SessionProvider>
+  );
 }

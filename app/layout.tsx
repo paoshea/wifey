@@ -1,10 +1,27 @@
-import "./globals.css";
-import { Roboto, Roboto_Mono } from "next/font/google";
-import ClientProviders from "../components/ClientProviders";
+import { Metadata } from 'next';
+import { Roboto } from 'next/font/google';
+import ClientProviders from '@/components/ClientProviders';
+import './globals.css';
 
+const roboto = Roboto({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+});
 
-const roboto = Roboto({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
-const robotoMono = Roboto_Mono({ subsets: ["latin"], weight: ["400", "700"], display: "swap" });
+export const metadata: Metadata = {
+  title: 'Wifey - Find Coverage & WiFi',
+  description: 'Find cellular coverage points and free WiFi hotspots near you',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/logo.svg',
+    },
+  },
+};
 
 export default function RootLayout({
   children,
@@ -12,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${roboto.className} ${robotoMono.className}`}>
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={roboto.className}>
         <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
