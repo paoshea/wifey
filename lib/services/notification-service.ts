@@ -282,8 +282,20 @@ export class NotificationService {
    * Mark a notification as read
    */
   async markAsRead(notificationId: string): Promise<void> {
-    // Implementation will depend on how we store notifications
-    // For now, this is a placeholder
+    await this.prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true }
+    });
+  }
+
+  /**
+   * Mark multiple notifications as read
+   */
+  async markManyAsRead(notificationIds: string[]): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: { id: { in: notificationIds } },
+      data: { isRead: true }
+    });
   }
 
   /**
@@ -304,6 +316,21 @@ export class NotificationService {
       quietHoursStart: '22:00',
       quietHoursEnd: '08:00'
     };
+  }
+
+  /**
+   * Get all unread notifications for a user
+   */
+  async getUnreadNotifications(userId: string) {
+    return this.prisma.notification.findMany({
+      where: {
+        userId,
+        isRead: false
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
   }
 }
 

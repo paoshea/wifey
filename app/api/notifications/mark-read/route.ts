@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await notificationService.markAsRead(notificationIds);
+    await notificationService.markManyAsRead(notificationIds);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error marking notifications as read:', error);

@@ -43,6 +43,9 @@ const nextConfig = {
         'utf-8-validate': false,
         bufferutil: false,
       };
+
+      // Enable verbose logging in non-server environment
+      config.stats = process.env.NEXT_PUBLIC_VERBOSE === 'true' ? 'errors-warnings' : 'errors-only';
     }
 
     // Ignore OpenTelemetry warnings
@@ -51,7 +54,6 @@ const nextConfig = {
         module: /node_modules\/@opentelemetry/,
         message: /the request of a dependency is an expression/,
       },
-      // Keep existing warning ignores
       ...(config.ignoreWarnings || []),
     ];
 
