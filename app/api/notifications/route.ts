@@ -46,15 +46,18 @@ export async function POST(req: NextRequest) {
       case 'ACHIEVEMENT':
         notification = await notificationService.createAchievementNotification(
           session.user.id,
-          metadata.achievementTitle,
-          metadata.points
+          {
+            title: metadata.achievementTitle,
+            points: metadata.points,
+            description: metadata.description || `You earned ${metadata.points} points!`,
+            icon: metadata.icon
+          }
         );
         break;
       case 'STREAK_MILESTONE':
         notification = await notificationService.createStreakMilestoneNotification(
           session.user.id,
-          metadata.days,
-          metadata.multiplier
+          metadata.days
         );
         break;
       default:
