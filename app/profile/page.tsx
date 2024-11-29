@@ -179,14 +179,14 @@ export default function ProfilePage() {
                   <Card key={achievement.id} className="p-4">
                     <CardHeader>
                       <div className="flex items-center space-x-2">
-                        {achievement.tier === AchievementTier.LEGENDARY ? (
+                        {achievement.tier === AchievementTier.PLATINUM ? (
                           <Trophy className="h-5 w-5 text-yellow-500" />
-                        ) : achievement.tier === AchievementTier.EPIC ? (
+                        ) : achievement.tier === AchievementTier.GOLD ? (
                           <Medal className="h-5 w-5 text-purple-500" />
-                        ) : achievement.tier === AchievementTier.RARE ? (
+                        ) : achievement.tier === AchievementTier.SILVER ? (
                           <Medal className="h-5 w-5 text-blue-500" />
                         ) : (
-                          <Star className="h-5 w-5 text-gray-500" />
+                          <Medal className="h-5 w-5 text-gray-500" />
                         )}
                         <CardTitle className="text-lg">{achievement.title}</CardTitle>
                       </div>

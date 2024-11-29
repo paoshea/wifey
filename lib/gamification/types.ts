@@ -26,15 +26,16 @@ export enum RequirementOperator {
   GREATER_THAN = 'GREATER_THAN',
   LESS_THAN = 'LESS_THAN',
   EQUAL = 'EQUAL',
+  NOT_EQUAL = 'NOT_EQUAL',
   GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
   LESS_THAN_EQUAL = 'LESS_THAN_EQUAL'
 }
 
 export enum AchievementTier {
-  COMMON = 'COMMON',
-  RARE = 'RARE',
-  EPIC = 'EPIC',
-  LEGENDARY = 'LEGENDARY'
+  BRONZE = 'BRONZE',
+  SILVER = 'SILVER',
+  GOLD = 'GOLD',
+  PLATINUM = 'PLATINUM'
 }
 
 export enum TimeFrame {

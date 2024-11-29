@@ -24,10 +24,10 @@ interface AchievementCardProps {
 
 const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }: AchievementCardProps) => {
   const rarityColors: Record<AchievementTier, string> = {
-    [AchievementTier.COMMON]: 'bg-blue-600',
-    [AchievementTier.RARE]: 'bg-purple-600',
-    [AchievementTier.EPIC]: 'bg-gradient-to-r from-yellow-400 to-orange-500',
-    [AchievementTier.LEGENDARY]: 'bg-gradient-to-r from-purple-400 to-pink-500'
+    [AchievementTier.BRONZE]: 'bg-blue-600',
+    [AchievementTier.SILVER]: 'bg-purple-600',
+    [AchievementTier.GOLD]: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    [AchievementTier.PLATINUM]: 'bg-gradient-to-r from-purple-400 to-pink-500'
   };
 
   const progressPercentage = Math.min((progress / target) * 100, 100);
@@ -82,7 +82,7 @@ interface AchievementDetailsModalProps {
 const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, onClose }: AchievementDetailsModalProps) => {
   const progressPercentage = Math.min((progress / target) * 100, 100);
 
-  const getRequirementText = (req: AchievementRequirement): string => {
+  const getRequirementText = (req: ValidatedAchievement['requirements'][0]): string => {
     const operatorText: Record<RequirementOperator, string> = {
       [RequirementOperator.GREATER_THAN]: '>',
       [RequirementOperator.GREATER_THAN_EQUAL]: '≥',
@@ -92,19 +92,9 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
       [RequirementOperator.NOT_EQUAL]: '≠'
     };
 
-    switch (req.type) {
-      case RequirementType.STAT:
-        const metricKey = req.metric as keyof typeof StatsMetric;
-        return `${StatsMetric[metricKey]?.replace(/_/g, ' ') || req.metric} ${operatorText[req.operator]} ${req.value}`;
-      case RequirementType.STREAK:
-        return `Maintain a streak of ${req.value} days`;
-      case RequirementType.LEVEL:
-        return `Reach level ${req.value}`;
-      case RequirementType.ACHIEVEMENT:
-        return `Unlock achievement: ${req.value}`;
-      default:
-        return 'Unknown requirement';
-    }
+    // For ValidatedAchievement requirements, we only handle STAT type
+    const metricKey = req.metric as keyof typeof StatsMetric;
+    return `${StatsMetric[metricKey]?.replace(/_/g, ' ') || req.metric} ${operatorText[req.operator]} ${req.value} (Current: ${req.currentValue})`;
   };
 
   return (
