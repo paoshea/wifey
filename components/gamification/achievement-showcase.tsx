@@ -38,7 +38,7 @@ const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }:
       whileTap={{ scale: 0.95 }}
       className={cn(
         'relative p-4 rounded-lg cursor-pointer transition-all',
-        isUnlocked ? rarityColors[achievement.rarity] : 'bg-gray-800 opacity-60'
+        isUnlocked ? rarityColors[achievement.tier] : 'bg-gray-800 opacity-60'
       )}
       onClick={onClick}
       data-testid="achievement-item"
@@ -65,7 +65,7 @@ const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }:
       )}
       <div className="mt-2 flex justify-between items-center">
         <span className="text-sm text-white font-medium">+{achievement.points} pts</span>
-        <span className="text-xs text-white opacity-75 capitalize">{achievement.rarity.toLowerCase()}</span>
+        <span className="text-xs text-white opacity-75 capitalize">{achievement.tier.toLowerCase()}</span>
       </div>
     </motion.div>
   );
@@ -123,7 +123,7 @@ const AchievementDetailsModal = ({ achievement, progress, target, isUnlocked, on
           <div className="text-6xl">{achievement.icon}</div>
           <div>
             <h2 className="text-2xl font-bold">{achievement.title}</h2>
-            <p className="text-gray-600 capitalize">{achievement.rarity.toLowerCase()} Achievement</p>
+            <p className="text-gray-600 capitalize">{achievement.tier.toLowerCase()} Achievement</p>
           </div>
         </div>
 

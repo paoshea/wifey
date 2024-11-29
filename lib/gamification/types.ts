@@ -56,6 +56,8 @@ export const RequirementSchema = z.object({
   description: z.string()
 });
 
+export type AchievementRequirement = z.infer<typeof RequirementSchema>;
+
 export const StatsContentSchema = z.object({
   totalMeasurements: z.number(),
   ruralMeasurements: z.number(),
