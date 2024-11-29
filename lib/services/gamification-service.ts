@@ -22,7 +22,8 @@ import {
   validateRequirement,
   validateAchievementRequirements,
   calculateLevel,
-  calculatePointsForMeasurement
+  calculatePointsForMeasurement,
+  calculateProgress
 } from '../gamification/validation';
 import {
   calculateMeasurementPoints,
@@ -41,6 +42,7 @@ import { monitoringService } from '../monitoring/monitoring-service';
 import { notificationService } from './notification-service';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { leaderboardService } from './leaderboard-service';
 
 const AchievementRequirementSchema = z.object({
   metric: z.enum(['totalMeasurements', 'ruralMeasurements', 'uniqueLocations', 'totalDistance', 'contributionScore', 'qualityScore', 'accuracyRate', 'verifiedSpots', 'helpfulActions']),
@@ -156,9 +158,11 @@ class GamificationCache {
 export class GamificationService {
   private apiCache: GamificationCache;
   private prisma: PrismaClient;
+  private leaderboardService: LeaderboardService;
 
-  constructor(prismaClient: PrismaClient = prisma) {
+  constructor(prismaClient: PrismaClient = prisma, leaderboardSvc: LeaderboardService = leaderboardService) {
     this.prisma = prismaClient;
+    this.leaderboardService = leaderboardSvc;
     this.apiCache = new GamificationCache();
   }
 
@@ -335,8 +339,13 @@ export class GamificationService {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         include: {
-          stats: true,
-          streaks: true
+          userStats: true,
+          streakHistory: {
+            orderBy: {
+              lastCheckin: 'desc'
+            },
+            take: 1
+          }
         }
       });
 
@@ -344,37 +353,61 @@ export class GamificationService {
         throw new UserNotFoundError(`User not found: ${userId}`);
       }
 
-      const currentStats = user.stats?.stats as StatsContent || defaultStats;
+      const currentStats = user.userStats?.statsData as StatsContent || defaultStats;
       const points = this.calculateBasePoints(measurement);
       const bonuses = this.calculateBonuses(measurement);
       const totalPoints = points + Object.values(bonuses).reduce((a, b) => a + b, 0);
       const xp = Math.round(totalPoints * 1.5); // XP is 1.5x points
-      const updatedStats = this.calculateUpdatedStats(currentStats, measurement);
+      const streak = user.streakHistory[0]?.current ?? 0;
+      const updatedStats = this.calculateUpdatedStats(currentStats, measurement, streak);
 
       const userStats = await this.prisma.userStats.upsert({
         where: { userId },
         create: {
           userId,
-          stats: updatedStats,
+          statsData: updatedStats,
           points: totalPoints
         },
         update: {
-          stats: updatedStats,
+          statsData: updatedStats,
           points: {
             increment: totalPoints
           }
         }
       });
 
+      // Create or update leaderboard entry
+      await this.prisma.leaderboardEntry.upsert({
+        where: {
+          userId_timeframe: {
+            userId,
+            timeframe: TimeFrame.ALL_TIME
+          }
+        },
+        create: {
+          userId,
+          timeframe: TimeFrame.ALL_TIME,
+          points: totalPoints,
+          rank: await this.calculateRank(totalPoints),
+          stats: updatedStats
+        },
+        update: {
+          points: {
+            increment: totalPoints
+          },
+          stats: updatedStats
+        }
+      });
+
       return {
         points: {
           value: totalPoints,
-          xp: xp,
-          bonuses: bonuses
+          xp,
+          bonuses
         },
         achievements: [], // Will be populated by achievement processor
         stats: updatedStats,
-        xp: xp
+        xp
       };
     } catch (error) {
       console.error('Error processing measurement:', error);
@@ -385,25 +418,7 @@ export class GamificationService {
   async getLeaderboard(
     limit: number = 10
   ): Promise<LeaderboardEntry[]> {
-    const cacheKey = `${GamificationService.LEADERBOARD_CACHE_KEY}_${limit}`;
-    return this.apiCache.wrap(
-      cacheKey,
-      async () => {
-        const users = await this.prisma.user.findMany({
-          take: limit,
-          orderBy: {
-            stats: {
-              contributionScore: 'desc'
-            }
-          },
-          include: {
-            stats: true
-          }
-        });
-        return users.map(user => this.mapUserToLeaderboardEntry(user));
-      },
-      { ttl: 60 } // 1 minute TTL for leaderboard
-    );
+    return this.leaderboardService.getLeaderboard(TimeFrame.ALL_TIME, 1, limit);
   }
 
   async getUserStats(userId: string): Promise<StatsContent> {
@@ -411,10 +426,11 @@ export class GamificationService {
     return this.apiCache.wrap(
       cacheKey,
       async () => {
-        const stats = await this.prisma.userStats.findUnique({
+        const userStats = await this.prisma.userStats.findUnique({
           where: { userId }
         });
-        return stats || this.getDefaultStats();
+        
+        return userStats?.statsData as StatsContent || this.getDefaultStats();
       },
       { ttl: 300 } // 5 minutes TTL for user stats
     );
@@ -453,6 +469,17 @@ export class GamificationService {
     }
   }
 
+  private async validateRequirements(
+    achievement: Achievement,
+    stats: UserStats['stats']
+  ): Promise<boolean> {
+    return achievement.requirements.every(req => validateRequirement(req, stats));
+  }
+
+  private calculateProgress(requirements: ValidatedRequirement[], stats: StatsContent): number {
+    return calculateProgress({ requirements } as Achievement, stats);
+  }
+
   private validateRequirement(
     requirement: ValidatedRequirement,
     stats: StatsContent
@@ -475,16 +502,6 @@ export class GamificationService {
       default:
         throw new ValidationError(`Unknown operator: ${requirement.operator}`);
     }
-  }
-
-  private calculateProgress(requirements: ValidatedRequirement[], stats: StatsContent): number {
-    if (requirements.length === 0) return 100;
-
-    const completedRequirements = requirements.filter(req => 
-      this.validateRequirement(req, stats)
-    );
-
-    return Math.round((completedRequirements.length / requirements.length) * 100);
   }
 
   async validateAchievement(achievement: Achievement, stats: StatsContent): Promise<ValidatedAchievement> {

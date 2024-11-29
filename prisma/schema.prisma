@@ -20,27 +20,16 @@ enum OperatorType {
   LIBERTY
 }
 
-enum ComparisonOperator {
-  GREATER_THAN
-  LESS_THAN
-  GREATER_THAN_EQUAL
-  LESS_THAN_EQUAL
-  EQUAL
+enum MeasurementType {
+  WIFI
+  COVERAGE
 }
 
-enum NotificationType {
-  STREAK_REMINDER
-  ACHIEVEMENT
-  STREAK_MILESTONE
-  SOCIAL
-  SYSTEM
-  DIGEST
-}
-
-enum NotificationPriority {
-  LOW
-  MEDIUM
-  HIGH
+enum TimeFrame {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
 }
 
 model User {
@@ -53,234 +42,98 @@ model User {
   image             String?
   role              UserRole  @default(USER)
   preferredLanguage String    @default("en")
-  points            Int       @default(0)
-  level             Int       @default(1)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   // Relations
-  wifiSpots         WifiSpot[]
-  coverageReports   CoverageReport[]
-  achievements      Achievement[]
-  streaks           UserStreak[]
-  progress          UserProgress?
-  stats             UserStats?
   measurements      Measurement[]
+  userStats        UserStats?
+  streakHistory    UserStreak[]
+  achievements     Achievement[]
   leaderboardEntries LeaderboardEntry[]
-  notifications     Notification[]
-  notificationPreferences NotificationPreferences?
 
   @@index([verificationToken])
+}
+
+model Measurement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  type        MeasurementType
+  value       Float
+  latitude    Float
+  longitude   Float
+  isRural     Boolean  @default(false)
+  operator    String?
+  quality     Float?
+  accuracy    Float?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([latitude, longitude])
+}
+
+model UserStats {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId @unique
+  points           Int      @default(0)
+  statsData        Json     // Stores the detailed stats object
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([points])
 }
 
 model UserStreak {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
   current     Int      @default(0)
   longest     Int      @default(0)
   lastCheckin DateTime @default(now())
-
-  @@index([userId])
-}
-
-model WifiSpot {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  latitude    Float
-  longitude   Float
-  speed       Float?
-  signal      Int?
-  security    String?
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  verified    Boolean  @default(false)
-  verifiedBy  String?  @db.ObjectId
-  points      Int      @default(10)
-}
-
-model CoverageReport {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  latitude       Float
-  longitude      Float
-  signal         Float
-  speed          Float?
-  operator       String
-  networkType    String
-  deviceModel    String
-  connectionType String
-  points         Int      @default(10)
-  createdAt      DateTime @default(now())
   
-  user User @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([latitude, longitude])
-}
-
-model CoveragePoint {
-  id          String            @id @default(auto()) @map("_id") @db.ObjectId
-  latitude    Float
-  longitude   Float
-  createdAt   DateTime          @default(now())
-  
-  history     CoverageHistory[]
-
-  @@index([latitude, longitude])
-}
-
-model CoverageHistory {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  coveragePointId String         @db.ObjectId
-  timestamp       DateTime       @default(now())
-
-  coveragePoint   CoveragePoint @relation(fields: [coveragePointId], references: [id])
-
-  @@index([coveragePointId])
 }
 
 model Achievement {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String
-  points      Int
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  unlockedAt  DateTime?
-  type        String   // e.g., "wifi_spots", "coverage_reports", "streak"
-  threshold   Int      // number required to unlock
-  icon        String?  // path to achievement icon
-}
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  title         String
+  description   String
+  points        Int
+  icon          String?
+  type          String   @default("achievement")
+  tier          String   @default("COMMON")
+  requirements  Json     // Stores achievement requirements as array
+  progress      Int      @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  user          User     @relation(fields: [userId], references: [id])
 
-model UserProgress {
-  id          String      @id @default(cuid()) @map("_id")
-  userId      String      
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level       Int         @default(1)
-  currentXP   Int         @default(0)
-  totalXP     Int         @default(0)
-  streak      Int         @default(0)
-  maxStreak   Int         @default(0)
-  lastCheckin DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  @@unique([userId])
-}
-
-model UserStats {
-  id                String   @id @default(cuid()) @map("_id")
-  userId           String      
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  totalMeasurements Int      @default(0)
-  ruralMeasurements Int      @default(0)
-  uniqueLocations   Int      @default(0)
-  totalDistance     Float    @default(0)
-  contributionScore Float    @default(0)
-  qualityScore      Float    @default(0)
-  accuracyRate      Float    @default(0)
-  verifiedSpots     Int      @default(0)
-  helpfulActions    Int      @default(0)
-  consecutiveDays   Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@unique([userId])
+  @@index([userId])
+  @@index([type, tier])
 }
 
 model LeaderboardEntry {
-  id          String   @id @default(cuid()) @map("_id")
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rank        Int
-  points      Int      @default(0)
-  timeframe   String   // daily, weekly, monthly, allTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, timeframe])
-  @@index([timeframe, rank])
-}
-
-model Measurement {
-  id          String    @id @default(cuid()) @map("_id")
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String    // wifi or coverage
-  value       Float
-  latitude    Float
-  longitude   Float
-  accuracy    Float?
-  altitude    Float?
-  speed      Float?
-  timestamp   DateTime  @default(now())
-  deviceInfo  Json?
-  metadata    Json?
-  isVerified  Boolean   @default(false)
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  timeframe   TimeFrame
   points      Int       @default(0)
-  isRural     Boolean   @default(false)
-  distance    Float?    // Distance from previous measurement in meters
-
-  // WiFi specific fields
-  ssid        String?
-  bssid       String?
-  frequency   Float?
-  channel     Int?
-  security    String?
-  
-  // Coverage specific fields
-  operator    String?
-  networkType String?
-  signalStrength Int?
-  
+  rank        Int
+  stats       Json      // Stores leaderboard-specific stats
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
+  user        User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([type])
-  @@index([latitude, longitude])
-  @@index([timestamp])
-}
-
-model Notification {
-  id            String              @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String
-  type          NotificationType
-  title         String
-  message       String
-  isRead        Boolean             @default(false)
-  priority      NotificationPriority @default(MEDIUM)
-  style         Json?               // For custom styling like colors, icons
-  metadata      Json?               // For additional notification-specific data
-  scheduledFor  DateTime?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  user          User                @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([type])
-  @@index([createdAt])
-}
-
-model NotificationPreferences {
-  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId              String
-  email               Boolean   @default(true)
-  push                Boolean   @default(true)
-  inApp               Boolean   @default(true)
-  dailyDigest         Boolean   @default(true)
-  streakReminders     Boolean   @default(true)
-  achievementAlerts   Boolean   @default(true)
-  socialNotifications Boolean   @default(true)
-  quietHoursStart     String?
-  quietHoursEnd       String?
-  user                User      @relation(fields: [userId], references: [id])
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  @@unique([userId])
+  @@index([timeframe, points])
+  @@index([timeframe, rank])
 }

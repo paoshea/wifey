@@ -7,6 +7,8 @@ import {
   type StatsContent,
   type ValidatedMeasurementInput,
   type ValidatedAchievement,
+  type ValidatedRequirement,
+  type Achievement,
   type ValidatedUserProgress,
   type ValidatedUserStats,
   type Requirement,
@@ -15,7 +17,8 @@ import {
   StatsContentSchema,
   UserProgressSchema,
   RequirementSchema,
-  MeasurementInputSchema
+  MeasurementInputSchema,
+  RequirementOperator
 } from './types';
 import { ValidationError } from './errors';
 
@@ -59,41 +62,46 @@ export function validateUserStats(data: unknown): ValidatedUserStats {
   }
 }
 
-// Requirement validation
-export function validateRequirement(requirement: Requirement, stats: StatsContent): boolean {
-  try {
-    const parsed = RequirementSchema.parse(requirement);
-    return checkRequirementMet(parsed, getStatValue(parsed.metric, stats));
-  } catch (error) {
-    throw new ValidationError('Invalid requirement data', error);
-  }
-}
-
-// Helper function to get stat value safely
-export function getStatValue(metric: string, stats: StatsContent): number {
-  return stats[metric as keyof StatsContent] ?? 0;
-}
-
 // Achievement requirements validation
-export function validateAchievementRequirements(
-  requirements: Requirement[],
+export function validateRequirement(
+  requirement: ValidatedRequirement,
   stats: StatsContent
-): { isValid: boolean; data: Requirement[]; progress: number } {
-  try {
-    const validatedReqs = requirements.map(req => ({
-      requirement: RequirementSchema.parse(req),
-      isMet: validateRequirement(req, stats)
-    }));
-    
-    const progress = validatedReqs.filter(r => r.isMet).length / validatedReqs.length;
-    return {
-      isValid: progress === 1,
-      data: validatedReqs.map(r => r.requirement),
-      progress
-    };
-  } catch (error) {
-    throw new ValidationError('Invalid achievement requirements', error);
+): boolean {
+  const statValue = stats[requirement.metric] || 0;
+  
+  switch (requirement.operator) {
+    case RequirementOperator.GREATER_THAN:
+      return statValue > requirement.value;
+    case RequirementOperator.GREATER_THAN_EQUAL:
+      return statValue >= requirement.value;
+    case RequirementOperator.LESS_THAN:
+      return statValue < requirement.value;
+    case RequirementOperator.LESS_THAN_EQUAL:
+      return statValue <= requirement.value;
+    case RequirementOperator.EQUAL:
+      return statValue === requirement.value;
+    case RequirementOperator.NOT_EQUAL:
+      return statValue !== requirement.value;
+    default:
+      return false;
   }
+}
+
+export function calculateProgress(
+  achievement: Achievement,
+  stats: StatsContent
+): number {
+  if (!achievement.requirements || !Array.isArray(achievement.requirements)) {
+    return 0;
+  }
+
+  const validRequirements = achievement.requirements.filter(req => {
+    if (typeof req !== 'object' || req === null) return false;
+    const requirement = req as ValidatedRequirement;
+    return validateRequirement(requirement, stats);
+  });
+
+  return Math.round((validRequirements.length / achievement.requirements.length) * 100);
 }
 
 // Measurement validation
@@ -141,24 +149,4 @@ export function handleValidationError(error: unknown): never {
     throw new ValidationError('Validation failed', error);
   }
   throw error;
-}
-
-// Helper function to check if requirement is met
-function checkRequirementMet(requirement: Requirement, value: number): boolean {
-  switch (requirement.operator) {
-    case 'GREATER_THAN':
-      return value > requirement.value;
-    case 'GREATER_THAN_EQUAL':
-      return value >= requirement.value;
-    case 'LESS_THAN':
-      return value < requirement.value;
-    case 'LESS_THAN_EQUAL':
-      return value <= requirement.value;
-    case 'EQUAL':
-      return value === requirement.value;
-    case 'NOT_EQUAL':
-      return value !== requirement.value;
-    default:
-      return false;
-  }
 }

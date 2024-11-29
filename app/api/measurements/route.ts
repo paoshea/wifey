@@ -115,7 +115,14 @@ export async function POST(request: Request) {
           longitude: measurement.location.lng,
           isRural: false,
           isFirstInArea: false, // This will be calculated by a background job
-          operator: provider
+          operator: provider,
+          stats: {
+            isUnique: false, // Will be calculated by background job
+            distance: 0, // Will be calculated based on previous measurements
+            contributionScore: 1, // Base contribution score
+            qualityScore: measurement.signalStrength / 4 * 100 // Convert to percentage
+          },
+          streak: 0 // Will be updated by the gamification service
         });
 
         return result;

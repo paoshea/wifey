@@ -64,79 +64,60 @@ export class LeaderboardService {
       return cached;
     }
 
-    const dateFilter = this.getDateFilter(timeframe);
     const skip = (page - 1) * limit;
 
-    const orderBy: LeaderboardOrderBy = {
-      userStats: {
-        points: Prisma.SortOrder.desc
-      }
-    };
-
-    const [users, totalUsers] = await Promise.all([
-      this.prisma.user.findMany({
+    const [entries, totalUsers] = await Promise.all([
+      this.prisma.leaderboardEntry.findMany({
+        where: {
+          timeframe
+        },
+        orderBy: {
+          points: 'desc'
+        },
         take: limit,
         skip,
-        where: {
-          measurements: {
-            some: {
-              createdAt: dateFilter
-            }
-          }
-        },
-        orderBy,
-        select: {
-          id: true,
-          name: true,
-          userStats: {
+        include: {
+          user: {
             select: {
-              points: true,
-              statsData: true
+              name: true,
+              userStats: {
+                select: {
+                  statsData: true
+                }
+              }
             }
           }
         }
       }),
-      this.prisma.user.count({
+      this.prisma.leaderboardEntry.count({
         where: {
-          measurements: {
-            some: {
-              createdAt: dateFilter
-            }
-          }
+          timeframe
         }
       })
     ]);
 
-    const entries: LeaderboardEntry[] = users.map((user, index) => {
-      const statsData = user.userStats?.statsData;
-      const validStats = isValidStats(statsData) ? statsData : {
-        totalMeasurements: 0,
-        contributionScore: 0,
-        qualityScore: 0
-      };
-
-      return {
-        userId: user.id,
-        username: user.name || 'Anonymous',
-        points: user.userStats?.points || 0,
-        rank: skip + index + 1,
-        stats: {
-          totalMeasurements: validStats.totalMeasurements,
-          contributionScore: validStats.contributionScore,
-          qualityScore: validStats.qualityScore
-        }
-      };
-    });
+    const formattedEntries: LeaderboardEntry[] = entries.map(entry => ({
+      userId: entry.userId,
+      username: entry.user.name || 'Anonymous',
+      points: entry.points,
+      rank: entry.rank,
+      stats: entry.stats as StatsContent
+    }));
 
     const response: LeaderboardResponse = {
       timeframe,
-      entries,
+      entries: formattedEntries,
       totalUsers,
       userRank: undefined // Will be set by the API route if user is authenticated
     };
 
     this.cache.put(cacheKey, response, LeaderboardService.CACHE_TTL);
     return response;
+  }
+
+  async getLeaderboardWithOptions(options: LeaderboardOptions): Promise<LeaderboardResponse> {
+    const { timeframe = TimeFrame.ALL_TIME, page = 1, pageSize = 10 } = options;
+    return this.getLeaderboard(timeframe, page, pageSize);
   }
 
   private getDateFilter(timeframe: TimeFrame): { gte: Date } {
