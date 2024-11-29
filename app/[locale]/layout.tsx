@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { SessionProvider } from 'next-auth/react';
 import { Navbar } from '@/components/layout/navbar';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { locales, type SupportedLocale } from '@/lib/i18n/config';
@@ -52,33 +53,24 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html 
-      lang={locale} 
-      className={`light ${GeistSans.variable} ${GeistMono.variable}`} 
-      suppressHydrationWarning
-    >
-      <head>
-        <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-        <link rel="apple-touch-icon" href="/logo.svg" />
-        <meta name="theme-color" content="#3B82F6" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      </head>
-      <body className={`${inter.className} antialiased bg-background`} suppressHydrationWarning>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+    <html lang={locale} className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <body className={`antialiased bg-background`} suppressHydrationWarning>
+        <SessionProvider>
           <ThemeProvider>
-            <div className="relative min-h-screen flex flex-col">
-              <Navbar />
-              <div className="fixed top-4 right-4 z-50">
-                <NotificationCenter />
+            <NextIntlClientProvider locale={locale} messages={messages}>
+              <div className="relative min-h-screen flex flex-col">
+                <Navbar />
+                <div className="fixed top-4 right-4 z-50">
+                  <NotificationCenter />
+                </div>
+                <main className="flex-grow container mx-auto px-4 py-8">
+                  {children}
+                </main>
+                <Toaster />
               </div>
-              <main className="flex-grow container mx-auto px-4 py-8">
-                {children}
-              </main>
-              <Toaster />
-            </div>
+            </NextIntlClientProvider>
           </ThemeProvider>
-        </NextIntlClientProvider>
+        </SessionProvider>
       </body>
     </html>
   );
