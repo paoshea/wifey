@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Achievement, UserProgress, Prisma } from '@prisma/client';
 import { GamificationService } from '../../services/gamification-service';
 import { 
   AchievementTier, 
@@ -6,9 +6,9 @@ import {
   RequirementOperator,
   StatsMetric,
   StatsContent,
-  Achievement,
   LeaderboardEntry,
-  UserProgress 
+  ValidatedUserProgress,
+  ValidatedAchievement
 } from '../types';
 
 jest.mock('@prisma/client');
@@ -19,164 +19,167 @@ describe('GamificationService', () => {
 
   beforeEach(() => {
     mockPrisma = {
+      $transaction: jest.fn().mockImplementation((fn) => fn(mockPrisma)),
       achievement: {
         findMany: jest.fn(),
         findUnique: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        upsert: jest.fn(),
       },
-      userStats: {
+      user: {
         findUnique: jest.fn(),
-        create: jest.fn(),
         update: jest.fn(),
       },
       userProgress: {
-        findMany: jest.fn(),
+        findUnique: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        upsert: jest.fn(),
       },
       leaderboardEntry: {
         findMany: jest.fn(),
+        findFirst: jest.fn(),
+        count: jest.fn(),
         upsert: jest.fn(),
       },
-    } as any;
+    } as unknown as jest.Mocked<PrismaClient>;
 
     gamificationService = new GamificationService(mockPrisma);
   });
 
   describe('getAchievements', () => {
-    it('should return all achievements', async () => {
+    it('should return all achievements for a user', async () => {
       const mockAchievements: Achievement[] = [{
         id: '1',
         title: 'Test Achievement',
         description: 'Test Description',
         icon: 'test-icon',
         points: 100,
-        tier: AchievementTier.COMMON,
-        requirements: [{
-          type: RequirementType.STAT,
-          metric: StatsMetric.TOTAL_MEASUREMENTS,
-          value: 10,
-          operator: RequirementOperator.GREATER_THAN_EQUAL,
-          description: 'Complete 10 measurements'
-        }],
-        target: 10,
+        type: 'TEST',
+        threshold: 10,
+        userId: 'user1',
         createdAt: new Date(),
-        updatedAt: new Date()
+        unlockedAt: null,
       }];
 
+      const mockProgress: UserProgress = {
+        id: '1',
+        userId: 'user1',
+        points: 0,
+        level: 1,
+        currentXP: 0,
+        nextLevelXP: 100,
+        streak: { current: 0, longest: 0 },
+        stats: {
+          [StatsMetric.TOTAL_MEASUREMENTS]: 0,
+          [StatsMetric.VERIFIED_SPOTS]: 0,
+          [StatsMetric.CONSECUTIVE_DAYS]: 0,
+        } as Prisma.JsonValue,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       mockPrisma.achievement.findMany.mockResolvedValue(mockAchievements);
+      mockPrisma.userProgress.findUnique.mockResolvedValue(mockProgress);
 
-      const achievements = await gamificationService.getAchievements();
-      expect(achievements).toEqual(mockAchievements);
-    });
-  });
-
-  describe('getUserStats', () => {
-    it('should return user stats', async () => {
-      const mockStats: StatsContent = {
-        [StatsMetric.TOTAL_MEASUREMENTS]: 20,
-        [StatsMetric.RURAL_MEASUREMENTS]: 5,
-        [StatsMetric.VERIFIED_SPOTS]: 8,
-        [StatsMetric.HELPFUL_ACTIONS]: 5,
-        [StatsMetric.CONSECUTIVE_DAYS]: 7,
-        [StatsMetric.QUALITY_SCORE]: 85,
-        [StatsMetric.ACCURACY_RATE]: 95,
-        [StatsMetric.UNIQUE_LOCATIONS]: 15,
-        [StatsMetric.TOTAL_DISTANCE]: 1000,
-        [StatsMetric.CONTRIBUTION_SCORE]: 75
-      };
-
-      mockPrisma.userStats.findUnique.mockResolvedValue({
-        userId: 'user1',
-        stats: mockStats,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      const achievements = await gamificationService.getAchievements('user1');
+      
+      expect(mockPrisma.achievement.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user1' }
       });
-
-      const stats = await gamificationService.getUserStats('user1');
-      expect(stats).toEqual(mockStats);
-    });
-  });
-
-  describe('updateUserStats', () => {
-    it('should update user stats', async () => {
-      const mockStats: StatsContent = {
-        [StatsMetric.TOTAL_MEASUREMENTS]: 20,
-        [StatsMetric.RURAL_MEASUREMENTS]: 5,
-        [StatsMetric.VERIFIED_SPOTS]: 8,
-        [StatsMetric.HELPFUL_ACTIONS]: 5,
-        [StatsMetric.CONSECUTIVE_DAYS]: 7,
-        [StatsMetric.QUALITY_SCORE]: 85,
-        [StatsMetric.ACCURACY_RATE]: 95,
-        [StatsMetric.UNIQUE_LOCATIONS]: 15,
-        [StatsMetric.TOTAL_DISTANCE]: 1000,
-        [StatsMetric.CONTRIBUTION_SCORE]: 75
-      };
-
-      mockPrisma.userStats.update.mockResolvedValue({
-        userId: 'user1',
-        stats: mockStats,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      expect(achievements).toHaveLength(1);
+      expect(achievements[0]).toMatchObject({
+        id: '1',
+        title: 'Test Achievement',
+        points: 100,
       });
-
-      await gamificationService.updateUserStats('user1', mockStats);
-      expect(mockPrisma.userStats.update).toHaveBeenCalled();
     });
   });
 
   describe('getUserProgress', () => {
-    it('should return user progress', async () => {
-      const mockProgress: UserProgress[] = [{
-        userId: 'user1',
-        achievementId: '1',
-        progress: 5,
-        isCompleted: false,
-        completedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }];
-
-      mockPrisma.userProgress.findMany.mockResolvedValue(mockProgress);
-
-      const progress = await gamificationService.getUserProgress('user1');
-      expect(progress).toEqual(mockProgress);
-    });
-  });
-
-  describe('getLeaderboard', () => {
-    it('should return leaderboard entries', async () => {
-      const mockEntries: LeaderboardEntry[] = [{
+    it('should return user progress with stats', async () => {
+      const mockProgress: UserProgress = {
+        id: '1',
         userId: 'user1',
         points: 100,
-        rank: 1,
+        level: 2,
+        currentXP: 150,
+        nextLevelXP: 200,
+        streak: { current: 3, longest: 5 },
+        stats: {
+          [StatsMetric.TOTAL_MEASUREMENTS]: 20,
+          [StatsMetric.VERIFIED_SPOTS]: 8,
+          [StatsMetric.CONSECUTIVE_DAYS]: 3,
+        } as Prisma.JsonValue,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }];
-
-      mockPrisma.leaderboardEntry.findMany.mockResolvedValue(mockEntries);
-
-      const entries = await gamificationService.getLeaderboard();
-      expect(entries).toEqual(mockEntries);
-    });
-  });
-
-  describe('updateLeaderboard', () => {
-    it('should update leaderboard entry', async () => {
-      const mockEntry: LeaderboardEntry = {
-        userId: 'user1',
-        points: 100,
-        rank: 1,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
-      mockPrisma.leaderboardEntry.upsert.mockResolvedValue(mockEntry);
+      mockPrisma.userProgress.findUnique.mockResolvedValue(mockProgress);
 
-      await gamificationService.updateLeaderboard('user1', 100);
-      expect(mockPrisma.leaderboardEntry.upsert).toHaveBeenCalled();
+      const progress = await gamificationService.getUserProgress('user1');
+      
+      expect(mockPrisma.userProgress.findUnique).toHaveBeenCalledWith({
+        where: { userId: 'user1' }
+      });
+      expect(progress).toBeDefined();
+      expect(progress?.points).toBe(100);
+      expect(progress?.level).toBe(2);
+      expect(progress?.streak.current).toBe(3);
+    });
+
+    it('should return null when user progress not found', async () => {
+      mockPrisma.userProgress.findUnique.mockResolvedValue(null);
+
+      const progress = await gamificationService.getUserProgress('user1');
+      
+      expect(progress).toBeNull();
+    });
+  });
+
+  describe('processMeasurement', () => {
+    it('should process measurement and update user progress', async () => {
+      const mockMeasurement = {
+        type: 'coverage',
+        value: 85,
+        location: { lat: 0, lng: 0 },
+      };
+
+      const mockProgress: UserProgress = {
+        id: '1',
+        userId: 'user1',
+        points: 100,
+        level: 2,
+        currentXP: 150,
+        nextLevelXP: 200,
+        streak: { current: 3, longest: 5 },
+        stats: {
+          [StatsMetric.TOTAL_MEASUREMENTS]: 20,
+          [StatsMetric.VERIFIED_SPOTS]: 8,
+          [StatsMetric.CONSECUTIVE_DAYS]: 3,
+        } as Prisma.JsonValue,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrisma.userProgress.findUnique.mockResolvedValue(mockProgress);
+      mockPrisma.userProgress.update.mockResolvedValue({
+        ...mockProgress,
+        points: 110,
+        stats: {
+          [StatsMetric.TOTAL_MEASUREMENTS]: 21,
+          [StatsMetric.VERIFIED_SPOTS]: 8,
+          [StatsMetric.CONSECUTIVE_DAYS]: 3,
+        } as Prisma.JsonValue,
+      });
+
+      const result = await gamificationService.processMeasurement('user1', mockMeasurement);
+      
+      expect(result).toBeDefined();
+      expect(result.points).toBeGreaterThan(0);
+      expect(result.newStats[StatsMetric.TOTAL_MEASUREMENTS]).toBe(21);
     });
   });
 });

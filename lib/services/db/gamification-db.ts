@@ -1,38 +1,26 @@
 // lib/services/db/gamification-db.ts
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, User, Achievement, UserStreak, WifiSpot, CoverageReport } from '@prisma/client';
 import { monitoringService } from '../../monitoring/monitoring-service';
-import type {
-  Achievement,
-  UserProgress,
-  UserStats,
-  LeaderboardEntry,
-  User,
-  Prisma as PrismaTypes,
-} from '@prisma/client';
 import {
   validateUserProgress,
-  validateUserStats,
-  validateLeaderboardEntry,
+  validateMeasurement,
   userIdSchema,
   achievementIdSchema,
   handleValidationError,
-  validateMeasurement,
 } from './validation';
 import {
   RequirementType,
   RequirementOperator,
-  jsonToStats,
   StatsContent,
   isValidStatsContent,
   AchievementTier,
   ValidatedAchievement,
-  ValidatedRequirement
+  UserStreakWhereUniqueInput,
+  TimeFrame
 } from '../../gamification/types';
 
 const prisma = new PrismaClient();
-
-type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
 interface Requirement {
   type: RequirementType;
@@ -42,133 +30,45 @@ interface Requirement {
   operator: RequirementOperator;
 }
 
-interface AchievementWithTypedRequirements extends Omit<Achievement, 'requirements'> {
-  requirements: Requirement[];
-}
-
-interface BaseUserProgress {
+interface UserProgress {
+  points: number;
   level: number;
   currentXP: number;
-  totalXP: number;
   nextLevelXP: number;
-  streak: number;
-  lastActive: Date;
-  totalPoints: number;
-  unlockedAchievements: number;
-  lastAchievementAt: Date | null;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  stats: Prisma.JsonValue;
 }
 
-type UserProgressData = Omit<PrismaTypes.UserProgressCreateInput, 'id' | 'userId' | 'user' | 'achievements'> & BaseUserProgress;
-
 interface MeasurementData {
-  isRural: boolean;
+  type: 'wifi' | 'coverage';
+  value: number;
   location?: {
     lat: number;
     lng: number;
   };
-  quality: number;
-  device: {
+  quality?: number;
+  operator?: string;
+  device?: {
     type: string;
     model: string;
     os: string;
   };
 }
 
-interface LeaderboardData {
+interface LeaderboardEntry {
+  userId: string;
   points: number;
   rank: number;
   timeframe: TimeFrame;
-}
-
-interface RankHistoryEntry {
-  rank: number;
-  date: Date;
-}
-
-function calculateUpdatedStats(currentStats: UserStats, measurement: MeasurementData): Partial<StatsContent> {
-  const stats = currentStats.stats as StatsContent;
-  const isRural = measurement.isRural ?? false;
-  return {
-    totalMeasurements: (stats.totalMeasurements || 0) + 1,
-    ruralMeasurements: isRural ? (stats.ruralMeasurements || 0) + 1 : (stats.ruralMeasurements || 0),
-    contributionScore: (stats.contributionScore || 0) + (isRural ? 2 : 1),
-    qualityScore: measurement.quality,
+  user: {
+    name: string | null;
+    id: string;
   };
 }
 
-function calculateUpdatedProgress(currentProgress: UserProgress, measurement: MeasurementData): Partial<UserProgressData> {
-  const xpGained = measurement.isRural ? 20 : 10;
-  const newXP = (currentProgress.currentXP || 0) + xpGained;
-  const newTotalXP = (currentProgress.totalXP || 0) + xpGained;
-  const newLevel = Math.floor(Math.sqrt(newTotalXP / 100)) + 1;
-  const newNextLevelXP = Math.pow(newLevel, 2) * 100;
-
-  return {
-    currentXP: newXP,
-    totalXP: newTotalXP,
-    level: newLevel,
-    nextLevelXP: newNextLevelXP,
-    lastActive: new Date()
-  };
-}
-
-// Add type guard for StatsContent
-function isStatsContent(value: unknown): value is StatsContent {
-  if (typeof value !== 'object' || value === null) return false;
-
-  const stats = value as Partial<StatsContent>;
-  return (
-    typeof stats.totalMeasurements === 'number' &&
-    typeof stats.ruralMeasurements === 'number' &&
-    typeof stats.uniqueLocations === 'number' &&
-    typeof stats.totalDistance === 'number' &&
-    typeof stats.contributionScore === 'number' &&
-    typeof stats.qualityScore === 'number' &&
-    typeof stats.accuracyRate === 'number' &&
-    typeof stats.verifiedSpots === 'number' &&
-    typeof stats.helpfulActions === 'number' &&
-    typeof stats.consecutiveDays === 'number'
-  );
-}
-
-function validateStats(stats: Prisma.InputJsonValue): StatsContent {
-  // Since we know InputJsonValue is a subset of JsonValue, this cast is safe
-  return jsonToStats(stats as Prisma.JsonValue);
-}
-
-function isValidRequirement(req: unknown): req is Requirement {
-  if (typeof req !== 'object' || req === null) return false;
-  const r = req as Partial<Requirement>;
-  return (
-    typeof r.type === 'string' &&
-    typeof r.value === 'number' &&
-    typeof r.description === 'string' &&
-    typeof r.metric === 'string' &&
-    typeof r.operator === 'string' &&
-    Object.values(RequirementType).includes(r.type as RequirementType) &&
-    Object.values(RequirementOperator).includes(r.operator as RequirementOperator)
-  );
-}
-
-function convertToRequirements(jsonReqs: Prisma.InputJsonValue): Requirement[] {
-  // Since we know InputJsonValue is a subset of JsonValue, this cast is safe
-  const jsonValue = jsonReqs as Prisma.JsonValue;
-  if (!Array.isArray(jsonValue)) return [];
-  return jsonValue
-    .filter((req): req is Prisma.JsonObject => (
-      typeof req === 'object' && req !== null
-    ))
-    .filter(isValidRequirement)
-    .map(req => ({
-      type: req.type as RequirementType,
-      value: req.value as number,
-      description: req.description as string,
-      metric: req.metric as string,
-      operator: req.operator as RequirementOperator
-    }));
-}
-
-// Default stats for new users
 const defaultStats: StatsContent = {
   totalMeasurements: 0,
   ruralMeasurements: 0,
@@ -190,430 +90,77 @@ export class GamificationDB {
   }
 
   // User Progress Methods
-  async getUserProgress(userId: string): Promise<(UserProgress & {
-    stats: UserStats | null;
-    achievements: Array<{
-      achievementId: string;
-      achievement: ValidatedAchievement;
-      unlockedAt: Date | null;
-    }>;
-  }) | null> {
+  async getUserProgress(userId: string): Promise<UserProgress | null> {
     try {
-      userIdSchema.parse(userId);
-
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
         include: {
-          achievements: {
-            include: {
-              achievement: true
-            }
-          },
-          stats: true
-        }
+          streaks: true,
+          achievements: true,
+        },
       });
 
-      if (!progress) {
-        return null;
-      }
+      if (!user) return null;
 
-      const userStats = progress.stats;
-
-      // Convert achievements to ValidatedAchievement type
-      const validatedAchievements = progress.achievements.map(ua => {
-        const achievement = ua.achievement;
-        const requirements = convertToRequirements(achievement.requirements ?? {});
-
-        // Convert requirements to ValidatedRequirements with default values
-        const validatedRequirements: ValidatedRequirement[] = requirements.map(req => ({
-          ...req,
-          currentValue: 0, // This should be calculated based on user's progress
-          isMet: false // This should be calculated based on user's progress
-        }));
-
-        const achievementProgress = calculateAchievementProgress(
-          userStats ?? {
-            id: '',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            stats: {},
-            userProgressId: progress.id
-          },
-          progress,
-          achievement
-        );
-
-        const validatedAchievement: ValidatedAchievement = {
-          ...achievement,
-          requirements: validatedRequirements,
-          progress: achievementProgress.progress,
-          target: achievement.target ?? 100,
-          tier: achievement.tier as AchievementTier,
-          rarity: achievement.tier as AchievementTier
-        };
-
-        return {
-          achievementId: ua.achievementId,
-          achievement: validatedAchievement,
-          unlockedAt: ua.unlockedAt
-        };
-      });
-
+      const streak = user.streaks[0] || { current: 0, longest: 0 };
+      
       return {
-        ...progress,
-        stats: progress.stats,
-        achievements: validatedAchievements
+        points: user.points,
+        level: Math.floor(Math.sqrt(user.points / 100)) + 1,
+        currentXP: user.points % 100,
+        nextLevelXP: (Math.floor(Math.sqrt(user.points / 100)) + 2) * 100,
+        streak: {
+          current: streak.current,
+          longest: streak.longest,
+        },
+        stats: defaultStats,
       };
-
     } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  public async updateUserProgress(userId: string, points: number): Promise<void> {
-    const tracker = monitoringService.startPerformanceTracking('updateUserProgress', userId);
-    try {
-      const userProgress = await this.prisma.userProgress.findUnique({
-        where: { userId }
-      });
-
-      if (!userProgress) {
-        throw new Error(`User progress not found for userId: ${userId}`);
-      }
-
-      const newTotalPoints = userProgress.totalPoints + points;
-      const newCurrentXP = userProgress.currentXP + points;
-      const { level, nextLevelXP } = this.calculateNewLevel(newCurrentXP);
-
-      await this.prisma.userProgress.update({
-        where: { userId },
-        data: {
-          totalPoints: newTotalPoints,
-          totalXP: userProgress.totalXP + points,
-          currentXP: newCurrentXP,
-          level,
-          nextLevelXP,
-          lastActive: new Date()
-        }
-      });
-
-      tracker.addMetadata({
-        pointsAdded: points,
-        newTotal: newTotalPoints,
-        newLevel: level
-      });
-      await tracker.end();
-    } catch (error) {
-      await tracker.end();
-      await monitoringService.logError(error, 'error', userId, { points });
+      await monitoringService.logError(error);
       throw error;
     }
   }
 
-  private calculateNewLevel(currentXP: number): { level: number; nextLevelXP: number } {
-    const tracker = monitoringService.startPerformanceTracking('calculateNewLevel');
+  async updateUserProgress(userId: string, points: number): Promise<void> {
     try {
-      const baseXP = 100;
-      const multiplier = 1.5;
-      let level = 1;
-      let xpRequired = baseXP;
-
-      while (currentXP >= xpRequired) {
-        level++;
-        xpRequired = Math.floor(baseXP * Math.pow(multiplier, level - 1));
-      }
-
-      tracker.addMetadata({
-        currentXP,
-        calculatedLevel: level,
-        nextLevelXP: xpRequired
-      });
-      tracker.end();
-      return { level, nextLevelXP: xpRequired };
-    } catch (error) {
-      tracker.end();
-      monitoringService.logError(error, 'error', undefined, { currentXP });
-      throw error;
-    }
-  }
-
-  async createOrUpdateUserProgress(
-    userId: string,
-    data: Partial<UserProgressData>
-  ): Promise<UserProgress> {
-    try {
-      userIdSchema.parse(userId);
-      validateUserProgress(data);
-
-      const progress = await this.prisma.userProgress.upsert({
-        where: { userId },
-        update: {
-          ...data,
-          updatedAt: new Date()
-        },
-        create: {
-          userId,
-          ...data,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      });
-
-      if (!progress) {
-        throw new Error(`Failed to create or update user progress for user ${userId}`);
-      }
-      return progress;
-    } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  // User Stats Methods
-  async updateUserStats(
-    userId: string,
-    stats: Partial<UserStats>
-  ): Promise<UserStats> {
-    try {
-      userIdSchema.parse(userId);
-      validateUserStats(stats);
-
-      // First get the user's progress to get the userProgressId
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        select: { id: true }
-      });
-
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
-
-      const userStats = await this.prisma.userStats.upsert({
-        where: { userProgressId: progress.id },
-        create: {
-          userProgressId: progress.id,
-          stats: defaultStats as Prisma.InputJsonValue
-        },
-        update: {
-          stats: validateStats(stats.stats as Prisma.InputJsonValue),
-          updatedAt: new Date()
-        }
-      });
-
-      if (!userStats) {
-        throw new Error(`Failed to update stats for user ${userId}`);
-      }
-
-      return userStats;
-    } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  async createUserStats(
-    userId: string
-  ): Promise<UserStats> {
-    try {
-      userIdSchema.parse(userId);
-
-      // First get the user's progress to get the userProgressId
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        select: { id: true }
-      });
-
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
-
-      const userStats = await this.prisma.userStats.create({
+      await this.prisma.user.update({
+        where: { id: userId },
         data: {
-          userProgressId: progress.id,
-          stats: defaultStats
-        }
+          points: { increment: points },
+        },
       });
-
-      if (!userStats) {
-        throw new Error(`Failed to create stats for user ${userId}`);
-      }
-
-      return userStats;
     } catch (error) {
-      handleValidationError(error);
+      await monitoringService.logError(error);
+      throw error;
     }
   }
 
   // Achievement Methods
-  public async unlockAchievement(
-    userId: string,
-    achievementId: string
-  ): Promise<Achievement> {
+  async unlockAchievement(userId: string, achievementId: string): Promise<Achievement> {
     try {
-      userIdSchema.parse(userId);
-
-      // Get user progress first
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        select: { id: true }
-      });
-
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
-
-      // Create or update the user achievement
-      const userAchievement = await this.prisma.userAchievement.create({
+      return await this.prisma.achievement.update({
+        where: {
+          id: achievementId,
+          userId: userId,
+        },
         data: {
-          achievementId: achievementId,
-          userProgressId: progress.id,
-          unlockedAt: new Date()
+          unlockedAt: new Date(),
         },
-        include: {
-          achievement: true
-        }
       });
-
-      return userAchievement.achievement;
     } catch (error) {
-      handleValidationError(error);
+      await monitoringService.logError(error);
+      throw error;
     }
   }
 
-  public async getUserAchievements(userId: string): Promise<Achievement[]> {
+  async getUserAchievements(userId: string): Promise<Achievement[]> {
     try {
-      const progress = await this.prisma.userProgress.findUnique({
+      return await this.prisma.achievement.findMany({
         where: { userId },
-        include: {
-          achievements: {
-            include: {
-              achievement: true
-            }
-          }
-        }
       });
-
-      if (!progress) {
-        return [];
-      }
-
-      // Convert achievements to return type
-      return progress.achievements.map(ua => {
-        const achievement = ua.achievement;
-        const requirements = convertToRequirements(achievement.requirements ?? {});
-
-        return {
-          ...achievement,
-          requirements: requirements as unknown as Prisma.JsonValue,
-          target: achievement.target ?? null
-        };
-      });
-
     } catch (error) {
-      monitoringService.logError(error, 'error', userId, {
-        context: 'getUserAchievements'
-      });
-      return [];
-    }
-  }
-
-  // Leaderboard Methods
-  public async updateLeaderboardEntry(
-    userId: string,
-    data: LeaderboardData
-  ): Promise<LeaderboardEntry> {
-    try {
-      userIdSchema.parse(userId);
-
-      // Get user progress first
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        include: { user: true }
-      });
-
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
-
-      const entry = await this.prisma.leaderboardEntry.upsert({
-        where: {
-          userId_timeframe: {
-            userId: progress.userId,
-            timeframe: data.timeframe
-          }
-        },
-        create: {
-          userId: progress.userId,
-          points: data.points,
-          rank: data.rank ?? 0,
-          timeframe: data.timeframe
-        },
-        update: {
-          points: data.points,
-          ...(data.rank !== undefined && data.rank !== null ? { rank: data.rank } : {})
-        }
-      });
-
-      if (!entry) {
-        throw new Error(`Failed to update leaderboard entry for user ${userId}`);
-      }
-
-      return entry;
-    } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  async getLeaderboard(
-    timeframe: TimeFrame,
-    limit = 100
-  ): Promise<Array<LeaderboardEntry & { user: { name: string | null, id: string } }>> {
-    try {
-      type LeaderboardQueryResult = Array<{
-        id: string;
-        userId: string;
-        points: number;
-        rank: number;
-        timeframe: string;
-        updatedAt: Date;
-        createdAt: Date;
-        user: {
-          name: string | null;
-          id: string;
-        };
-      }>;
-
-      const leaderboard = await this.prisma.leaderboardEntry.findMany({
-        where: {
-          timeframe
-        },
-        orderBy: {
-          points: 'desc'
-        },
-        take: limit,
-        select: {
-          id: true,
-          userId: true,
-          points: true,
-          rank: true,
-          timeframe: true,
-          updatedAt: true,
-          createdAt: true,
-          user: {
-            select: {
-              name: true,
-              id: true
-            }
-          }
-        }
-      }) as unknown as LeaderboardQueryResult;
-
-      return leaderboard;
-    } catch (error) {
-      monitoringService.logError(error, 'error', '', {
-        context: 'getLeaderboard',
-        timeframe,
-        limit
-      });
-      return [];
+      await monitoringService.logError(error);
+      throw error;
     }
   }
 
@@ -621,284 +168,121 @@ export class GamificationDB {
   async processMeasurement(
     userId: string,
     measurement: MeasurementData,
-    tx?: Prisma.TransactionClient
   ): Promise<{
-    stats: UserStats;
-    progress: UserProgress;
+    points: number;
+    achievements: Achievement[];
   }> {
     try {
-      userIdSchema.parse(userId);
-      validateMeasurement(measurement);
+      return await this.prisma.$transaction(async (tx) => {
+        // Update user points based on measurement type
+        const pointsEarned = measurement.type === 'wifi' ? 10 : 5;
 
-      const prismaClient = tx || this.prisma;
+        // Create the appropriate record
+        if (measurement.type === 'wifi' && measurement.location) {
+          await tx.wifiSpot.create({
+            data: {
+              name: 'WiFi Spot',
+              latitude: measurement.location.lat,
+              longitude: measurement.location.lng,
+              signal: measurement.value,
+              points: pointsEarned,
+              userId,
+            },
+          });
+        } else if (measurement.type === 'coverage' && measurement.location && measurement.operator) {
+          await tx.coverageReport.create({
+            data: {
+              operator: measurement.operator as Prisma.OperatorType,
+              latitude: measurement.location.lat,
+              longitude: measurement.location.lng,
+              signal: measurement.value,
+              points: pointsEarned,
+              userId,
+            },
+          });
+        }
 
-      // Get user progress first
-      const progress = await prismaClient.userProgress.findUnique({
-        where: { userId },
-        include: { stats: true }
-      });
-
-      if (!progress) {
-        throw new Error(`Progress not found for user ${userId}`);
-      }
-
-      // Create default stats if they don't exist
-      let currentStats = progress.stats;
-      if (!currentStats) {
-        currentStats = await prismaClient.userStats.create({
+        // Update user points
+        await tx.user.update({
+          where: { id: userId },
           data: {
-            userProgressId: progress.id,
-            stats: defaultStats as Prisma.InputJsonValue
-          }
-        });
-      }
-
-      // Calculate new stats based on measurement
-      const newStats = calculateUpdatedStats(currentStats, measurement);
-      validateUserStats(newStats);
-
-      const updatedStats = await prismaClient.userStats.upsert({
-        where: { userProgressId: progress.id },
-        create: {
-          userProgressId: progress.id,
-          stats: defaultStats as Prisma.InputJsonValue
-        },
-        update: {
-          stats: validateStats((newStats ?? defaultStats) as Prisma.InputJsonValue),
-          updatedAt: new Date()
-        }
-      });
-
-      if (!updatedStats) {
-        throw new Error(`Failed to update stats for user ${userId}`);
-      }
-
-      // Update progress
-      const newProgress = calculateUpdatedProgress(progress, measurement);
-      validateUserProgress(newProgress);
-
-      const updatedProgress = await prismaClient.userProgress.update({
-        where: { userId },
-        data: newProgress
-      });
-
-      if (!updatedProgress) {
-        throw new Error(`Failed to update progress for user ${userId}`);
-      }
-
-      // Check and update achievements
-      await this.checkAndUpdateAchievements(progress, updatedStats, updatedProgress, prismaClient);
-
-      return {
-        stats: updatedStats,
-        progress: updatedProgress
-      };
-    } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  private async checkAndUpdateAchievements(
-    progress: UserProgress,
-    stats: UserStats,
-    updatedProgress: UserProgress,
-    prismaClient: PrismaClient | Prisma.TransactionClient
-  ): Promise<void> {
-    try {
-      // Get all achievements that haven't been unlocked yet
-      const allAchievements = await prismaClient.achievement.findMany({
-        where: {
-          NOT: {
-            userAchievements: {
-              some: {
-                userProgressId: progress.id,
-                completed: true
-              }
-            }
-          }
-        }
-      });
-
-      // Check which achievements should be unlocked
-      const eligibleAchievements = allAchievements.filter(achievement =>
-        determineEligibleAchievements(stats, updatedProgress).includes(achievement.id)
-      );
-
-      for (const achievement of eligibleAchievements) {
-        // Check if achievement is already unlocked
-        const existingAchievement = await prismaClient.userAchievement.findUnique({
-          where: {
-            userProgressId_achievementId: {
-              userProgressId: progress.id,
-              achievementId: achievement.id
-            }
-          }
-        });
-
-        if (existingAchievement) {
-          continue;
-        }
-
-        // Create user achievement
-        const userAchievement = await prismaClient.userAchievement.create({
-          data: {
-            achievementId: achievement.id,
-            userProgressId: progress.id,
-            unlockedAt: new Date()
+            points: { increment: pointsEarned },
           },
-          include: {
-            achievement: true
-          }
         });
 
-        if (!userAchievement) {
-          monitoringService.logError(
-            new Error(`Failed to create user achievement for user ${progress.userId}`),
-            'error',
-            progress.userId,
-            { context: 'checkAndUpdateAchievements', achievementId: achievement.id }
-          );
-          continue;
-        }
-
-        // Update user progress
-        const points = userAchievement.achievement.points || 0;
-        await prismaClient.userProgress.update({
-          where: { id: progress.id },
-          data: {
-            totalPoints: { increment: points },
-            unlockedAchievements: { increment: 1 },
-            lastAchievementAt: new Date()
-          }
+        // Check for new achievements
+        const achievements = await tx.achievement.findMany({
+          where: { userId, unlockedAt: null },
         });
-      }
+
+        return {
+          points: pointsEarned,
+          achievements,
+        };
+      });
     } catch (error) {
-      handleValidationError(error);
+      await monitoringService.logError(error);
+      throw error;
     }
   }
 
-  public async getUserRankHistory(
-    userId: string,
-    timeframe: TimeFrame,
-    limit = 30
-  ): Promise<RankHistoryEntry[]> {
+  // Leaderboard Methods
+  async getLeaderboard(
+    timeframe: TimeFrame = 'allTime',
+    limit = 10
+  ): Promise<LeaderboardEntry[]> {
     try {
-      userIdSchema.parse(userId);
-
-      // Get user progress first
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId }
-      });
-
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
-
-      const history = await this.prisma.rankHistory.findMany({
-        where: {
-          userId: progress.userId,
-          timeframe
-        },
+      const users = await this.prisma.user.findMany({
+        take: limit,
         orderBy: {
-          date: 'desc'
+          points: 'desc',
         },
-        take: limit
+        select: {
+          id: true,
+          name: true,
+          points: true,
+        },
       });
 
-      return history;
+      return users.map((user, index) => ({
+        userId: user.id,
+        points: user.points,
+        rank: index + 1,
+        timeframe,
+        user: {
+          name: user.name,
+          id: user.id,
+        },
+      }));
     } catch (error) {
-      handleValidationError(error);
+      await monitoringService.logError(error);
+      throw error;
     }
   }
 
-  public async updateRankHistory(
-    userId: string,
-    timeframe: TimeFrame,
-    rank: number
-  ): Promise<void> {
+  async calculateUserRank(userId: string): Promise<number> {
     try {
-      userIdSchema.parse(userId);
-
-      // Get user progress first
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId }
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { points: true },
       });
 
-      if (!progress) {
-        throw new Error(`User progress not found for user ${userId}`);
-      }
+      if (!user) return 0;
 
-      await this.prisma.rankHistory.create({
-        data: {
-          userId: progress.userId,
-          timeframe,
-          rank,
-          points: progress.totalPoints,
-          date: new Date()
-        }
-      });
-    } catch (error) {
-      handleValidationError(error);
-    }
-  }
-
-  // Utility Methods
-  public async calculateUserRank(
-    userId: string,
-    timeframe: TimeFrame = 'allTime'
-  ): Promise<number> {
-    const tracker = monitoringService.startPerformanceTracking('calculateUserRank', userId);
-    try {
-      const userProgress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-        select: { totalPoints: true }
-      });
-
-      if (!userProgress) {
-        throw new Error(`User progress not found for userId: ${userId}`);
-      }
-
-      const rank = await this.prisma.userProgress.count({
+      const higherRankedUsers = await this.prisma.user.count({
         where: {
-          totalPoints: {
-            gt: userProgress.totalPoints
-          }
-        }
+          points: {
+            gt: user.points,
+          },
+        },
       });
 
-      // Store rank history
-      await this.prisma.rankHistory.create({
-        data: {
-          userId,
-          rank: rank + 1,
-          timeframe,
-          points: userProgress.totalPoints
-        }
-      });
-
-      tracker.addMetadata({ timeframe, rank: rank + 1 });
-      await tracker.end();
-      return rank + 1;
+      return higherRankedUsers + 1;
     } catch (error) {
-      await tracker.end();
-      await monitoringService.logError(error, 'error', userId, { timeframe });
+      await monitoringService.logError(error);
       throw error;
     }
   }
 }
 
-function determineEligibleAchievements(stats: UserStats, progress: UserProgress): string[] {
-  // TO DO: implement logic to determine eligible achievements
-  return [];
-}
-
-function calculateAchievementProgress(stats: UserStats, progress: UserProgress, achievement: Achievement): {
-  progress: number;
-  completed: boolean;
-} {
-  // TO DO: implement logic to calculate achievement progress
-  return {
-    progress: 0,
-    completed: false
-  };
-}
+export const gamificationDB = new GamificationDB();

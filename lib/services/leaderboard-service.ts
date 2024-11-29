@@ -1,11 +1,65 @@
 // lib/services/leaderboard-service.ts
 
-import { PrismaClient, Prisma, User, UserProgress, UserStreak } from '@prisma/client';
+import { PrismaClient, Prisma, User, UserStats, UserStreak, Measurement, WifiSpot, CoverageReport } from '@prisma/client';
 import { apiCache } from './api-cache';
 import { createApiError } from '../api/error-handler';
-import { TimeFrame, LeaderboardEntry, LeaderboardStats, LeaderboardResponse } from '../gamification/types';
+import { 
+  TimeFrame, 
+  LeaderboardEntry, 
+  LeaderboardStats, 
+  LeaderboardResponse,
+  StatsContent,
+  jsonToStats
+} from '../gamification/types';
+import { calculateLevel } from '../gamification/validation';
 
-export type { TimeFrame, LeaderboardEntry, LeaderboardStats, LeaderboardResponse } from '../gamification/types';
+export type { TimeFrame, LeaderboardEntry, LeaderboardStats, LeaderboardResponse };
+
+type UserWithRelations = Prisma.UserGetPayload<{
+  include: {
+    achievements: true;
+    stats: true;
+    streaks: true;
+    measurements: {
+      include: {
+        wifiSpots: true;
+        coverageReports: true;
+      };
+    };
+  };
+}>;
+
+type UserSelect = {
+  id: true;
+  name: true;
+  email: true;
+  image: true;
+  points: true;
+  level: true;
+  userStreak: {
+    select: {
+      currentStreak: true;
+      longestStreak: true;
+    };
+  };
+  stats: {
+    select: {
+      stats: true;
+    };
+  };
+  achievements: {
+    select: {
+      id: true;
+      unlockedAt: true;
+    };
+  };
+  measurements: {
+    select: {
+      id: true;
+      timestamp: true;
+    };
+  };
+};
 
 const prisma = new PrismaClient();
 
@@ -42,39 +96,35 @@ export class LeaderboardService {
       async () => {
         const dateFilter = this.getDateFilter(timeframe);
 
-        const [total, userProgress] = await Promise.all([
-          prisma.userProgress.count({
+        const [total, users] = await Promise.all([
+          prisma.user.count({
             where: {
-              user: {
-                measurements: {
-                  some: {
-                    timestamp: dateFilter.timestamp
-                  }
+              measurements: {
+                some: {
+                  timestamp: dateFilter.timestamp
                 }
               }
             }
           }),
-          prisma.userProgress.findMany({
+          prisma.user.findMany({
             where: {
-              user: {
-                measurements: {
-                  some: {
-                    timestamp: dateFilter.timestamp
-                  }
+              measurements: {
+                some: {
+                  timestamp: dateFilter.timestamp
                 }
               }
             },
             select: {
               id: true,
-              userId: true,
-              totalPoints: true,
+              name: true,
+              email: true,
+              image: true,
+              points: true,
               level: true,
-              streak: true,
-              user: {
+              userStreak: {
                 select: {
-                  name: true,
-                  email: true,
-                  image: true
+                  currentStreak: true,
+                  longestStreak: true
                 }
               },
               stats: {
@@ -82,50 +132,56 @@ export class LeaderboardService {
                   stats: true
                 }
               },
-              userBadges: {
+              achievements: {
                 select: {
-                  id: true
+                  id: true,
+                  unlockedAt: true
+                }
+              },
+              measurements: {
+                select: {
+                  id: true,
+                  timestamp: true
                 }
               }
-            },
+            } as UserSelect,
             orderBy: {
-              totalPoints: 'desc'
+              points: 'desc'
             },
             skip,
             take: actualPageSize
           })
         ]);
 
-        const entries: LeaderboardEntry[] = userProgress.map((progress, index) => {
-          const username = progress.user?.name ?? progress.user?.email?.split('@')[0] ?? 'Anonymous';
-          const stats = (progress.stats?.stats as { [key: string]: number }) ?? {};
-          const currentStreak = progress.streak ?? 0;
-
-          return {
-            id: progress.id,
+        const entries: LeaderboardEntry[] = users.map((user: UserWithRelations, index) => {
+          const username = user.name ?? user.email?.split('@')[0] ?? 'Anonymous';
+          const stats = user.stats?.stats 
+            ? (user.stats.stats as Prisma.JsonValue as StatsContent)
+            : {} as StatsContent;
+          const streak = user.userStreak ?? { currentStreak: 0, longestStreak: 0 };
+          
+          const entry: LeaderboardEntry = {
             rank: skip + index + 1,
-            userId: progress.userId,
+            userId: user.id,
             username,
-            points: progress.totalPoints,
-            level: progress.level,
+            points: user.points ?? 0,
+            level: calculateLevel(user.points ?? 0),
             streak: {
-              current: currentStreak,
-              longest: currentStreak // Using current streak as longest since we don't track longest separately
+              current: streak.currentStreak,
+              longest: streak.longestStreak
             },
-            contributions: stats.totalMeasurements ?? 0,
-            badges: progress.userBadges?.length ?? 0,
-            image: progress.user?.image
+            stats: includeStats ? stats : undefined
           };
+
+          return entry;
         });
 
         const response: LeaderboardResponse = {
-          entries,
-          pagination: {
-            total,
-            page,
-            pageSize: actualPageSize,
-            hasMore: skip + actualPageSize < total
-          }
+          timeframe,
+          page,
+          pageSize: actualPageSize,
+          total,
+          entries
         };
 
         if (includeStats) {
@@ -138,194 +194,201 @@ export class LeaderboardService {
     );
   }
 
-  private getDateFilter(timeframe: TimeFrame): { timestamp?: { gte?: Date; lt?: Date; lte?: Date } } {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  async getUserStats(userId: string): Promise<LeaderboardStats> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        achievements: true,
+        stats: true,
+        streaks: true,
+        measurements: {
+          include: {
+            wifiSpots: true,
+            coverageReports: true
+          }
+        }
+      }
+    }) as UserWithRelations | null;
 
-    switch (timeframe) {
-      case 'daily':
-        return {
-          timestamp: {
-            gte: startOfDay,
-            lt: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
-          }
-        };
-      case 'weekly':
-        const startOfWeek = new Date(startOfDay.getTime() - startOfDay.getDay() * 24 * 60 * 60 * 1000);
-        return {
-          timestamp: {
-            gte: startOfWeek,
-            lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-          }
-        };
-      case 'monthly':
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return {
-          timestamp: {
-            gte: startOfMonth,
-            lt: new Date(now.getFullYear(), now.getMonth() + 1, 1)
-          }
-        };
-      case 'allTime':
-      default:
-        return {
-          timestamp: {
-            lte: now
-          }
-        };
+    if (!user) {
+      throw createApiError(404, 'User not found');
     }
+
+    const stats = user.stats?.stats 
+      ? (user.stats.stats as Prisma.JsonValue as StatsContent)
+      : {} as StatsContent;
+
+    const streak = user.userStreak ?? { currentStreak: 0, longestStreak: 0 };
+
+    return {
+      userId: user.id,
+      username: user.name ?? user.email?.split('@')[0] ?? 'Anonymous',
+      points: user.points ?? 0,
+      level: calculateLevel(user.points ?? 0),
+      streak: {
+        current: streak.currentStreak,
+        longest: streak.longestStreak
+      },
+      stats,
+      achievements: user.achievements.map(a => ({
+        id: a.id,
+        unlockedAt: a.unlockedAt
+      })),
+      measurements: {
+        total: user.measurements.length,
+        wifi: user.measurements.filter(m => m.wifiSpots).length,
+        coverage: user.measurements.filter(m => m.coverageReports).length
+      }
+    };
   }
 
-  async getUserRankContext(
+  async getUserRankWithContext(
     userId: string,
     timeframe: TimeFrame = 'allTime',
-    context = 5
-  ): Promise<{
-    userRank: number;
-    surroundingEntries: LeaderboardEntry[];
-  }> {
-    if (!userId) throw createApiError(400, 'User ID is required');
+    context = 2
+  ): Promise<LeaderboardResponse> {
+    const dateFilter = this.getDateFilter(timeframe);
 
-    const cacheKey = `user_rank_${userId}_${timeframe}_${context}`;
-
-    return apiCache.fetch(
-      cacheKey,
-      async () => {
-        const dateFilter: { timestamp?: { gte?: Date; lt?: Date; lte?: Date } } = this.getDateFilter(timeframe);
-
-        const userProgress = await prisma.userProgress.findUnique({
-          where: { userId },
-          select: { totalPoints: true }
-        });
-
-        if (!userProgress) {
-          throw createApiError(404, 'User progress not found');
-        }
-
-        const userRank = await prisma.userProgress.count({
-          where: {
-            totalPoints: {
-              gt: userProgress.totalPoints
-            },
-            user: {
-              measurements: {
-                some: {
-                  timestamp: dateFilter.timestamp
-                }
-              }
-            }
+    const userRank = await prisma.user.count({
+      where: {
+        points: {
+          gt: (await prisma.user.findUnique({
+            where: { id: userId },
+            select: { points: true }
+          }))?.points ?? 0
+        },
+        measurements: {
+          some: {
+            timestamp: dateFilter.timestamp
           }
-        }) + 1;
-
-        const page = Math.max(1, Math.ceil(userRank / 10));
-        const surroundingEntries = await this.getLeaderboard(
-          timeframe,
-          page,
-          context * 2 + 1
-        );
-
-        return {
-          userRank,
-          surroundingEntries: surroundingEntries.entries
-        };
-      },
-      {
-        maxAge: this.CACHE_TTL,
-        priority: 'medium'
+        }
       }
-    );
+    });
+
+    const users = await prisma.user.findMany({
+      where: {
+        measurements: {
+          some: {
+            timestamp: dateFilter.timestamp
+          }
+        }
+      },
+      include: {
+        achievements: true,
+        stats: true,
+        streaks: true,
+        measurements: {
+          include: {
+            wifiSpots: true,
+            coverageReports: true
+          }
+        }
+      },
+      orderBy: {
+        points: 'desc'
+      },
+      take: context * 2 + 1,
+      skip: Math.max(0, userRank - context - 1)
+    }) as UserWithRelations[];
+
+    const total = await prisma.user.count({
+      where: {
+        measurements: {
+          some: {
+            timestamp: dateFilter.timestamp
+          }
+        }
+      }
+    });
+
+    const entries = users.map((user, index) => {
+      const username = user.name ?? user.email?.split('@')[0] ?? 'Anonymous';
+      const stats = user.stats?.stats 
+        ? (user.stats.stats as Prisma.JsonValue as StatsContent)
+        : {} as StatsContent;
+      const streak = user.userStreak ?? { currentStreak: 0, longestStreak: 0 };
+
+      return {
+        rank: userRank + index + 1,
+        userId: user.id,
+        username,
+        points: user.points ?? 0,
+        level: calculateLevel(user.points ?? 0),
+        streak: {
+          current: streak.currentStreak,
+          longest: streak.longestStreak
+        },
+        stats
+      };
+    });
+
+    return {
+      timeframe,
+      page: Math.floor(userRank / (context * 2 + 1)) + 1,
+      pageSize: context * 2 + 1,
+      total,
+      entries
+    };
+  }
+
+  private getDateFilter(timeframe: TimeFrame): { timestamp: { gte: Date } } {
+    const now = new Date();
+    switch (timeframe) {
+      case 'daily':
+        now.setHours(0, 0, 0, 0);
+        break;
+      case 'weekly':
+        now.setDate(now.getDate() - now.getDay());
+        now.setHours(0, 0, 0, 0);
+        break;
+      case 'monthly':
+        now.setDate(1);
+        now.setHours(0, 0, 0, 0);
+        break;
+      case 'allTime':
+        return { timestamp: { gte: new Date(0) } };
+    }
+    return { timestamp: { gte: now } };
   }
 
   private async getLeaderboardStats(
-    tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use">,
-    dateFilter: { timestamp?: { gte?: Date; lt?: Date; lte?: Date } }
+    tx: PrismaClient,
+    dateFilter: { timestamp: { gte: Date } }
   ): Promise<LeaderboardStats> {
-    const cacheKey = `leaderboard-stats:${JSON.stringify(dateFilter)}`;
-    return await apiCache.fetch<LeaderboardStats>(
-      cacheKey,
-      async () => {
-        const [
-          totalUsers,
-          measurements,
-          topContributor,
-          streakLeader,
-          levelLeader
-        ] = await Promise.all([
-          tx.user.count({
-            where: {
-              measurements: {
-                some: {
-                  timestamp: dateFilter.timestamp
-                }
-              }
-            }
-          }),
-          tx.measurement.count({
-            where: {
+    const [totalUsers, totalMeasurements, averagePoints] = await Promise.all([
+      tx.user.count({
+        where: {
+          measurements: {
+            some: {
               timestamp: dateFilter.timestamp
             }
-          }),
-          tx.user.findFirst({
-            where: {
-              measurements: {
-                some: {
-                  timestamp: dateFilter.timestamp
-                }
-              }
-            },
-            orderBy: {
-              measurements: {
-                _count: 'desc'
-              }
-            },
-            select: {
-              name: true,
-              email: true
+          }
+        }
+      }),
+      tx.measurement.count({
+        where: {
+          timestamp: dateFilter.timestamp
+        }
+      }),
+      tx.user.aggregate({
+        where: {
+          measurements: {
+            some: {
+              timestamp: dateFilter.timestamp
             }
-          }),
-          tx.userProgress.findFirst({
-            where: {
-              user: {
-                measurements: {
-                  some: {
-                    timestamp: dateFilter.timestamp
-                  }
-                }
-              }
-            },
-            orderBy: {
-              streak: 'desc'
-            },
-            select: {
-              streak: true
-            }
-          }),
-          tx.userProgress.findFirst({
-            where: {
-              user: {
-                measurements: {
-                  some: {
-                    timestamp: dateFilter.timestamp
-                  }
-                }
-              }
-            },
-            orderBy: {
-              level: 'desc'
-            }
-          })
-        ]);
+          }
+        },
+        _avg: {
+          points: true
+        }
+      })
+    ]);
 
-        return {
-          totalUsers,
-          totalContributions: measurements,
-          topContributor: topContributor?.name ?? topContributor?.email?.split('@')[0] ?? 'Anonymous',
-          mostBadges: 'N/A', // TODO: Implement badges count
-          longestStreak: streakLeader?.streak ?? 0,
-          highestLevel: levelLeader?.level ?? 0
-        };
-      }
-    );
+    return {
+      totalUsers,
+      totalMeasurements,
+      averagePoints: Math.round(averagePoints._avg.points ?? 0)
+    };
   }
 }
 
