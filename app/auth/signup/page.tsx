@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,54 +17,72 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 
 const formSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character'
+    ),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
 });
 
-export default function SignIn() {
+export default function SignUp() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true);
-      const result = await signIn('credentials', {
-        email: values.email,
-        password: values.password,
-        redirect: false,
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+        }),
       });
 
-      if (result?.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: result.error,
-        });
-        return;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Something went wrong');
       }
 
-      router.push(callbackUrl);
+      toast({
+        title: 'Success!',
+        description: 'Please check your email to verify your account.',
+      });
+
+      router.push('/auth/signin?registered=true');
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error instanceof Error ? error.message : 'Something went wrong',
       });
     } finally {
       setIsLoading(false);
@@ -78,45 +95,28 @@ export default function SignIn() {
         <div className="flex flex-col space-y-6">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Welcome back
+              Create an account
             </h1>
             <p className="text-sm text-muted-foreground">
-              Choose your preferred sign in method
+              Enter your details below to create your account
             </p>
-          </div>
-
-          <div className="grid gap-4">
-            <Button
-              variant="outline"
-              disabled={isLoading}
-              onClick={() => signIn('google', { callbackUrl })}
-            >
-              <Icons.google className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
-            <Button
-              variant="outline"
-              disabled={isLoading}
-              onClick={() => signIn('github', { callbackUrl })}
-            >
-              <Icons.gitHub className="mr-2 h-4 w-4" />
-              Continue with GitHub
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
@@ -147,22 +147,35 @@ export default function SignIn() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Sign In
+                Sign Up
               </Button>
             </form>
           </Form>
 
           <div className="text-center text-sm">
-            Don&apos;t have an account?{' '}
+            Already have an account?{' '}
             <Link
-              href="/auth/signup"
+              href="/auth/signin"
               className="font-semibold text-primary hover:underline"
             >
-              Sign up
+              Sign in
             </Link>
           </div>
         </div>

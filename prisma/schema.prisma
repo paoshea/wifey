@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,274 +12,101 @@ datasource db {
 
 enum UserRole {
   USER
-  ADMIN
   MODERATOR
+  ADMIN
 }
 
-enum AchievementTier {
-  COMMON
-  RARE
-  EPIC
-  LEGENDARY
+enum OperatorType {
+  KOLBI
+  MOVISTAR
+  CLARO
+  LIBERTY
 }
 
-enum RequirementType {
-  STAT
-  LEVEL
-  STREAK
-  ACHIEVEMENT
-}
-
-enum RequirementOperator {
+enum ComparisonOperator {
   GREATER_THAN
-  GREATER_THAN_EQUAL
   LESS_THAN
+  GREATER_THAN_EQUAL
   LESS_THAN_EQUAL
   EQUAL
 }
 
 model User {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  name            String?
-  email           String    @unique
-  password        String
-  role            UserRole  @default(USER)
-  preferredLanguage String  @default("en")
-  emailVerified   DateTime?
-  image           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  progress        UserProgress?
-  coveragePoints  CoveragePoint[]
-  measurements    Measurement[]
-  rankHistory     RankHistory[]
-  errorLogs       ErrorLog[]
-  performanceLogs PerformanceLog[]
-  leaderboardEntries LeaderboardEntry[]
-}
-
-model UserProgress {
-  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId              String    @unique @db.ObjectId
-  user                User      @relation(fields: [userId], references: [id])
-  totalPoints         Int       @default(0)
-  level              Int       @default(1)
-  currentXP          Int       @default(0)
-  totalXP            Int       @default(0)
-  longestStreak      Int       @default(0)
-  nextLevelXP        Int       @default(100)
-  streak             Int       @default(0)
-  lastActive         DateTime  @default(now())
-  unlockedAchievements Int    @default(0)
-  lastAchievementAt   DateTime?
-  stats              UserStats?
-  achievements       UserAchievement[]
-  userStreak         UserStreak?
-  userBadges         UserBadge[]
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  @@index([level])
-  @@index([totalPoints])
-}
-
-model UserStats {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgressId    String    @unique @db.ObjectId
-  userProgress      UserProgress @relation(fields: [userProgressId], references: [id])
-  stats            Json      // Stores StatsContent object
+  name              String?
+  email             String    @unique
+  hashedPassword    String?
+  verificationToken String?
+  emailVerified     DateTime?
+  image             String?
+  role              UserRole  @default(USER)
+  preferredLanguage String    @default("en")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-}
 
-model Achievement {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  title       String    @unique
-  description String
-  icon        String
-  points      Int
-  tier        AchievementTier
-  requirements Json     // Array of Requirement objects
-  target      Int?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userAchievements UserAchievement[]
+  wifiSpots         WifiSpot[]
+  coverageReports   CoverageReport[]
+  achievements      Achievement[]
+  points            Int       @default(0)
+  streaks           UserStreak[]
 
-  @@index([tier])
-}
-
-model UserAchievement {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgressId  String    @db.ObjectId
-  achievementId   String    @db.ObjectId
-  progress        Int       @default(0)
-  target          Int?
-  completed       Boolean   @default(false)
-  unlockedAt      DateTime?
-  notifiedAt      DateTime?
-  userProgress    UserProgress @relation(fields: [userProgressId], references: [id])
-  achievement     Achievement  @relation(fields: [achievementId], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  @@unique([userProgressId, achievementId])
-  @@index([completed])
-  @@index([unlockedAt])
-}
-
-model LeaderboardEntry {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
-  points      Int
-  rank        Int
-  timeframe   String    // 'daily', 'weekly', 'monthly', 'allTime'
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@unique([userId, timeframe])
-  @@index([timeframe, points])
-  @@index([rank])
-}
-
-model CoveragePoint {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  location       Json      // { lat: number, lng: number }
-  signalStrength Float
-  provider       String
-  type           String    // 'cellular' or 'wifi'
-  technology     String    // '2G', '3G', '4G', '5G'
-  reliability    Float
-  timestamp      DateTime  @default(now())
-  userId         String?   @db.ObjectId
-  user           User?     @relation(fields: [userId], references: [id])
-  history        CoverageHistory[]
-  verifications  Int       @default(0)
-  lastVerified   DateTime  @default(now())
-  predictedArea  Json?     // Polygon of predicted coverage area
-  metadata       Json?     // Additional metadata for coverage point
-
-  @@unique([provider, type, location], name: "provider_type_location_unique")
-  @@index([provider])
-  @@index([type])
-}
-
-model CoverageHistory {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  coveragePointId String        @db.ObjectId
-  coveragePoint   CoveragePoint @relation(fields: [coveragePointId], references: [id])
-  signalStrength  Float
-  timestamp       DateTime      @default(now())
-  userId          String?       @db.ObjectId
-  metadata        Json?         // Weather conditions, time of day, etc.
-
-  @@index([timestamp])
-}
-
-model WifiHotspot {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  location     Json     // { lat: number, lng: number }
-  provider     String
-  speed        String?
-  isPublic     Boolean  @default(true)
-  lastVerified DateTime @default(now())
-
-  @@index([provider])
-  @@index([isPublic])
-}
-
-model Measurement {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  type      String   // 'speed', 'signal', or 'latency'
-  value     Float
-  unit      String
-  location  Json     // { lat: number, lng: number }
-  timestamp DateTime @default(now())
-  device    Json     // Device information
-  metadata  Json?    // Additional measurement metadata
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([type])
-  @@index([timestamp])
-}
-
-model CoverageComparison {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  location    Json     // { lat: number, lng: number }
-  providers   Json[]   // Array of provider comparisons
-  timestamp   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([timestamp])
+  @@index([verificationToken])
 }
 
 model UserStreak {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String   @unique @db.ObjectId
-  currentStreak Int       @default(0)
-  lastUpdated   DateTime  @default(now())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  current     Int      @default(0)
+  longest     Int      @default(0)
+  lastCheckin DateTime @default(now())
 
-  @@index([currentStreak])
+  @@index([userId])
 }
 
-model UserBadge {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userProgress  UserProgress @relation(fields: [userProgressId], references: [id])
-  userProgressId String   @db.ObjectId
-  badgeType     String
-  level         Int       @default(1)
-  progress      Int       @default(0)
-  unlockedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@unique([userProgressId, badgeType])
-  @@index([userProgressId])
-  @@index([badgeType])
+model WifiSpot {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  latitude    Float
+  longitude   Float
+  speed       Float?
+  signal      Int?
+  security    String?
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  verified    Boolean  @default(false)
+  verifiedBy  String?  @db.ObjectId
+  points      Int      @default(10)
 }
 
-model RankHistory {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
-  rank        Int
-  date        DateTime  @default(now())
-  timeframe   String    // daily, weekly, monthly, allTime
+model CoverageReport {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  operator    OperatorType
+  latitude    Float
+  longitude   Float
+  signal      Int
+  speed       Float?
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  verified    Boolean  @default(false)
+  verifiedBy  String?  @db.ObjectId
+  points      Int      @default(5)
+}
+
+model Achievement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
   points      Int
-  createdAt   DateTime  @default(now())
-
-  @@index([userId])
-  @@index([timeframe, date])
-}
-
-model ErrorLog {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
-  error       String
-  stack       String?
-  metadata    Json?
-  timestamp   DateTime  @default(now())
-
-  @@index([userId])
-  @@index([timestamp])
-}
-
-model PerformanceLog {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id])
-  operation   String
-  duration    Int       // in milliseconds
-  metadata    Json?
-  timestamp   DateTime  @default(now())
-
-  @@index([userId])
-  @@index([operation])
-  @@index([timestamp])
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  unlockedAt  DateTime?
+  type        String   // e.g., "wifi_spots", "coverage_reports", "streak"
+  threshold   Int      // number required to unlock
+  icon        String?  // path to achievement icon
 }

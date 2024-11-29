@@ -8,8 +8,12 @@ const publicPaths = [
   '/',
   '/auth/signin',
   '/auth/signup',
+  '/auth/verify',
+  '/auth/verify-request',
+  '/auth/error',
   '/api/auth/signin',
   '/api/auth/signup',
+  '/api/auth/verify',
   '/onboarding',
   '/api/onboarding',
   '/coverage',
@@ -36,25 +40,14 @@ const intlMiddleware = createMiddleware({
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for API routes
-  if (pathname.startsWith('/api/')) {
+  // Skip middleware for public API routes
+  if (pathname.startsWith('/api/') && publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
   // Handle internationalization first
   const response = await intlMiddleware(request);
   if (response) return response;
-
-  // Check if the user needs onboarding
-  const hasCompletedOnboarding = request.cookies.get('hasCompletedOnboarding');
-  const isOnboardingPage = pathname.includes('/onboarding');
-
-  // If user hasn't completed onboarding and isn't on the onboarding page,
-  // redirect them to onboarding
-  if (!hasCompletedOnboarding && !isOnboardingPage && !pathname.includes('/_next')) {
-    const locale = request.cookies.get('NEXT_LOCALE')?.value || 'en';
-    return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url));
-  }
 
   // Allow public paths
   if (publicPaths.some(path => pathname.startsWith(path))) {
@@ -72,6 +65,22 @@ export async function middleware(request: NextRequest) {
     const url = new URL('/auth/signin', request.url);
     url.searchParams.set('callbackUrl', encodeURI(request.url));
     return NextResponse.redirect(url);
+  }
+
+  // Check if email is verified for protected routes
+  if (!token.emailVerified && !pathname.startsWith('/auth/verify')) {
+    return NextResponse.redirect(
+      new URL('/auth/verify-request', request.url)
+    );
+  }
+
+  // Check if user needs onboarding
+  const hasCompletedOnboarding = request.cookies.get('hasCompletedOnboarding');
+  const isOnboardingPage = pathname.includes('/onboarding');
+
+  if (!hasCompletedOnboarding && !isOnboardingPage && !pathname.includes('/_next')) {
+    const locale = request.cookies.get('NEXT_LOCALE')?.value || 'en';
+    return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url));
   }
 
   // Check role-protected paths
@@ -93,14 +102,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * 1. /api/ (API routes)
-     * 2. /_next/ (Next.js internals)
-     * 3. /_static (inside /public)
-     * 4. /_vercel (Vercel internals)
-     * 5. /favicon.ico, /sitemap.xml (static files)
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public files)
      */
-    '/((?!api/|_next/|_static/|_vercel|favicon.ico|sitemap.xml).*)',
-    '/api/:path*',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 };

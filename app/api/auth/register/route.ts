@@ -1,115 +1,90 @@
 // api/auth/register/route.ts
 
-import { UserRole } from '../../../../lib/types/auth';
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { Resend } from 'resend';
 import { z } from 'zod';
-import * as Sentry from '@sentry/nextjs';
+import { crypto } from 'crypto';
 
-const prisma = new PrismaClient();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  language: z.string(),
 });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    // Validate request body
-    const validationResult = registerSchema.safeParse(body);
-    if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid input data', details: validationResult.error.errors },
-        { status: 400 }
-      );
-    }
-
-    const validatedData = validationResult.data;
+    const { name, email, password } = registerSchema.parse(body);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+      where: { email },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
+        { message: 'User already exists' },
+        { status: 400 }
       );
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Generate verification token
+    const verificationToken = crypto.randomUUID();
 
     // Create user
     const user = await prisma.user.create({
       data: {
-        name: validatedData.name,
-        email: validatedData.email,
+        name,
+        email,
         password: hashedPassword,
-        role: UserRole.USER,
-        preferredLanguage: validatedData.language,
+        verificationToken,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        preferredLanguage: true,
-        createdAt: true,
-      },
+    });
+
+    // Send verification email
+    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify?token=${verificationToken}`;
+    
+    await resend.emails.send({
+      from: 'Wifey <noreply@wifey.app>',
+      to: email,
+      subject: 'Verify your email',
+      html: `
+        <h1>Welcome to Wifey!</h1>
+        <p>Click the link below to verify your email address:</p>
+        <a href="${verificationUrl}">${verificationUrl}</a>
+        <p>If you didn't create this account, you can safely ignore this email.</p>
+      `,
     });
 
     return NextResponse.json(
       {
-        success: true,
+        message: 'User created successfully. Please check your email to verify your account.',
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
-          preferredLanguage: user.preferredLanguage,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    // Log error to Sentry
-    Sentry.captureException(error, {
-      extra: {
-        route: '/api/auth/register',
-      },
-    });
-
     console.error('Registration error:', error);
-
-    // Return appropriate error response
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { message: 'Invalid input data', errors: error.errors },
         { status: 400 }
       );
     }
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'User with this email already exists' },
-          { status: 409 }
-        );
-      }
-    }
-
     return NextResponse.json(
-      { error: 'An error occurred during registration' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
