@@ -136,6 +136,11 @@ class GamificationService {
 
   async getUserProgress(userId: string): Promise<UserProgress> {
     try {
+      const cachedProgress = await apiCache.get(`user-progress:${userId}`);
+      if (cachedProgress) {
+        return cachedProgress;
+      }
+
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -154,7 +159,7 @@ class GamificationService {
       const nextLevelXP = (level + 1) * 100;
       const stats = user.stats?.stats ? (user.stats.stats as Prisma.JsonValue as StatsContent) : defaultStats;
 
-      return {
+      const progress: UserProgress = {
         points: user.points ?? 0,
         level,
         currentXP: (user.points ?? 0) % 100,
@@ -166,6 +171,9 @@ class GamificationService {
         stats,
         achievements: user.achievements
       };
+
+      await apiCache.set(`user-progress:${userId}`, progress);
+      return progress;
     } catch (error) {
       await monitoringService.logError(error);
       throw error;
@@ -312,6 +320,7 @@ class GamificationService {
         await notificationService.sendAchievementNotification(userId, notification);
       }
 
+      await apiCache.invalidate(`user-progress:${userId}`);
       return result;
     } catch (error) {
       await monitoringService.logError(error);
@@ -325,6 +334,11 @@ class GamificationService {
     pageSize = 10
   ): Promise<LeaderboardResponse> {
     try {
+      const cachedLeaderboard = await apiCache.get(`leaderboard:${timeframe}:${page}:${pageSize}`);
+      if (cachedLeaderboard) {
+        return cachedLeaderboard;
+      }
+
       const skip = (page - 1) * pageSize;
 
       const [users, total] = await Promise.all([
@@ -363,7 +377,7 @@ class GamificationService {
         };
       });
 
-      return {
+      const leaderboard: LeaderboardResponse = {
         entries,
         pagination: {
           total,
@@ -372,6 +386,9 @@ class GamificationService {
           hasMore: skip + pageSize < total
         }
       };
+
+      await apiCache.set(`leaderboard:${timeframe}:${page}:${pageSize}`, leaderboard);
+      return leaderboard;
     } catch (error) {
       await monitoringService.logError(error);
       throw error;

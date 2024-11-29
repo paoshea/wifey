@@ -1,7 +1,8 @@
+import { type NextRequest } from 'next/server';
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');

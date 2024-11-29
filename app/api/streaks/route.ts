@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { type NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/auth.config';
+import prisma from '@/lib/prisma';
 import { streakService } from '@/lib/services/streak-service';
-import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {

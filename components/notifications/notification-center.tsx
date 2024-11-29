@@ -1,22 +1,27 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, Check, Settings, Filter } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import { Notification, NotificationType } from '@prisma/client';
-import { Dialog } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { NotificationPreferences } from '@/lib/services/notification-service';
+'use client'
+
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bell, X, Check, Settings, Filter } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import type {
+  Notification,
+  NotificationType,
+  NotificationPreferences
+} from '@/types/notifications'
+import { Dialog } from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface NotificationGroup {
-  type: NotificationType;
-  notifications: Notification[];
-  icon: string;
-  label: string;
+  type: NotificationType
+  notifications: Notification[]
+  icon: string
+  label: string
 }
 
-export default function NotificationCenter() {
+export function NotificationCenter() {
   const { data: session } = useSession();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [groups, setGroups] = useState<Record<string, Notification[]>>({});
@@ -25,6 +30,7 @@ export default function NotificationCenter() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [showSettings, setShowSettings] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
+    userId: session?.user?.id || '',
     email: true,
     push: true,
     inApp: true,
@@ -247,7 +253,7 @@ export default function NotificationCenter() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
             <div className="p-6">
               <h3 className="text-lg font-semibold mb-4">Notification Settings</h3>
-              
+
               <div className="space-y-6">
                 <div className="space-y-4">
                   <h4 className="font-medium">Notification Channels</h4>
@@ -336,21 +342,20 @@ export default function NotificationCenter() {
 
 function NotificationItem({
   notification,
-  onMarkAsRead
+  onMarkAsRead,
 }: {
-  notification: Notification;
-  onMarkAsRead: () => void;
+  notification: Notification
+  onMarkAsRead: () => void
 }) {
   const style = notification.style || {};
-  
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`p-4 border-b hover:bg-gray-50 ${
-        !notification.isRead ? 'bg-blue-50' : ''
-      }`}
+      className={`p-4 border-b hover:bg-gray-50 ${!notification.isRead ? 'bg-blue-50' : ''
+        }`}
       style={{
         backgroundColor: style.backgroundColor,
         color: style.textColor

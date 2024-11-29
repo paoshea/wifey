@@ -23,12 +23,11 @@ export enum RequirementType {
 }
 
 export enum RequirementOperator {
-  GREATER_THAN = 'GREATER_THAN',
-  GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
-  LESS_THAN = 'LESS_THAN',
-  LESS_THAN_EQUAL = 'LESS_THAN_EQUAL',
-  EQUAL = 'EQUAL',
-  NOT_EQUAL = 'NOT_EQUAL'
+  GREATER_THAN = 'gt',
+  GREATER_THAN_EQUAL = 'gte',
+  LESS_THAN = 'lt',
+  LESS_THAN_EQUAL = 'lte',
+  EQUAL = 'eq'
 }
 
 export type LeaderboardTimeframe = 'daily' | 'weekly' | 'monthly' | 'allTime';
@@ -46,31 +45,21 @@ export type Requirement = z.infer<typeof RequirementSchema>;
 export type AchievementRequirement = Requirement;
 
 // Stats Metric Enum
-export enum StatsMetric {
-  TOTAL_MEASUREMENTS = 'totalMeasurements',
-  RURAL_MEASUREMENTS = 'ruralMeasurements',
-  VERIFIED_SPOTS = 'verifiedSpots',
-  HELPFUL_ACTIONS = 'helpfulActions',
-  CONSECUTIVE_DAYS = 'consecutiveDays',
-  QUALITY_SCORE = 'qualityScore',
-  ACCURACY_RATE = 'accuracyRate',
-  UNIQUE_LOCATIONS = 'uniqueLocations',
-  TOTAL_DISTANCE = 'totalDistance',
-  CONTRIBUTION_SCORE = 'contributionScore'
-}
+export type StatsMetric = 
+  | 'totalMeasurements'
+  | 'ruralMeasurements'
+  | 'uniqueLocations'
+  | 'totalDistance'
+  | 'contributionScore'
+  | 'qualityScore'
+  | 'accuracyRate'
+  | 'verifiedSpots'
+  | 'helpfulActions'
+  | 'consecutiveDays';
 
 // Stats Content Schema
 export const StatsContentSchema = z.object({
-  totalMeasurements: z.number(),
-  ruralMeasurements: z.number(),
-  uniqueLocations: z.number(),
-  totalDistance: z.number(),
-  contributionScore: z.number(),
-  qualityScore: z.number(),
-  accuracyRate: z.number(),
-  verifiedSpots: z.number(),
-  helpfulActions: z.number(),
-  consecutiveDays: z.number()
+  [K in StatsMetric]: z.number()
 });
 
 export type StatsContent = z.infer<typeof StatsContentSchema>;
@@ -323,14 +312,7 @@ export interface LeaderboardEntry {
     current: number;
     longest: number;
   };
-  contributions: number;
-  badges: number;
-  image?: string | null;
-  timeframe?: string;
-  updatedAt?: Date;
-  displayName?: string;
-  topAchievements?: Achievement[];
-  avatarUrl?: string | null;
+  stats?: StatsContent;
 }
 
 export interface LeaderboardStats {
@@ -355,3 +337,106 @@ export interface LeaderboardResponse {
 
 // Export Prisma Types
 export type { Achievement, UserProgress, UserStats };
+
+// New types
+export type UserWithRelations = Prisma.UserGetPayload<{
+  include: {
+    achievements: true;
+    stats: true;
+    streaks: true;
+    measurements: {
+      include: {
+        wifiSpots: true;
+        coverageReports: true;
+      };
+    };
+  };
+}>;
+
+export type MeasurementCreate = Prisma.MeasurementCreateInput;
+
+export type MeasurementInput = {
+  type: 'wifi' | 'coverage';
+  value: number;
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  altitude?: number;
+  speed?: number;
+  deviceInfo?: Record<string, any>;
+  metadata?: Record<string, any>;
+  ssid?: string;
+  bssid?: string;
+  frequency?: number;
+  channel?: number;
+  security?: string;
+  operator?: string;
+  networkType?: string;
+  signalStrength?: number;
+};
+
+export type ValidatedMeasurementInput = MeasurementInput & {
+  isRural: boolean;
+  distance?: number;
+};
+
+export type MeasurementResult = {
+  points: number;
+  xp: number;
+  bonuses: Record<string, number>;
+  achievements: AchievementNotification[];
+  newLevel: number;
+  newStats: StatsContent;
+};
+
+export type AchievementNotification = {
+  achievement: {
+    id: string;
+    name: string;
+    description: string;
+    points: number;
+    icon?: string;
+  };
+  pointsEarned: number;
+  newLevel: number;
+};
+
+export type LeaderboardStats = {
+  userId: string;
+  username: string;
+  points: number;
+  level: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  stats: StatsContent;
+  achievements: Array<{
+    id: string;
+    unlockedAt: Date | null;
+  }>;
+  measurements: {
+    total: number;
+    wifi: number;
+    coverage: number;
+  };
+};
+
+export type StatsMetric = {
+  id: string;
+  name: string;
+  value: number;
+  unit?: string;
+  description?: string;
+  icon?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  change?: number;
+  target?: number;
+  category: 'measurement' | 'achievement' | 'social' | 'progress';
+};
+
+export type UserWithStats = User & {
+  stats: UserStats | null;
+  progress: UserProgress | null;
+  leaderboardEntries: LeaderboardEntry[];
+};

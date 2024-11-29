@@ -44,3 +44,10 @@ export class TransactionError extends GamificationError {
     this.name = 'TransactionError';
   }
 }
+
+export class UserNotFoundError extends Error {
+  constructor(userId: string) {
+    super(`User with ID ${userId} not found`);
+    this.name = 'UserNotFoundError';
+  }
+}

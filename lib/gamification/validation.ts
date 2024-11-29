@@ -20,6 +20,7 @@ import {
 import { ValidationError } from './errors';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { Measurement } from '@prisma/client';
 
 // Basic validation schemas
 export const userIdSchema = z.string().min(1);
@@ -201,6 +202,38 @@ export function calculateLevel(xp: number): number {
 // Required XP calculation
 export function calculateRequiredXP(level: number): number {
   return Math.pow(level - 1, 2) * 100;
+}
+
+// Points calculation for measurement
+export function calculatePointsForMeasurement(measurement: Measurement): number {
+  let points = 5; // Base points for any measurement
+
+  // Bonus points for rural areas
+  if (measurement.isRural) {
+    points += 3;
+  }
+
+  // Bonus points for high accuracy
+  if (measurement.accuracy && measurement.accuracy < 10) {
+    points += 2;
+  }
+
+  // Bonus points for complete data
+  if (measurement.altitude && measurement.speed && measurement.deviceInfo) {
+    points += 2;
+  }
+
+  // Bonus points for WiFi measurements with complete network info
+  if (measurement.type === 'wifi' && measurement.ssid && measurement.bssid && measurement.security) {
+    points += 3;
+  }
+
+  // Bonus points for coverage measurements with network details
+  if (measurement.type === 'coverage' && measurement.operator && measurement.networkType) {
+    points += 3;
+  }
+
+  return points;
 }
 
 // Error handling

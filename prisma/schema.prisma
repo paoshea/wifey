@@ -31,24 +31,46 @@ enum ComparisonOperator {
   EQUAL
 }
 
+enum NotificationType {
+  STREAK_REMINDER
+  ACHIEVEMENT
+  STREAK_MILESTONE
+  SOCIAL
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id                String    @id @default(auto()) @map("_id") @db.ObjectId
   name              String?
   email             String    @unique
   hashedPassword    String?
-  verificationToken String?
+  verificationToken String?   @db.ObjectId
   emailVerified     DateTime?
   image             String?
   role              UserRole  @default(USER)
   preferredLanguage String    @default("en")
+  points            Int       @default(0)
+  level             Int       @default(1)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  // Relations
   wifiSpots         WifiSpot[]
   coverageReports   CoverageReport[]
   achievements      Achievement[]
-  points            Int       @default(0)
   streaks           UserStreak[]
+  progress          UserProgress?
+  stats             UserStats?
+  measurements      Measurement[]
+  leaderboardEntries LeaderboardEntry[]
+  notifications     Notification[]
+  notificationPreferences NotificationPreferences?
 
   @@index([verificationToken])
 }
@@ -97,6 +119,18 @@ model CoverageReport {
   points      Int      @default(5)
 }
 
+model CoverageReport {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  points    Int
+  metadata  Json?
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
 model Achievement {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
@@ -109,4 +143,133 @@ model Achievement {
   type        String   // e.g., "wifi_spots", "coverage_reports", "streak"
   threshold   Int      // number required to unlock
   icon        String?  // path to achievement icon
+}
+
+model UserProgress {
+  id          String      @id @default(cuid()) @map("_id")
+  userId      String      
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level       Int         @default(1)
+  currentXP   Int         @default(0)
+  totalXP     Int         @default(0)
+  streak      Int         @default(0)
+  maxStreak   Int         @default(0)
+  lastCheckin DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId])
+}
+
+model UserStats {
+  id                String   @id @default(cuid()) @map("_id")
+  userId           String      
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalMeasurements Int      @default(0)
+  ruralMeasurements Int      @default(0)
+  uniqueLocations   Int      @default(0)
+  totalDistance     Float    @default(0)
+  contributionScore Float    @default(0)
+  qualityScore      Float    @default(0)
+  accuracyRate      Float    @default(0)
+  verifiedSpots     Int      @default(0)
+  helpfulActions    Int      @default(0)
+  consecutiveDays   Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId])
+}
+
+model LeaderboardEntry {
+  id          String   @id @default(cuid()) @map("_id")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank        Int
+  points      Int      @default(0)
+  timeframe   String   // daily, weekly, monthly, allTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, timeframe])
+  @@index([timeframe, rank])
+}
+
+model Measurement {
+  id          String    @id @default(cuid()) @map("_id")
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String    // wifi or coverage
+  value       Float
+  latitude    Float
+  longitude   Float
+  accuracy    Float?
+  altitude    Float?
+  speed      Float?
+  timestamp   DateTime  @default(now())
+  deviceInfo  Json?
+  metadata    Json?
+  isVerified  Boolean   @default(false)
+  points      Int       @default(0)
+  isRural     Boolean   @default(false)
+  distance    Float?    // Distance from previous measurement in meters
+
+  // WiFi specific fields
+  ssid        String?
+  bssid       String?
+  frequency   Float?
+  channel     Int?
+  security    String?
+  
+  // Coverage specific fields
+  operator    String?
+  networkType String?
+  signalStrength Int?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([latitude, longitude])
+  @@index([timestamp])
+}
+
+model Notification {
+  id            String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String
+  type          NotificationType
+  title         String
+  message       String
+  isRead        Boolean             @default(false)
+  priority      NotificationPriority @default(MEDIUM)
+  style         Json?               // For custom styling like colors, icons
+  metadata      Json?               // For additional notification-specific data
+  scheduledFor  DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  user          User                @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model NotificationPreferences {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String    @unique
+  email               Boolean   @default(true)
+  push                Boolean   @default(true)
+  inApp               Boolean   @default(true)
+  dailyDigest         Boolean   @default(true)
+  streakReminders     Boolean   @default(true)
+  achievementAlerts   Boolean   @default(true)
+  socialNotifications Boolean   @default(true)
+  quietHoursStart     String?
+  quietHoursEnd       String?
+  user                User      @relation(fields: [userId], references: [id])
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([userId])
 }
