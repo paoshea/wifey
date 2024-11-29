@@ -3,7 +3,8 @@ export const NotificationType = {
   ACHIEVEMENT: 'ACHIEVEMENT',
   STREAK_MILESTONE: 'STREAK_MILESTONE',
   SOCIAL: 'SOCIAL',
-  SYSTEM: 'SYSTEM'
+  SYSTEM: 'SYSTEM',
+  DIGEST: 'DIGEST'
 } as const;
 
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];

@@ -32,17 +32,18 @@ enum ComparisonOperator {
 }
 
 enum NotificationType {
-  STREAK_REMINDER = "STREAK_REMINDER"
-  ACHIEVEMENT = "ACHIEVEMENT"
-  STREAK_MILESTONE = "STREAK_MILESTONE"
-  SOCIAL = "SOCIAL"
-  SYSTEM = "SYSTEM"
+  STREAK_REMINDER
+  ACHIEVEMENT
+  STREAK_MILESTONE
+  SOCIAL
+  SYSTEM
+  DIGEST
 }
 
 enum NotificationPriority {
-  LOW = "LOW"
-  MEDIUM = "MEDIUM"
-  HIGH = "HIGH"
+  LOW
+  MEDIUM
+  HIGH
 }
 
 model User {
@@ -222,11 +223,11 @@ model Measurement {
 model Notification {
   id            String              @id @default(auto()) @map("_id") @db.ObjectId
   userId        String
-  type          String              @default("SYSTEM")
+  type          NotificationType
   title         String
   message       String
   isRead        Boolean             @default(false)
-  priority      String              @default("MEDIUM")
+  priority      NotificationPriority @default(MEDIUM)
   style         Json?               // For custom styling like colors, icons
   metadata      Json?               // For additional notification-specific data
   scheduledFor  DateTime?

@@ -13,8 +13,17 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
+const NotificationTypes = {
+  STREAK_REMINDER: 'STREAK_REMINDER',
+  ACHIEVEMENT: 'ACHIEVEMENT',
+  STREAK_MILESTONE: 'STREAK_MILESTONE',
+  SOCIAL: 'SOCIAL',
+  SYSTEM: 'SYSTEM',
+  DIGEST: 'DIGEST'
+} as const;
+
 interface NotificationGroup {
-  type: NotificationType
+  type: typeof NotificationTypes[keyof typeof NotificationTypes]
   notifications: Notification[]
   icon: string
   label: string
@@ -99,32 +108,32 @@ export function NotificationCenter() {
 
   const notificationGroups: NotificationGroup[] = [
     {
-      type: NotificationType.STREAK_REMINDER,
-      notifications: groups[NotificationType.STREAK_REMINDER] || [],
+      type: NotificationTypes.STREAK_REMINDER,
+      notifications: groups[NotificationTypes.STREAK_REMINDER] || [],
       icon: '🔥',
       label: 'Streak Reminders'
     },
     {
-      type: NotificationType.ACHIEVEMENT,
-      notifications: groups[NotificationType.ACHIEVEMENT] || [],
+      type: NotificationTypes.ACHIEVEMENT,
+      notifications: groups[NotificationTypes.ACHIEVEMENT] || [],
       icon: '🏆',
       label: 'Achievements'
     },
     {
-      type: NotificationType.STREAK_MILESTONE,
-      notifications: groups[NotificationType.STREAK_MILESTONE] || [],
+      type: NotificationTypes.STREAK_MILESTONE,
+      notifications: groups[NotificationTypes.STREAK_MILESTONE] || [],
       icon: '⭐',
       label: 'Milestones'
     },
     {
-      type: NotificationType.SOCIAL,
-      notifications: groups[NotificationType.SOCIAL] || [],
+      type: NotificationTypes.SOCIAL,
+      notifications: groups[NotificationTypes.SOCIAL] || [],
       icon: '👥',
       label: 'Social'
     },
     {
-      type: NotificationType.DIGEST,
-      notifications: groups[NotificationType.DIGEST] || [],
+      type: NotificationTypes.DIGEST,
+      notifications: groups[NotificationTypes.DIGEST] || [],
       icon: '📰',
       label: 'Digests'
     }
