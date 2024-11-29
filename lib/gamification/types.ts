@@ -176,6 +176,8 @@ export type ValidatedAchievement = {
     currentValue: number;
     isComplete: boolean;
   }[];
+  progress: number;
+  target: number;
   tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
 };
 

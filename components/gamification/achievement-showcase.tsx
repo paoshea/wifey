@@ -182,8 +182,8 @@ export const AchievementShowcase = ({ achievements = [], onAchievementClick }: A
           key={achievement.id}
           achievement={achievement}
           progress={achievement.progress}
-          target={achievement.target || 0}
-          isUnlocked={achievement.progress >= (achievement.target || 0)}
+          target={achievement.target}
+          isUnlocked={achievement.progress >= achievement.target}
           onClick={() => {
             setSelectedAchievement(achievement);
             onAchievementClick?.(achievement);
@@ -196,8 +196,8 @@ export const AchievementShowcase = ({ achievements = [], onAchievementClick }: A
           <AchievementDetailsModal
             achievement={selectedAchievement}
             progress={selectedAchievement.progress}
-            target={selectedAchievement.target || 0}
-            isUnlocked={selectedAchievement.progress >= (selectedAchievement.target || 0)}
+            target={selectedAchievement.target}
+            isUnlocked={selectedAchievement.progress >= selectedAchievement.target}
             onClose={() => setSelectedAchievement(null)}
           />
         )}
