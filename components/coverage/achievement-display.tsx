@@ -1,11 +1,18 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Badge as BadgeUI } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Trophy, Star, Flame, Medal, Award } from 'lucide-react';
-import { useGamificationStore } from '@/lib/store/gamification-store';
 import { Badge, BADGES } from '@/lib/types/gamification';
-import { Card, CardContent } from '@/components/ui/card';
+
+interface BadgePopupProps {
+  badge: Badge;
+  onClose: () => void;
+}
 
 const RARITY_COLORS = {
   common: 'bg-gray-500',
@@ -13,11 +20,6 @@ const RARITY_COLORS = {
   epic: 'bg-purple-500',
   legendary: 'bg-yellow-500',
 };
-
-interface BadgePopupProps {
-  badge: Badge;
-  onClose: () => void;
-}
 
 const BadgePopup = ({ badge, onClose }: BadgePopupProps) => (
   <motion.div

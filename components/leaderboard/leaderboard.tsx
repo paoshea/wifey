@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Icons } from '@/components/ui/icons';
 import { getCachedLeaderboard } from '@/lib/services/gamification-service';
-import { LeaderboardEntry } from '@prisma/client';
+import { LeaderboardEntry, TimeFrame } from '@/lib/gamification/types';
 
 interface LeaderboardProps {
   initialEntries?: LeaderboardEntry[];
-  timeframe?: string;
+  timeframe?: TimeFrame;
 }
 
 export function Leaderboard({ initialEntries = [], timeframe = 'weekly' }: LeaderboardProps) {

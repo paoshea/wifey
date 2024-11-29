@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { UserAchievement, BADGES, Badge } from '@/lib/types/gamification';
+import { devtools, persist } from 'zustand/middleware';
+import { UserAchievement, BADGES, Badge } from '@/lib/types/Gamification';
 
 interface GamificationState {
   achievements: UserAchievement;

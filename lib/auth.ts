@@ -5,6 +5,12 @@ import { authOptions } from '@/app/api/auth/auth.config';
 import { NextResponse } from 'next/server';
 import { Session } from 'next-auth';
 import { UserRole } from './types/auth';
+import { z } from 'zod';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import { PrismaClient } from '@prisma/client';
+import { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import prisma from '@/lib/prisma';
 
 type AuthResult = {
   success: true;

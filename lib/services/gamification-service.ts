@@ -650,5 +650,26 @@ export class GamificationService {
   }
 }
 
+// Cache-specific functions
+export const getCachedUserProgress = async (userId: string): Promise<UserProgress> => {
+  return gamificationService.apiCache.wrap(
+    `${GamificationService.USER_STATS_CACHE_KEY}_${userId}`,
+    () => gamificationService.getUserProgress(userId),
+    { ttl: 300 } // 5 minutes cache
+  );
+};
+
+export const getCachedLeaderboard = async (
+  timeframe: TimeFrame = 'allTime',
+  page = 1,
+  pageSize = 10
+): Promise<LeaderboardResponse> => {
+  return gamificationService.apiCache.wrap(
+    `${GamificationService.LEADERBOARD_CACHE_KEY}_${timeframe}_${page}_${pageSize}`,
+    () => gamificationService.getLeaderboard(timeframe, page, pageSize),
+    { ttl: 300 } // 5 minutes cache
+  );
+};
+
 // Export singleton instance
 export const gamificationService = new GamificationService();

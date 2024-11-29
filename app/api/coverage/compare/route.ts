@@ -14,17 +14,17 @@ const querySchema = z.object({
   radius: z.number().default(1000), // Default radius of 1km
 });
 
-// Prisma return type
-type PrismaCoverageReport = Prisma.CoverageReportGetPayload<{}>;
-
-interface CoveragePoint {
-  id: string;
-  latitude: number;
-  longitude: number;
-  signal: number;
-  speed?: number | null;
-  createdAt: Date;
-}
+// Use Prisma's inferred types for better type safety
+type CoverageReport = Prisma.CoverageReportGetPayload<{
+  select: {
+    id: true;
+    latitude: true;
+    longitude: true;
+    signal: true;
+    speed: true;
+    createdAt: true;
+  }
+}>;
 
 interface ProviderAnalysis {
   avgSignal: number;
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const box = getBoundingBox(lat, lng, radius);
 
     // Get coverage points within the bounding box
-    const prismaPoints = await prisma.coverageReport.findMany({
+    const points = await prisma.coverageReport.findMany({
       where: {
         AND: [
           { latitude: { gte: box.minLat, lte: box.maxLat } },
@@ -68,14 +68,14 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter points within actual radius using Haversine formula
-    const points = prismaPoints.filter((point) =>
+    const filteredPoints = points.filter((point) =>
       getDistance(lat, lng, point.latitude, point.longitude) <= radius
     );
 
     // Group and analyze by provider
     const providerMap = new Map<string, ProviderAnalysis>();
     
-    points.forEach((point) => {
+    filteredPoints.forEach((point) => {
       const current = providerMap.get('default') || {
         avgSignal: 0,
         avgSpeed: 0,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      points,
+      points: filteredPoints,
       analysis: Array.from(providerMap.values()),
     });
   } catch (error) {

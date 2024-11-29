@@ -1,22 +1,28 @@
 // hooks/useGamification.tsx
 
 import { useCallback, useEffect, useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useSession } from 'next-auth/react';
 import { GamificationService } from '@/lib/services/gamification-service';
-import { PrismaClient, Achievement, UserAchievement, UserProgress, UserStats } from '@prisma/client';
 import {
-  ValidatedAchievement,
-  ValidatedUserProgress,
-  ValidatedUserStats,
-  AchievementTier,
-  StatsContent,
+  type UserProgress,
+  type LeaderboardEntry,
+  type TimeFrame,
+  type AchievementProgress,
+  type ValidatedAchievement,
+  type MeasurementResult,
+  type StatsContent,
+  type ValidatedMeasurementInput
+} from '@/lib/gamification/types';
+import { PrismaClient, Achievement, UserAchievement, UserStats } from '@prisma/client';
+import {
   isValidAchievement,
   isValidUserProgress,
   isValidUserStats,
   StatsContentSchema,
-  StatsMetric
+  StatsMetric,
+  AchievementTier
 } from '@/lib/gamification/types';
-import { useToast } from '@/components/ui/use-toast';
-import { useSession } from 'next-auth/react';
 
 interface UseGamificationReturn {
   achievements: ValidatedAchievement[];

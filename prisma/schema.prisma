@@ -137,3 +137,14 @@ model LeaderboardEntry {
   @@index([timeframe, points])
   @@index([timeframe, rank])
 }
+
+model CoverageReport {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  latitude    Float
+  longitude   Float
+  signal      Float
+  speed       Float?
+  createdAt   DateTime @default(now())
+
+  @@index([latitude, longitude])
+}

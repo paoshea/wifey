@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { TimeFrame, LeaderboardEntry } from '@/lib/gamification/types';
-import { leaderboardService } from '@/lib/services/leaderboard-service';
+import { getCachedLeaderboard } from '@/lib/services/gamification-service';
 
 interface LeaderboardProps {
   refreshInterval?: number;
@@ -45,7 +45,7 @@ export function Leaderboard({ refreshInterval = 30000 }: LeaderboardProps) {
   const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await leaderboardService.getLeaderboard(timeframe);
+      const data = await getCachedLeaderboard(timeframe);
       setEntries(data.entries);
     } catch (error) {
       toast({
