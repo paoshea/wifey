@@ -1,21 +1,21 @@
 // lib/services/gamification-service.ts
 
-import { PrismaClient, User, Achievement, UserStreak, WifiSpot, CoverageReport, OperatorType, Prisma } from '@prisma/client';
+import { PrismaClient, type User, type Achievement, type UserStreak, type WifiSpot, type CoverageReport, type OperatorType, type Prisma } from '@prisma/client';
 import {
-  StatsContent,
-  ValidatedAchievement,
-  AchievementTier,
-  Requirement,
-  RequirementOperator,
-  ValidatedMeasurementInput,
-  AchievementNotification,
-  ValidatedRequirement,
-  StatsMetric,
-  MeasurementResult,
-  LeaderboardEntry,
-  LeaderboardResponse,
-  TimeFrame,
-  AchievementProgress
+  type StatsContent,
+  type ValidatedAchievement,
+  type AchievementTier,
+  type Requirement,
+  type RequirementOperator,
+  type ValidatedMeasurementInput,
+  type AchievementNotification,
+  type ValidatedRequirement,
+  type StatsMetric,
+  type MeasurementResult,
+  type LeaderboardEntry,
+  type LeaderboardResponse,
+  type TimeFrame,
+  type AchievementProgress
 } from '../gamification/types';
 import {
   validateMeasurement,
@@ -40,6 +40,7 @@ import {
 import { apiCache } from './api-cache';
 import { monitoringService } from '../monitoring/monitoring-service';
 import { notificationService } from './notification-service';
+import { prisma } from '@/lib/prisma';
 
 type UserWithRelations = Prisma.UserGetPayload<{
   include: {
@@ -48,23 +49,6 @@ type UserWithRelations = Prisma.UserGetPayload<{
     streaks: true;
   };
 }>;
-
-type MeasurementCreate = {
-  type: 'wifi' | 'coverage';
-  name?: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  value: number;
-  speed?: number;
-  security?: string;
-  operator?: OperatorType;
-  points: number;
-  userId: string;
-  isRural?: boolean;
-  distance?: number;
-};
 
 interface UserProgress {
   points: number;
@@ -92,8 +76,8 @@ const defaultStats: StatsContent = {
   consecutiveDays: 0
 };
 
-class GamificationService {
-  constructor(private readonly prisma: PrismaClient) {}
+export class GamificationService {
+  constructor(private readonly prisma: PrismaClient = prisma) {}
 
   async getAchievements(userId: string): Promise<ValidatedAchievement[]> {
     try {
@@ -166,7 +150,7 @@ class GamificationService {
         nextLevelXP,
         streak: {
           current: streak.current,
-          longest: streak.longest,
+          longest: streak.longest
         },
         stats,
         achievements: user.achievements
@@ -485,8 +469,20 @@ class GamificationService {
   }
 }
 
-// Export the class
-export { GamificationService };
+// Export singleton instance
+export const gamificationService = new GamificationService();
 
-// Export a singleton instance
-export const gamificationService = new GamificationService(new PrismaClient());
+// Export cached functions with proper types
+export const getCachedUserProgress = apiCache.wrap<string, UserProgress>(
+  'user-progress',
+  async (userId: string) => gamificationService.getUserProgress(userId)
+);
+
+export const getCachedLeaderboard = apiCache.wrap<[TimeFrame?, number?, number?], LeaderboardResponse>(
+  'leaderboard',
+  async (timeframe: TimeFrame = 'allTime', page = 1, pageSize = 10) => 
+    gamificationService.getLeaderboard(timeframe, page, pageSize)
+);
+
+// Export types
+export type { UserProgress, UserWithRelations };

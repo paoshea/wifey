@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/theme-provider';
-import Navbar from '@/components/layout/navbar';
+import { Navbar } from '@/components/layout/navbar';
 import { locales, type SupportedLocale } from '@/lib/i18n/config';
 import '../globals.css';
 

@@ -23,6 +23,11 @@ interface CoveragePoint {
   latitude: number;
   longitude: number;
   signal: number;
+  networkType: string;
+  rsrp?: number | null;
+  rsrq?: number | null;
+  rssi?: number | null;
+  rssnr?: number | null;
   speed?: number | null;
   createdAt: Date;
 }
@@ -65,6 +70,11 @@ export async function GET(request: NextRequest) {
         latitude: true,
         longitude: true,
         signal: true,
+        networkType: true,
+        rsrp: true,
+        rsrq: true,
+        rssi: true,
+        rssnr: true,
         speed: true,
         createdAt: true,
       },

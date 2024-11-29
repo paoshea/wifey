@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
 import { UserNav } from '@/components/layout/user-nav';
-import { NotificationCenter } from './notification-center';
+import { NotificationCenter } from '@/components/notifications/notification-center';
 
 export function Navbar() {
   const pathname = usePathname();

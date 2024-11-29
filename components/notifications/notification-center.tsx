@@ -6,24 +6,14 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check, Settings, Filter } from 'lucide-react'
 import { useSession } from 'next-auth/react'
-import type { Notification, NotificationPreferences } from '@/types/notifications'
-import { NotificationType } from '@/types/notifications'
+import type { Notification, NotificationPreferences, NotificationType } from '@/types/notifications'
 import { Dialog } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
-const NotificationTypes = {
-  STREAK_REMINDER: 'STREAK_REMINDER',
-  ACHIEVEMENT: 'ACHIEVEMENT',
-  STREAK_MILESTONE: 'STREAK_MILESTONE',
-  SOCIAL: 'SOCIAL',
-  SYSTEM: 'SYSTEM',
-  DIGEST: 'DIGEST'
-} as const;
-
 interface NotificationGroup {
-  type: typeof NotificationTypes[keyof typeof NotificationTypes]
+  type: NotificationType
   notifications: Notification[]
   icon: string
   label: string
@@ -32,7 +22,14 @@ interface NotificationGroup {
 export function NotificationCenter() {
   const { data: session } = useSession();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [groups, setGroups] = useState<Record<string, Notification[]>>({});
+  const [groups, setGroups] = useState<Record<NotificationType, Notification[]>>({
+    STREAK_REMINDER: [],
+    ACHIEVEMENT: [],
+    STREAK_MILESTONE: [],
+    SOCIAL: [],
+    SYSTEM: [],
+    DIGEST: []
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<string>('all');
@@ -108,32 +105,32 @@ export function NotificationCenter() {
 
   const notificationGroups: NotificationGroup[] = [
     {
-      type: NotificationTypes.STREAK_REMINDER,
-      notifications: groups[NotificationTypes.STREAK_REMINDER] || [],
+      type: 'STREAK_REMINDER',
+      notifications: groups['STREAK_REMINDER'] || [],
       icon: '🔥',
       label: 'Streak Reminders'
     },
     {
-      type: NotificationTypes.ACHIEVEMENT,
-      notifications: groups[NotificationTypes.ACHIEVEMENT] || [],
+      type: 'ACHIEVEMENT',
+      notifications: groups['ACHIEVEMENT'] || [],
       icon: '🏆',
       label: 'Achievements'
     },
     {
-      type: NotificationTypes.STREAK_MILESTONE,
-      notifications: groups[NotificationTypes.STREAK_MILESTONE] || [],
+      type: 'STREAK_MILESTONE',
+      notifications: groups['STREAK_MILESTONE'] || [],
       icon: '⭐',
       label: 'Milestones'
     },
     {
-      type: NotificationTypes.SOCIAL,
-      notifications: groups[NotificationTypes.SOCIAL] || [],
+      type: 'SOCIAL',
+      notifications: groups['SOCIAL'] || [],
       icon: '👥',
       label: 'Social'
     },
     {
-      type: NotificationTypes.DIGEST,
-      notifications: groups[NotificationTypes.DIGEST] || [],
+      type: 'DIGEST',
+      notifications: groups['DIGEST'] || [],
       icon: '📰',
       label: 'Digests'
     }
