@@ -24,11 +24,10 @@ export enum RequirementType {
 
 export enum RequirementOperator {
   GREATER_THAN = 'GREATER_THAN',
-  GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
   LESS_THAN = 'LESS_THAN',
-  LESS_THAN_EQUAL = 'LESS_THAN_EQUAL',
   EQUAL = 'EQUAL',
-  NOT_EQUAL = 'NOT_EQUAL'
+  GREATER_THAN_EQUAL = 'GREATER_THAN_EQUAL',
+  LESS_THAN_EQUAL = 'LESS_THAN_EQUAL'
 }
 
 export enum AchievementTier {
@@ -36,6 +35,13 @@ export enum AchievementTier {
   RARE = 'RARE',
   EPIC = 'EPIC',
   LEGENDARY = 'LEGENDARY'
+}
+
+export enum TimeFrame {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  ALL_TIME = 'allTime'
 }
 
 // Core Types
@@ -50,7 +56,18 @@ export const RequirementSchema = z.object({
   description: z.string()
 });
 
-export const StatsContentSchema = z.record(z.nativeEnum(StatsMetric), z.number());
+export const StatsContentSchema = z.object({
+  totalMeasurements: z.number(),
+  ruralMeasurements: z.number(),
+  uniqueLocations: z.number(),
+  totalDistance: z.number(),
+  contributionScore: z.number(),
+  qualityScore: z.number(),
+  accuracyRate: z.number(),
+  verifiedSpots: z.number(),
+  helpfulActions: z.number(),
+  consecutiveDays: z.number()
+});
 
 export const AchievementSchema = z.object({
   id: z.string(),
@@ -127,10 +144,37 @@ export const MeasurementInputSchema = z.object({
 export type Requirement = z.infer<typeof RequirementSchema>;
 export type StatsContent = z.infer<typeof StatsContentSchema>;
 export type MeasurementInput = z.infer<typeof MeasurementInputSchema>;
-export type ValidatedMeasurementInput = MeasurementInput;
+export type ValidatedMeasurementInput = {
+  type: 'wifi' | 'coverage';
+  value: number;
+  latitude: number;
+  longitude: number;
+  isRural: boolean;
+  isFirstInArea: boolean;
+  quality?: number;
+  operator?: string;
+  accuracy?: number;
+};
 export type ValidatedUserStats = z.infer<typeof UserStatsSchema>;
 export type ValidatedUserProgress = z.infer<typeof UserProgressSchema>;
-export type ValidatedAchievement = z.infer<typeof AchievementSchema>;
+export type ValidatedAchievement = {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  type: string;
+  threshold: number;
+  icon?: string | null;
+  unlockedAt?: Date | null;
+  requirements: {
+    metric: keyof StatsContent;
+    operator: RequirementOperator;
+    value: number;
+    currentValue: number;
+    isComplete: boolean;
+  }[];
+  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+};
 
 // Utility Types
 export type StatsUpdate = {
@@ -140,17 +184,16 @@ export type StatsUpdate = {
 // Result Types
 export interface MeasurementResult {
   points: number;
-  xp: number;
-  bonuses: Record<string, number>;
   achievements: AchievementNotification[];
-  newLevel?: number;
-  newStats: StatsContent;
+  stats: StatsContent;
 }
 
 export interface AchievementNotification {
-  achievement: Achievement;
-  pointsEarned: number;
-  newLevel?: number;
+  achievementId: string;
+  title: string;
+  description: string;
+  points: number;
+  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
 }
 
 // Re-export Prisma types

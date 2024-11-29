@@ -97,6 +97,48 @@ export type AchievementWithRelations = Prisma.AchievementGetPayload<{
   };
 }>;
 
+export type UserStats = {
+  id: string;
+  userId: string;
+  totalMeasurements: number;
+  ruralMeasurements: number;
+  uniqueLocations: number;
+  totalDistance: number;
+  contributionScore: number;
+  qualityScore: number;
+  accuracyRate: number;
+  verifiedSpots: number;
+  helpfulActions: number;
+  consecutiveDays: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Measurement = {
+  id: string;
+  userId: string;
+  type: 'wifi' | 'coverage';
+  latitude: number;
+  longitude: number;
+  signal: number;
+  speed?: number;
+  isRural: boolean;
+  isFirstInArea: boolean;
+  quality?: number;
+  accuracy?: number;
+  points: number;
+  createdAt: Date;
+  // WiFi specific fields
+  name?: string;
+  security?: string;
+  // Coverage specific fields
+  operator?: string;
+  networkType?: string;
+  deviceModel?: string;
+  connectionType?: string;
+  verified?: boolean;
+};
+
 // Transaction Context Type
 export type TransactionContext = {
   prisma: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;

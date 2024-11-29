@@ -358,9 +358,6 @@ export class GamificationService {
   }
 }
 
-// Export the class type
-export type { GamificationService };
-
 // Export singleton instance
 export const gamificationService = new GamificationService();
 

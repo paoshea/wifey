@@ -139,8 +139,10 @@ async function main() {
         longitude: -73.935242,
         signal: 85,
         speed: 45.5,
-        points: 5,
-        verified: true,
+        networkType: '5G',
+        deviceModel: 'iPhone 13',
+        connectionType: 'cellular',
+        points: 10,
         user: {
           connect: {
             id: user.id
@@ -153,8 +155,10 @@ async function main() {
         longitude: -73.935250,
         signal: 75,
         speed: 35.5,
-        points: 5,
-        verified: true,
+        networkType: '4G',
+        deviceModel: 'Samsung Galaxy S21',
+        connectionType: 'cellular',
+        points: 10,
         user: {
           connect: {
             id: user.id

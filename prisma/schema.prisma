@@ -112,6 +112,7 @@ model CoverageReport {
   networkType    String
   deviceModel    String
   connectionType String
+  points         Int      @default(10)
   createdAt      DateTime @default(now())
   
   user User @relation(fields: [userId], references: [id])
