@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Roboto, Roboto_Mono } from "@next/font/google";
+import { Roboto, Roboto_Mono } from "next/font/google";
 import ClientProviders from "../components/ClientProviders";
 
 
