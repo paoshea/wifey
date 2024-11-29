@@ -1,14 +1,13 @@
+// components/notifications/notification-center.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check, Settings, Filter } from 'lucide-react'
 import { useSession } from 'next-auth/react'
-import type {
-  Notification,
-  NotificationType,
-  NotificationPreferences
-} from '@/types/notifications'
+import type { Notification, NotificationPreferences } from '@/types/notifications'
+import { NotificationType } from '@/types/notifications'
 import { Dialog } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'

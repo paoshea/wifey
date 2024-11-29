@@ -32,17 +32,17 @@ enum ComparisonOperator {
 }
 
 enum NotificationType {
-  STREAK_REMINDER
-  ACHIEVEMENT
-  STREAK_MILESTONE
-  SOCIAL
-  SYSTEM
+  STREAK_REMINDER = "STREAK_REMINDER"
+  ACHIEVEMENT = "ACHIEVEMENT"
+  STREAK_MILESTONE = "STREAK_MILESTONE"
+  SOCIAL = "SOCIAL"
+  SYSTEM = "SYSTEM"
 }
 
 enum NotificationPriority {
-  LOW
-  MEDIUM
-  HIGH
+  LOW = "LOW"
+  MEDIUM = "MEDIUM"
+  HIGH = "HIGH"
 }
 
 model User {
@@ -105,28 +105,12 @@ model WifiSpot {
 
 model CoverageReport {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  operator    OperatorType
-  latitude    Float
-  longitude   Float
-  signal      Int
-  speed       Float?
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  points      Int      @default(0)
+  metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  verified    Boolean  @default(false)
-  verifiedBy  String?  @db.ObjectId
-  points      Int      @default(5)
-}
-
-model CoverageReport {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  points    Int
-  metadata  Json?
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -238,11 +222,11 @@ model Measurement {
 model Notification {
   id            String              @id @default(auto()) @map("_id") @db.ObjectId
   userId        String
-  type          NotificationType
+  type          String              @default("SYSTEM")
   title         String
   message       String
   isRead        Boolean             @default(false)
-  priority      NotificationPriority @default(MEDIUM)
+  priority      String              @default("MEDIUM")
   style         Json?               // For custom styling like colors, icons
   metadata      Json?               // For additional notification-specific data
   scheduledFor  DateTime?
@@ -257,7 +241,7 @@ model Notification {
 
 model NotificationPreferences {
   id                  String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId              String    @unique
+  userId              String
   email               Boolean   @default(true)
   push                Boolean   @default(true)
   inApp               Boolean   @default(true)
@@ -271,5 +255,5 @@ model NotificationPreferences {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  @@index([userId])
+  @@unique([userId])
 }

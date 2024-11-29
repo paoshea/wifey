@@ -1,16 +1,20 @@
-export enum NotificationType {
-  STREAK_REMINDER = 'STREAK_REMINDER',
-  ACHIEVEMENT = 'ACHIEVEMENT',
-  STREAK_MILESTONE = 'STREAK_MILESTONE',
-  SOCIAL = 'SOCIAL',
-  SYSTEM = 'SYSTEM'
-}
+export const NotificationType = {
+  STREAK_REMINDER: 'STREAK_REMINDER',
+  ACHIEVEMENT: 'ACHIEVEMENT',
+  STREAK_MILESTONE: 'STREAK_MILESTONE',
+  SOCIAL: 'SOCIAL',
+  SYSTEM: 'SYSTEM'
+} as const;
 
-export enum NotificationPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH'
-}
+export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
+
+export const NotificationPriority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH'
+} as const;
+
+export type NotificationPriority = typeof NotificationPriority[keyof typeof NotificationPriority];
 
 export interface NotificationStyle {
   backgroundColor?: string
