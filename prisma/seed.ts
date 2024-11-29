@@ -2,7 +2,7 @@
 
 import { PrismaClient, type Prisma, UserRole, OperatorType } from '@prisma/client';
 import { seedAchievements } from './seed/achievements';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // Type for the default stats content
 interface StatsContent {

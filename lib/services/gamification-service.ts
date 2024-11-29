@@ -40,7 +40,7 @@ import {
 import { apiCache } from './api-cache';
 import { monitoringService } from '../monitoring/monitoring-service';
 import { notificationService } from './notification-service';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 type UserWithStats = Prisma.UserGetPayload<{
   include: {
@@ -363,9 +363,17 @@ export const gamificationService = new GamificationService();
 
 // Export cached functions with proper types
 export const getCachedUserProgress = apiCache.wrap<string, UserProgress>(
-  'user-progress',
-  async (userId: string) => {
-    return await gamificationService.getUserProgress(userId);
-  },
-  { ttl: 300 } // 5 minutes cache
+  'userProgress',
+  async (userId: string) => gamificationService.getUserProgress(userId)
+);
+
+export const getCachedLeaderboard = apiCache.wrap<[TimeFrame, number, number], LeaderboardResponse>(
+  'leaderboard',
+  async (timeframe: TimeFrame = 'allTime', page = 1, pageSize = 10) => 
+    gamificationService.getLeaderboard(timeframe, page, pageSize)
+);
+
+export const getCachedAchievements = apiCache.wrap<string, ValidatedAchievement[]>(
+  'achievements',
+  async (userId: string) => gamificationService.getAchievements(userId)
 );

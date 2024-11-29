@@ -26,22 +26,32 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // Add SVG handling
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
 
-    // Add OpenTelemetry warnings suppression
-    config.plugins.push(
-      new webpack.ContextReplacementPlugin(
-        /@opentelemetry[\/\\]instrumentation/,
-        (data) => {
-          delete data.dependencies;
-          return data;
-        }
-      )
-    );
+    // Add fallbacks for OpenTelemetry
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        perf_hooks: false,
+        'utf-8-validate': false,
+        bufferutil: false,
+      };
+    }
+
+    // Ignore OpenTelemetry warnings in development
+    if (process.env.NODE_ENV === 'development') {
+      config.ignoreWarnings = [
+        { module: /@opentelemetry/ },
+        { module: /node_modules/ },
+      ];
+    }
 
     return config;
   },

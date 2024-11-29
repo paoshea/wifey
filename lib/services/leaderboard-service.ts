@@ -11,7 +11,7 @@ import type {
   StatsContent
 } from '../gamification/types';
 import { calculateLevel } from '../gamification/validation';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // Type for user data with stats
 type UserWithStats = Prisma.UserGetPayload<{
