@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
     const coverageReport = await prisma.coverageReport.create({
       data: {
         userId: session.user.id,
-        lat: data.latitude,
-        lng: data.longitude,
+        latitude: data.latitude,
+        longitude: data.longitude,
         signal: data.signal,
         speed: data.speed,
         operator: data.operator,
