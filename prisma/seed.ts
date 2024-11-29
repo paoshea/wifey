@@ -1,10 +1,35 @@
 // prisma/seed.ts
 
-import { PrismaClient, UserRole, OperatorType } from '@prisma/client';
+import { PrismaClient, type Prisma, UserRole, OperatorType } from '@prisma/client';
 import { seedAchievements } from './seed/achievements';
-import { UserCreateInput, WifiSpotCreateInput, CoverageReportCreateInput } from './types';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+// Type for the default stats content
+interface StatsContent {
+  totalMeasurements: number;
+  ruralMeasurements: number;
+  uniqueLocations: number;
+  totalDistance: number;
+  contributionScore: number;
+  qualityScore: number;
+  accuracyRate: number;
+  verifiedSpots: number;
+  helpfulActions: number;
+  consecutiveDays: number;
+}
+
+const defaultStats: StatsContent = {
+  totalMeasurements: 0,
+  ruralMeasurements: 0,
+  uniqueLocations: 0,
+  totalDistance: 0,
+  contributionScore: 0,
+  qualityScore: 0,
+  accuracyRate: 0,
+  verifiedSpots: 0,
+  helpfulActions: 0,
+  consecutiveDays: 0
+};
 
 async function main() {
   // Clear existing data
@@ -13,12 +38,13 @@ async function main() {
   await prisma.coverageReport.deleteMany();
   await prisma.wifiSpot.deleteMany();
   await prisma.userStreak.deleteMany();
+  await prisma.userStats.deleteMany();
   await prisma.user.deleteMany();
   console.log('Data cleared successfully');
 
   // Seed WiFi Spots template
   console.log('Preparing WiFi spots template...');
-  const wifiSpotTemplate: Omit<WifiSpotCreateInput, 'userId'> = {
+  const wifiSpotTemplate: Omit<Prisma.WifiSpotCreateInput, 'user'> = {
     name: 'Central Library',
     latitude: 40.730610,
     longitude: -73.935242,
@@ -29,7 +55,7 @@ async function main() {
     verified: true
   };
 
-  const wifiSpotTemplate2: Omit<WifiSpotCreateInput, 'userId'> = {
+  const wifiSpotTemplate2: Omit<Prisma.WifiSpotCreateInput, 'user'> = {
     name: 'Community Center',
     latitude: 40.730610,
     longitude: -73.935242,
@@ -42,30 +68,27 @@ async function main() {
 
   // Seed Test Users
   console.log('Seeding users...');
-  const users: UserCreateInput[] = [
+  const users: Prisma.UserCreateInput[] = [
     {
       name: 'Test User 1',
       email: 'test1@example.com',
       hashedPassword: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy', // hashed 'password123'
       role: UserRole.USER,
-      preferredLanguage: 'en',
-      points: 0
+      preferredLanguage: 'en'
     },
     {
       name: 'Test User 2',
       email: 'test2@example.com',
       hashedPassword: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
       role: UserRole.USER,
-      preferredLanguage: 'en',
-      points: 0
+      preferredLanguage: 'en'
     },
     {
       name: 'Test User 3',
       email: 'test3@example.com',
       hashedPassword: '$2b$10$dVflzSaF5E3v7.CUi/GhXOxhT0rliAFj.TyQF1YwNhhzpRF.kK8Hy',
       role: UserRole.USER,
-      preferredLanguage: 'en',
-      points: 0
+      preferredLanguage: 'en'
     },
   ];
 
@@ -73,6 +96,15 @@ async function main() {
     // Create user
     const user = await prisma.user.create({
       data: userData,
+    });
+
+    // Create user stats
+    await prisma.userStats.create({
+      data: {
+        userId: user.id,
+        points: 0,
+        stats: defaultStats
+      }
     });
 
     // Create user streak
@@ -86,19 +118,21 @@ async function main() {
     });
 
     // Create WiFi spots for user
-    const wifiSpots: WifiSpotCreateInput[] = [
-      { ...wifiSpotTemplate, userId: user.id },
-      { ...wifiSpotTemplate2, userId: user.id }
-    ];
-
-    for (const spot of wifiSpots) {
+    for (const template of [wifiSpotTemplate, wifiSpotTemplate2]) {
       await prisma.wifiSpot.create({
-        data: spot
+        data: {
+          ...template,
+          user: {
+            connect: {
+              id: user.id
+            }
+          }
+        }
       });
     }
 
     // Create coverage reports
-    const coverageReports: CoverageReportCreateInput[] = [
+    const coverageReports: Prisma.CoverageReportCreateInput[] = [
       {
         operator: OperatorType.KOLBI,
         latitude: 40.730610,
@@ -107,7 +141,11 @@ async function main() {
         speed: 45.5,
         points: 5,
         verified: true,
-        userId: user.id
+        user: {
+          connect: {
+            id: user.id
+          }
+        }
       },
       {
         operator: OperatorType.MOVISTAR,
@@ -117,7 +155,11 @@ async function main() {
         speed: 35.5,
         points: 5,
         verified: true,
-        userId: user.id
+        user: {
+          connect: {
+            id: user.id
+          }
+        }
       }
     ];
 

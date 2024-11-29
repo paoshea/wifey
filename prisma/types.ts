@@ -1,4 +1,15 @@
-import { Prisma, PrismaClient, UserRole, OperatorType, ComparisonOperator } from '@prisma/client';
+import type { 
+  Prisma,
+  PrismaClient,
+  UserRole,
+  OperatorType,
+  ComparisonOperator,
+  User,
+  WifiSpot,
+  CoverageReport,
+  Achievement,
+  UserStreak
+} from '@prisma/client';
 
 // Export Prisma types for reuse
 export type { 
@@ -6,64 +17,20 @@ export type {
   PrismaClient,
   UserRole,
   OperatorType,
-  ComparisonOperator
+  ComparisonOperator,
+  User,
+  WifiSpot,
+  CoverageReport,
+  Achievement,
+  UserStreak
 };
 
 // Input Types
-export interface UserCreateInput {
-  name?: string | null;
-  email: string;
-  hashedPassword?: string | null;
-  role?: UserRole;
-  preferredLanguage?: string;
-  image?: string | null;
-  emailVerified?: Date | null;
-  verificationToken?: string | null;
-  points?: number;
-}
-
-export interface WifiSpotCreateInput {
-  name: string;
-  latitude: number;
-  longitude: number;
-  speed?: number | null;
-  signal?: number | null;
-  security?: string | null;
-  points?: number;
-  verified?: boolean;
-  verifiedBy?: string | null;
-  userId: string;
-}
-
-export interface CoverageReportCreateInput {
-  operator: OperatorType;
-  latitude: number;
-  longitude: number;
-  signal: number;
-  speed?: number | null;
-  points?: number;
-  verified?: boolean;
-  verifiedBy?: string | null;
-  userId: string;
-}
-
-export interface UserStreakCreateInput {
-  userId: string;
-  current?: number;
-  longest?: number;
-  lastCheckin?: Date;
-}
-
-export interface AchievementCreateInput {
-  title: string;
-  description: string;
-  points: number;
-  type: string;
-  threshold: number;
-  icon?: string | null;
-  userId: string;
-  unlockedAt?: Date | null;
-}
+export type UserCreateInput = Prisma.UserCreateInput;
+export type WifiSpotCreateInput = Prisma.WifiSpotCreateInput;
+export type CoverageReportCreateInput = Prisma.CoverageReportCreateInput;
+export type UserStreakCreateInput = Prisma.UserStreakCreateInput;
+export type AchievementCreateInput = Prisma.AchievementCreateInput;
 
 // Prisma Select Types
 export type UserSelect = Prisma.UserSelect;
@@ -93,7 +60,7 @@ export type CoverageReportOrderByWithRelationInput = Prisma.CoverageReportOrderB
 export type AchievementOrderByWithRelationInput = Prisma.AchievementOrderByWithRelationInput;
 export type UserStreakOrderByWithRelationInput = Prisma.UserStreakOrderByWithRelationInput;
 
-// Utility Types
+// Filter Types
 export type DateTimeFilter = Prisma.DateTimeFilter;
 export type StringFilter = Prisma.StringFilter;
 export type IntFilter = Prisma.IntFilter;
@@ -101,7 +68,36 @@ export type FloatFilter = Prisma.FloatFilter;
 export type BoolFilter = Prisma.BoolFilter;
 export type JsonFilter = Prisma.JsonFilter;
 
+// Payload Types with Relations
+export type UserWithRelations = Prisma.UserGetPayload<{
+  include: {
+    stats: true;
+    streaks: true;
+    achievements: true;
+  };
+}>;
+
+export type WifiSpotWithRelations = Prisma.WifiSpotGetPayload<{
+  include: {
+    user: true;
+    verifiedByUser: true;
+  };
+}>;
+
+export type CoverageReportWithRelations = Prisma.CoverageReportGetPayload<{
+  include: {
+    user: true;
+    verifiedByUser: true;
+  };
+}>;
+
+export type AchievementWithRelations = Prisma.AchievementGetPayload<{
+  include: {
+    user: true;
+  };
+}>;
+
 // Transaction Context Type
-export interface TransactionContext {
+export type TransactionContext = {
   prisma: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>;
-}
+};
