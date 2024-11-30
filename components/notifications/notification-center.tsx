@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check, Settings, Filter } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import type { Notification, NotificationPreferences, NotificationType } from '@/types/notifications'
-import { Dialog } from '@/components/ui/dialog'
+import * as Dialog from '@radix-ui/react-dialog'
 import { Switch } from '@/components/ui/switch'
 import Button from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -249,95 +249,95 @@ export function NotificationCenter() {
       </AnimatePresence>
 
       {/* Settings Dialog */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Notification Settings</h3>
+      <Dialog.Root open={showSettings} onOpenChange={setShowSettings}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+          <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <Dialog.Title className="text-lg font-semibold mb-4">
+              Notification Settings
+            </Dialog.Title>
 
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Notification Channels</h4>
-                  <div className="space-y-2">
-                    {Object.entries({
-                      inApp: 'In-app notifications',
-                      email: 'Email notifications',
-                      push: 'Push notifications',
-                      dailyDigest: 'Daily digest'
-                    }).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <span>{label}</span>
-                        <Switch
-                          checked={preferences[key as keyof NotificationPreferences] as boolean}
-                          onCheckedChange={(checked) =>
-                            updatePreferences({ [key]: checked })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Notification Types</h4>
-                  <div className="space-y-2">
-                    {Object.entries({
-                      streakReminders: 'Streak reminders',
-                      achievementAlerts: 'Achievement alerts',
-                      socialNotifications: 'Social notifications'
-                    }).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <span>{label}</span>
-                        <Switch
-                          checked={preferences[key as keyof NotificationPreferences] as boolean}
-                          onCheckedChange={(checked) =>
-                            updatePreferences({ [key]: checked })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Quiet Hours</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Start</label>
-                      <input
-                        type="time"
-                        value={preferences.quietHoursStart}
-                        onChange={(e) =>
-                          updatePreferences({ quietHoursStart: e.target.value })
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Notification Channels</h4>
+                <div className="space-y-2">
+                  {Object.entries({
+                    inApp: 'In-app notifications',
+                    email: 'Email notifications',
+                    push: 'Push notifications',
+                    dailyDigest: 'Daily digest'
+                  }).map(([key, label]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span>{label}</span>
+                      <Switch
+                        checked={preferences[key as keyof NotificationPreferences] as boolean}
+                        onCheckedChange={(checked) =>
+                          updatePreferences({ [key]: checked })
                         }
-                        className="w-full mt-1 px-3 py-2 border rounded-md"
                       />
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-500">End</label>
-                      <input
-                        type="time"
-                        value={preferences.quietHoursEnd}
-                        onChange={(e) =>
-                          updatePreferences({ quietHoursEnd: e.target.value })
-                        }
-                        className="w-full mt-1 px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end">
-                <Button onClick={() => setShowSettings(false)}>
-                  Close
-                </Button>
+              <div className="space-y-4">
+                <h4 className="font-medium">Notification Types</h4>
+                <div className="space-y-2">
+                  {Object.entries({
+                    streakReminders: 'Streak reminders',
+                    achievementAlerts: 'Achievement alerts',
+                    socialNotifications: 'Social notifications'
+                  }).map(([key, label]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span>{label}</span>
+                      <Switch
+                        checked={preferences[key as keyof NotificationPreferences] as boolean}
+                        onCheckedChange={(checked) =>
+                          updatePreferences({ [key]: checked })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-medium">Quiet Hours</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-500">Start</label>
+                    <input
+                      type="time"
+                      value={preferences.quietHoursStart}
+                      onChange={(e) =>
+                        updatePreferences({ quietHoursStart: e.target.value })
+                      }
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-500">End</label>
+                    <input
+                      type="time"
+                      value={preferences.quietHoursEnd}
+                      onChange={(e) =>
+                        updatePreferences({ quietHoursEnd: e.target.value })
+                      }
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </Dialog>
+
+            <div className="mt-6 flex justify-end">
+              <Dialog.Close asChild>
+                <Button>Close</Button>
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

@@ -1,12 +1,19 @@
-'use client';
-
 import { Metadata } from 'next';
-import { useLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { locales, type SupportedLocale } from '@/lib/i18n/config';
-import { Providers } from './providers';
+import { headers } from 'next/headers';
+import { Inter } from 'next/font/google';
+import LocaleClientLayout from './locale-client-layout';
 import '../globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+  preload: true,
+  adjustFontFallback: true,
+});
 
 export const metadata: Metadata = {
   title: 'Wifey - Find Coverage & WiFi',
@@ -34,10 +41,16 @@ export default async function LocaleLayout({
   }
 
   const messages = await getLocaleMessages(locale);
+  const headersList = headers();
+  const pathname = headersList.get('x-pathname') || '/';
 
   return (
-    <Providers locale={locale as SupportedLocale} messages={messages}>
-      {children}
-    </Providers>
+    <html lang={locale} className={`${inter.variable} font-sans antialiased`}>
+      <body>
+        <LocaleClientLayout locale={locale as SupportedLocale} messages={messages}>
+          {children}
+        </LocaleClientLayout>
+      </body>
+    </html>
   );
 }

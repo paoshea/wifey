@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import createMiddleware from 'next-intl/middleware';
+import { defaultLocale, locales } from '@/lib/i18n/config';
 
 // Paths that don't require authentication
 const publicPaths = [
@@ -29,11 +30,9 @@ const roleProtectedPaths = {
   '/api/coverage/delete': ['admin', 'moderator'],
 };
 
-const locales = ['en', 'es'];
-
 const intlMiddleware = createMiddleware({
   locales,
-  defaultLocale: 'en',
+  defaultLocale,
   localePrefix: 'always'
 });
 
@@ -46,8 +45,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle internationalization first
-  const response = await intlMiddleware(request);
-  if (response) return response;
+  const intlResponse = await intlMiddleware(request);
+  if (intlResponse) return intlResponse;
 
   // Allow public paths
   if (publicPaths.some(path => pathname.startsWith(path))) {
@@ -79,7 +78,7 @@ export async function middleware(request: NextRequest) {
   const isOnboardingPage = pathname.includes('/onboarding');
 
   if (!hasCompletedOnboarding && !isOnboardingPage && !pathname.includes('/_next')) {
-    const locale = request.cookies.get('NEXT_LOCALE')?.value || 'en';
+    const locale = request.cookies.get('NEXT_LOCALE')?.value || defaultLocale;
     return NextResponse.redirect(new URL(`/${locale}/onboarding`, request.url));
   }
 
@@ -100,14 +99,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public (public files)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-  ],
+  matcher: ['/((?!api|_next|.*\\..*).*)']
 };

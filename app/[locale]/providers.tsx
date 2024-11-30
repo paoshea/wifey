@@ -12,13 +12,14 @@ interface ProvidersProps {
   locale: SupportedLocale;
   messages: any;
   children: React.ReactNode;
+  timeZone: string;
 }
 
-export function Providers({ locale, messages, children }: ProvidersProps) {
+export function Providers({ locale, messages, children, timeZone }: ProvidersProps) {
   return (
     <SessionProvider>
       <ThemeProvider>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
           <div className="relative min-h-screen flex flex-col">
             <Navbar />
             <main className="flex-grow">
