@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Providers } from './[locale]/providers';
 import { Analytics } from '@vercel/analytics/react';
@@ -12,12 +12,16 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: 'Wifey - Find Coverage & WiFi',
   description: 'Find cellular coverage points and free WiFi hotspots near you',
   keywords: ['wifi', 'cellular coverage', 'network coverage', 'free wifi', 'hotspots'],
   authors: [{ name: 'Wifey Team' }],
-  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({
