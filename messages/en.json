@@ -873,7 +873,9 @@
     "form": {
       "location": "Search Location",
       "currentLocation": "Use Current Location"
-    },
+    }
+  },
+  "report": {
     "type": "Issue Type",
     "selectType": "Select issue type",
     "provider": "Network Provider",
@@ -892,27 +894,20 @@
       "unknown": "An unknown error occurred"
     }
   },
-  "distance": {
-    "from": "From",
-    "to": "To",
-    "currentLocation": "Current Location",
-    "selectedPoint": "Selected Point",
-    "distance": "Distance",
-    "coverageDetails": "Coverage Details",
-    "provider": "Provider",
-    "strength": "Signal Strength",
-    "quality": "Quality"
-  },
   "offline": {
-    "title": "Offline GPS Tracking",
-    "subtitle": "Track and save locations even when offline",
+    "title": "Offline Tracking",
+    "subtitle": "Track and save locations while offline",
     "online": "Online",
     "offline": "Offline",
     "saveLocation": "Save Location",
     "uploadLocations": "Upload Locations",
     "savedLocations": "Saved Locations",
-    "location": "Location",
-    "report": "Report"
+    "report": "Report",
+    "currentLocation": "Current Location",
+    "form": {
+      "location": "Search Location",
+      "currentLocation": "Use Current Location"
+    }
   },
   "gpsTracking": "GPS Tracking",
   "online": "Online",
