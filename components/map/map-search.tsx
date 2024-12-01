@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Crosshair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -30,6 +30,7 @@ export function MapSearch({ onLocationFound, searchRadius = 5, onRadiusChange }:
   const [searchQuery, setSearchQuery] = useState('');
   const [radius, setRadius] = useState(searchRadius);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -43,7 +44,6 @@ export function MapSearch({ onLocationFound, searchRadius = 5, onRadiusChange }:
 
     setIsSearching(true);
     try {
-      // Using Nominatim for geocoding (OpenStreetMap's geocoding service)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
@@ -110,48 +110,85 @@ export function MapSearch({ onLocationFound, searchRadius = 5, onRadiusChange }:
       });
   };
 
+  const handleLocateMe = () => {
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latlng = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          handleMapClick(latlng);
+          setIsLocating(false);
+          toast({
+            title: t('search.locationFound'),
+            description: t('search.usingCurrentLocation'),
+          });
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          toast({
+            title: t('search.error'),
+            description: t('search.locationError'),
+            variant: "destructive",
+          });
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      toast({
+        title: t('search.error'),
+        description: t('search.browserNotSupported'),
+        variant: "destructive",
+      });
+      setIsLocating(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 w-full max-w-2xl">
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder={t('search.placeholder')}
-          className="h-12"
-          disabled={isSearching}
-        />
+      <div className="flex space-x-2">
+        <div className="flex-1">
+          <Input
+            type="text"
+            placeholder={t('search.placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={handleKeyPress}
+          />
+        </div>
         <Button
-          size="lg"
-          className="px-8"
+          variant="outline"
+          size="icon"
           onClick={handleSearch}
           disabled={isSearching}
         >
           {isSearching ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Search className="w-5 h-5 mr-2" />
-              {t('search.button')}
-            </>
+            <Search className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleLocateMe}
+          disabled={isLocating}
+        >
+          {isLocating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Crosshair className="h-4 w-4" />
           )}
         </Button>
       </div>
-      
-      <div className="w-full h-[400px] rounded-lg overflow-hidden border">
-        <MapView
-          center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : undefined}
-          onMapClick={handleMapClick}
-          zoom={15}
-          points={selectedLocation ? [{
-            id: 'selected',
-            type: 'wifi',
-            name: searchQuery || 'Selected Location',
-            coordinates: [selectedLocation.lat, selectedLocation.lng],
-            details: {}
-          }] : []}
-        />
-      </div>
+      <MapView
+        onMapClick={handleMapClick}
+        center={selectedLocation ? [selectedLocation.lat, selectedLocation.lng] : undefined}
+        selectedLocation={selectedLocation}
+      />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   Zap,
   Twitter,
   Github,
+  WifiOff,
   type LucideProps
 } from 'lucide-react';
 
@@ -52,6 +53,7 @@ export const Icons = {
   activity: Activity,
   twitter: Twitter,
   github: Github,
+  offline: WifiOff,
   google: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

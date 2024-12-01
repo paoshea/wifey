@@ -5,9 +5,9 @@
     "coverageFinder": "Coverage Finder",
     "register": "Register",
     "login": "Sign In",
-    "cellular": "Cellular",
-    "wifi": "WiFi",
-    "coverage": "Coverage",
+    "cellular": "Cellular Towers",
+    "wifi": "WiFi Hotspots",
+    "coverage": "Network Coverage",
     "community": "Join Community",
     "reportCoverage": "Quick Report",
     "settings": "Settings",
@@ -21,15 +21,16 @@
       "button": "Make a Report",
       "title": "Report Coverage Point",
       "description": "Help the community by marking a spot with good coverage or WiFi.",
-      "cellular": "Cellular Coverage",
-      "wifi": "WiFi Hotspot",
+      "cellular": "Cellular Towers",
+      "wifi": "WiFi Hotspots",
       "submit": "Mark this Spot",
       "success": "Thanks for your report!",
       "appreciationMessage": "Your contribution helps make our coverage map better.",
       "joinMessage": "Join our community to track your contributions!"
     },
     "logout": "Logout",
-    "leaderboard": "Leaderboard"
+    "leaderboard": "Leaderboard",
+    "offline": "Offline Tracking"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -88,8 +89,8 @@
       "title": "Powerful Features",
       "subtitle": "Everything you need to stay connected on the go",
       "cellular": {
-        "title": "Cellular Coverage",
-        "description": "Find the nearest coverage point when you're in a dead zone"
+        "title": "Cellular Towers",
+        "description": "Find the nearest cellular tower when you're in a dead zone"
       },
       "wifi": {
         "title": "Free WiFi",
@@ -152,8 +153,8 @@
     }
   },
   "coverage": {
-    "title": "Cellular Coverage",
-    "subtitle": "Find and track cellular coverage points in your area",
+    "title": "Network Coverage",
+    "subtitle": "Find and track network coverage points in your area",
     "search": {
       "placeholder": "Search for coverage points...",
       "button": "Search"
@@ -269,8 +270,8 @@
         }
       },
       "coverage": {
-        "title": "Cellular Coverage",
-        "description": "Track and map cellular coverage",
+        "title": "Cellular Towers",
+        "description": "Track and map cellular towers",
         "benefits": {
           "realtime": "Real-time signal strength",
           "accuracy": "High accuracy mapping",
@@ -420,7 +421,7 @@
     "Error Fallback": "Error occurred! Check Sentry for details."
   },
   "WifiFinder": {
-    "title": "WiFi Finder",
+    "title": "WiFi Hotspots",
     "listView": "List View",
     "mapView": "Map View",
     "searchPlaceholder": "Search by name or location...",
@@ -467,8 +468,8 @@
     "quickActions": "Quick Actions",
     "newReport": "New Report",
     "viewMap": "View Map",
-    "cellularTitle": "Cellular Coverage",
-    "cellularDescription": "View and contribute to cellular coverage data in your area.",
+    "cellularTitle": "Cellular Towers",
+    "cellularDescription": "View and contribute to cellular tower data in your area.",
     "wifiTitle": "WiFi Hotspots",
     "wifiDescription": "Find and share public WiFi hotspots near you.",
     "nearbyTitle": "Nearby Networks",
@@ -550,7 +551,7 @@
     "filters": {
       "title": "Filter Coverage",
       "all": "All Coverage Types",
-      "cellular": "Cellular Coverage",
+      "cellular": "Cellular Towers",
       "wifi": "WiFi Hotspots",
       "landmarks": "Landmarks",
       "range": {
@@ -582,8 +583,8 @@
   },
   "nav": {
     "home": "Home",
-    "coverage": "Coverage",
-    "wifi": "WiFi",
+    "coverage": "Network Coverage",
+    "wifi": "WiFi Hotspots",
     "explore": "Explore",
     "reportCoverage": "Quick Report"
   },
@@ -615,6 +616,11 @@
     "error": {
       "title": "Error",
       "description": "Failed to submit report. Please try again."
+    },
+    "currentLocation": "Current Location",
+    "form": {
+      "location": "Search Location",
+      "currentLocation": "Use Current Location"
     }
   },
   "community": {
@@ -710,7 +716,8 @@
       "placeholder": "Search for a location...",
       "button": "Search",
       "error": "Error finding location",
-      "success": "Location found: {location}"
+      "success": "Location found: {location}",
+      "locationError": "Unable to get your location. Please check your browser permissions."
     },
     "layers": {
       "all": "All Points",
@@ -809,5 +816,136 @@
         "communityHelper": "Help 10 users find coverage"
       }
     }
+  },
+  "location": {
+    "gpsTracking": "GPS Tracking",
+    "online": "Online",
+    "offline": "Offline",
+    "startTracking": "Start Tracking",
+    "stopTracking": "Stop Tracking",
+    "findMe": "Find Me",
+    "cursorPosition": "Cursor Position",
+    "distanceToPoint": "Distance to Point",
+    "distance": "Distance",
+    "accuracy": {
+      "high": "High Accuracy",
+      "medium": "Medium Accuracy",
+      "low": "Low Accuracy",
+      "label": "Accuracy"
+    },
+    "coordinates": {
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    },
+    "heading": "Heading",
+    "speed": "Speed",
+    "averageAccuracy": "Average Accuracy",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "status": {
+      "waiting": "Waiting for GPS signal...",
+      "tracking": "Tracking location...",
+      "stopped": "Tracking stopped",
+      "error": "Error getting location",
+      "unavailable": "Location services unavailable",
+      "permission": "Location permission required"
+    },
+    "permissions": {
+      "required": "Location permission is required",
+      "denied": "Location permission was denied",
+      "prompt": "Please enable location services to use this feature"
+    },
+    "getLocation": "Get My Location",
+    "loading": "Getting Location...",
+    "meters": "meters",
+    "errors": {
+      "notSupported": "Geolocation is not supported by your browser",
+      "permissionDenied": "Please allow location access",
+      "unavailable": "Location information unavailable",
+      "timeout": "Location request timed out",
+      "unknown": "An unknown error occurred"
+    },
+    "saveLocation": "Save Location",
+    "uploadLocations": "Upload Locations",
+    "savedLocations": "Saved Locations",
+    "report": "Report",
+    "currentLocation": "Current Location",
+    "form": {
+      "location": "Search Location",
+      "currentLocation": "Use Current Location"
+    },
+    "type": "Issue Type",
+    "selectType": "Select issue type",
+    "provider": "Network Provider",
+    "selectProvider": "Select provider",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the issue you're experiencing...",
+    "contact": "Contact Email (optional)",
+    "contactPlaceholder": "your@email.com",
+    "locationSelected": "Selected Location",
+    "submit": "Submit Report",
+    "saveOffline": "Save Report Offline",
+    "submitted": "Report submitted successfully!",
+    "savedOffline": "Report saved offline successfully!",
+    "errors": {
+      "noLocation": "Please select a location first",
+      "unknown": "An unknown error occurred"
+    }
+  },
+  "distance": {
+    "from": "From",
+    "to": "To",
+    "currentLocation": "Current Location",
+    "selectedPoint": "Selected Point",
+    "distance": "Distance",
+    "coverageDetails": "Coverage Details",
+    "provider": "Provider",
+    "strength": "Signal Strength",
+    "quality": "Quality"
+  },
+  "offline": {
+    "title": "Offline GPS Tracking",
+    "subtitle": "Track and save locations even when offline",
+    "online": "Online",
+    "offline": "Offline",
+    "saveLocation": "Save Location",
+    "uploadLocations": "Upload Locations",
+    "savedLocations": "Saved Locations",
+    "location": "Location",
+    "report": "Report"
+  },
+  "gpsTracking": "GPS Tracking",
+  "online": "Online",
+  "offline": "Offline",
+  "startTracking": "Start Tracking",
+  "stopTracking": "Stop Tracking",
+  "findMe": "Find Me",
+  "cursorPosition": "Cursor Position",
+  "distanceToPoint": "Distance to Point",
+  "distance": "Distance",
+  "accuracy": {
+    "high": "High Accuracy",
+    "medium": "Medium Accuracy",
+    "low": "Low Accuracy",
+    "label": "Accuracy"
+  },
+  "coordinates": {
+    "latitude": "Latitude",
+    "longitude": "Longitude"
+  },
+  "heading": "Heading",
+  "speed": "Speed",
+  "status": {
+    "waiting": "Waiting for GPS signal...",
+    "tracking": "Tracking location...",
+    "stopped": "Tracking stopped",
+    "error": "Error getting location",
+    "unavailable": "Location services unavailable",
+    "permission": "Location permission required"
+  },
+  "permissions": {
+    "required": "Location permission is required",
+    "denied": "Location permission was denied",
+    "prompt": "Please enable location services to use this feature"
   }
 }

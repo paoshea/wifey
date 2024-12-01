@@ -32,7 +32,7 @@ export function MainHeader() {
     },
     {
       title: t('cellular'),
-      href: '/coverage',
+      href: '/cellular',
       icon: <Icons.signal className="w-4 h-4" />,
     },
     {
@@ -42,8 +42,13 @@ export function MainHeader() {
     },
     {
       title: t('coverage'),
-      href: '/explore',
+      href: '/coverage',
       icon: <Icons.map className="w-4 h-4" />,
+    },
+    {
+      title: t('offline'),
+      href: '/offline',
+      icon: <Icons.offline className="w-4 h-4" />,
     },
     {
       title: t('leaderboard'),
@@ -203,6 +208,9 @@ export function MainHeader() {
                   </Link>
                 </>
               )}
+              <div className="pt-4">
+                <LanguageSwitcher />
+              </div>
             </nav>
           </div>
         </div>

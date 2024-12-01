@@ -15,6 +15,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { LocationTracker } from '@/components/location/LocationTracker';
+import { GPSLocationMap } from '@/components/location/GPSLocationMap';
+import { LocationFinder } from '@/components/location/LocationFinder';
 
 // Dynamically import the MapSearch component to avoid SSR issues with Leaflet
 const MapSearch = dynamic(
@@ -47,6 +50,10 @@ export default function ReportPage() {
     if (loc.name && !name) {
       setName(loc.name);
     }
+  };
+
+  const handleLocationUpdate = (loc: { lat: number; lng: number }) => {
+    setLocation(prev => ({ ...prev, ...loc }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,21 +108,11 @@ export default function ReportPage() {
               <p className="text-blue-600 mb-4">
                 {t('report.success.joinDescription')}
               </p>
-              <div className="flex gap-4 justify-center">
-                <Button asChild>
-                  <Link href={`/${locale}/auth/signup`}>
-                    <Icons.user className="mr-2 h-4 w-4" />
-                    {t('report.success.signUp')}
-                  </Link>
-                </Button>
-                <Button variant="outline" onClick={() => {
-                  setShowSuccess(false);
-                  router.push(`/${locale}/map?lat=${location.lat}&lng=${location.lng}`);
-                }}>
-                  <Icons.map className="mr-2 h-4 w-4" />
-                  {t('report.success.viewMap')}
-                </Button>
-              </div>
+              <Button asChild>
+                <Link href={`/${locale}/dashboard`}>
+                  {t('report.success.joinButton')}
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -126,102 +123,121 @@ export default function ReportPage() {
   return (
     <div className="container max-w-4xl py-8">
       <Card>
-        <CardHeader>
-          <CardTitle>{t('report.title')}</CardTitle>
-          <CardDescription>{t('report.description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form id="reportForm" onSubmit={handleSubmit} className="space-y-6">
-            {/* Map Selection */}
-            <div className="space-y-2">
-              <Label>{t('report.selectLocation')}</Label>
-              <MapSearch onLocationFound={handleLocationFound} />
-            </div>
-
-            {/* Coverage Type */}
-            <div className="space-y-2">
-              <Label>{t('report.coverageType')}</Label>
-              <RadioGroup
-                defaultValue="wifi"
-                onValueChange={setType}
-                className="flex space-x-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="wifi" id="wifi" />
-                  <Label htmlFor="wifi" className="flex items-center">
-                    <Icons.wifi className="mr-2 h-4 w-4" />
-                    {t('report.wifi')}
-                  </Label>
+        <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>{t('report.title')}</CardTitle>
+            <CardDescription>{t('report.description')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('report.form.location')}</Label>
+                  <MapSearch onLocationFound={handleLocationFound} />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cellular" id="cellular" />
-                  <Label htmlFor="cellular" className="flex items-center">
-                    <Icons.signal className="mr-2 h-4 w-4" />
-                    {t('report.cellular')}
-                  </Label>
+                <div className="space-y-2">
+                  <Label>{t('report.form.currentLocation')}</Label>
+                  <LocationTracker onLocationUpdate={handleLocationUpdate} />
                 </div>
-              </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label>{t('report.coverageType')}</Label>
+                <RadioGroup
+                  defaultValue={type}
+                  onValueChange={setType}
+                  className="flex space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="wifi" id="wifi" />
+                    <Label htmlFor="wifi" className="flex items-center">
+                      <Icons.wifi className="mr-2 h-4 w-4" />
+                      {t('report.wifi')}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cellular" id="cellular" />
+                    <Label htmlFor="cellular" className="flex items-center">
+                      <Icons.signal className="mr-2 h-4 w-4" />
+                      {t('report.cellular')}
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">{t('report.locationName')}</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('report.locationNamePlaceholder')}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="speed">{t('report.speed')}</Label>
+                <Input
+                  id="speed"
+                  type="number"
+                  value={speed}
+                  onChange={(e) => setSpeed(e.target.value)}
+                  placeholder={t('report.speedPlaceholder')}
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">{t('report.notes')}</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t('report.notesPlaceholder')}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label>{t('form.location')}</Label>
+                <div className="mt-2 space-y-4">
+                  <LocationFinder 
+                    onLocationFound={({ lat, lng }) => {
+                      setLocation({ lat, lng });
+                    }}
+                  />
+                  <div className="h-[300px]">
+                    <GPSLocationMap
+                      onLocationUpdate={handleLocationUpdate}
+                      className="w-full h-full"
+                    />
+                  </div>
+                  {location && (
+                    <p className="text-sm text-gray-600">
+                      {t('form.locationSelected')}: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-
-            {/* Location Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">{t('report.locationName')}</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('report.locationNamePlaceholder')}
-                required
-              />
-            </div>
-
-            {/* Speed */}
-            <div className="space-y-2">
-              <Label htmlFor="speed">{t('report.speed')}</Label>
-              <Input
-                id="speed"
-                type="number"
-                value={speed}
-                onChange={(e) => setSpeed(e.target.value)}
-                placeholder={t('report.speedPlaceholder')}
-                min="0"
-                step="0.1"
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">{t('report.notes')}</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={t('report.notesPlaceholder')}
-                rows={3}
-              />
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter>
-          <Button
-            form="reportForm"
-            type="submit"
-            disabled={isLoading || !location.lat || !location.lng || !name}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                {t('report.submitting')}
-              </>
-            ) : (
-              <>
-                <Icons.save className="mr-2 h-4 w-4" />
-                {t('report.submit')}
-              </>
-            )}
-          </Button>
-        </CardFooter>
+          </CardContent>
+          <CardFooter>
+            <Button
+              type="submit"
+              disabled={isLoading || !location.lat || !location.lng || !name}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  {t('report.submitting')}
+                </>
+              ) : (
+                <>
+                  <Icons.save className="mr-2 h-4 w-4" />
+                  {t('report.submit')}
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );

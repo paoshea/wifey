@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { Wifi } from 'lucide-react';
+import { Phone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import MapView from '@/components/map/map-view';
 import type { MapPoint } from '@/components/map/map-view';
@@ -16,36 +16,36 @@ interface CurrentLocation {
   lng: number;
 }
 
-export default function WifiPage() {
-  const t = useTranslations('wifi');
+export default function CellularPage() {
+  const t = useTranslations('cellular');
   const [searchRadius, setSearchRadius] = useState(5);
   const [mapCenter, setMapCenter] = useState<[number, number]>([9.9281, -84.0907]);
   const [mapZoom, setMapZoom] = useState(13);
   const [currentLocation, setCurrentLocation] = useState<CurrentLocation | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
 
-  // Sample wifi data - replace with real data from backend
+  // Sample cellular data - replace with real data from backend
   const samplePoints: MapPoint[] = [
     {
       id: '1',
-      type: 'wifi',
-      name: 'Coffee Shop WiFi',
+      type: 'cellular',
+      name: 'Cell Tower A',
       coordinates: [9.9281, -84.0907] as [number, number],
       details: {
-        speed: '50 Mbps',
-        type: 'free',
-        provider: 'Local Cafe'
+        provider: 'Movistar',
+        technology: '4G LTE',
+        band: 'Band 7'
       }
     },
     {
       id: '2',
-      type: 'wifi',
-      name: 'Hotel WiFi',
+      type: 'cellular',
+      name: 'Cell Tower B',
       coordinates: [9.9290, -84.0920] as [number, number],
       details: {
-        speed: '100 Mbps',
-        type: 'restricted',
-        provider: 'Hotel Network'
+        provider: 'Claro',
+        technology: '5G',
+        band: 'Band n78'
       }
     }
   ];
@@ -64,14 +64,14 @@ export default function WifiPage() {
           className="text-center mb-12"
         >
           <div className="flex items-center justify-center mb-6">
-            <Wifi className="w-12 h-12 text-blue-600" />
+            <Phone className="w-12 h-12 text-blue-600" />
           </div>
           <div className="flex flex-col items-center space-y-6">
             <h1 className="text-4xl font-bold text-gray-900">{t('title')}</h1>
             <p className="text-xl text-gray-600 max-w-2xl text-center">
               {t('subtitle')}
             </p>
-            <AddPoint type="wifi" />
+            <AddPoint type="cellular" />
           </div>
         </motion.div>
 
@@ -81,7 +81,7 @@ export default function WifiPage() {
               <div className="h-[600px] w-full">
                 <MapView
                   points={samplePoints}
-                  activeLayer="wifi"
+                  activeLayer="cellular"
                   center={mapCenter}
                   zoom={mapZoom}
                   onPointSelect={handlePointSelect}
@@ -106,12 +106,11 @@ export default function WifiPage() {
             />
             {selectedPoint && (
               <Card className="p-4">
-                <h3 className="font-medium mb-2">{t('wifiDetails')}</h3>
+                <h3 className="font-medium mb-2">{t('cellularDetails')}</h3>
                 <div className="space-y-2 text-sm">
-                  <p>{t('name')}: {selectedPoint.name}</p>
                   <p>{t('provider')}: {selectedPoint.details?.provider}</p>
-                  <p>{t('speed')}: {selectedPoint.details?.speed}</p>
-                  <p>{t('type')}: {selectedPoint.details?.type}</p>
+                  <p>{t('technology')}: {selectedPoint.details?.technology}</p>
+                  <p>{t('band')}: {selectedPoint.details?.band}</p>
                 </div>
               </Card>
             )}

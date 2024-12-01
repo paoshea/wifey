@@ -10,11 +10,17 @@ import type { MapPoint } from '@/components/map/map-view';
 import { AddPoint } from '@/components/points/add-point';
 import { MapSearch } from '@/components/map/map-search';
 
+interface CurrentLocation {
+  lat: number;
+  lng: number;
+}
+
 export default function CoveragePage() {
   const t = useTranslations('coverage');
   const [searchRadius, setSearchRadius] = useState(5);
   const [mapCenter, setMapCenter] = useState<[number, number]>([9.9281, -84.0907]);
   const [mapZoom, setMapZoom] = useState(13);
+  const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
 
   // Sample coverage data - replace with real data from backend
   const samplePoints: MapPoint[] = [
@@ -43,7 +49,7 @@ export default function CoveragePage() {
   ];
 
   const handlePointSelect = (point: MapPoint) => {
-    console.log('Selected coverage point:', point);
+    setSelectedPoint(point);
   };
 
   return (
@@ -64,6 +70,24 @@ export default function CoveragePage() {
               {t('subtitle')}
             </p>
             <AddPoint type="coverage" />
+          </div>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <Card className="p-6">
+              <div className="h-[600px] w-full">
+                <MapView
+                  points={samplePoints}
+                  activeLayer="coverage"
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  onPointSelect={handlePointSelect}
+                />
+              </div>
+            </Card>
+          </div>
+          <div className="space-y-4">
             <MapSearch 
               onLocationFound={({ lat, lng }) => {
                 setMapCenter([lat, lng]);
@@ -71,20 +95,18 @@ export default function CoveragePage() {
               }}
               searchRadius={searchRadius}
             />
+            {selectedPoint && (
+              <Card className="p-4">
+                <h3 className="font-medium mb-2">{t('coverageDetails')}</h3>
+                <div className="space-y-2 text-sm">
+                  <p>{t('provider')}: {selectedPoint.details?.provider}</p>
+                  <p>{t('strength')}: {selectedPoint.details?.strength}</p>
+                  <p>{t('quality')}: {selectedPoint.details?.quality}</p>
+                </div>
+              </Card>
+            )}
           </div>
-        </motion.div>
-
-        <Card className="p-6">
-          <div className="h-[600px] w-full">
-            <MapView
-              points={samplePoints}
-              activeLayer="coverage"
-              center={mapCenter}
-              zoom={mapZoom}
-              onPointSelect={handlePointSelect}
-            />
-          </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

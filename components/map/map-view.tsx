@@ -43,62 +43,7 @@ interface MapViewProps {
   center?: [number, number];
   zoom?: number;
   autoLocate?: boolean;
-}
-
-function LocationControl() {
-  const [isLocating, setIsLocating] = useState(false);
-  const map = useMapEvents({
-    locationfound(e) {
-      map.flyTo(e.latlng, map.getZoom());
-      toast({
-        title: "Location found!",
-        description: "Map centered to your current location.",
-      });
-      setIsLocating(false);
-    },
-    locationerror() {
-      toast({
-        title: "Location error",
-        description: "Unable to find your location. Please check your browser permissions.",
-        variant: "destructive",
-      });
-      setIsLocating(false);
-    },
-  });
-
-  const handleClick = () => {
-    setIsLocating(true);
-    map.locate();
-  };
-
-  return (
-    <div className="leaflet-top leaflet-right" style={{ marginTop: '80px' }}>
-      <div className="leaflet-control leaflet-bar">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="bg-white hover:bg-gray-100 w-10 h-10 shadow-md"
-                onClick={handleClick}
-                disabled={isLocating}
-              >
-                {isLocating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Crosshair className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Find my location</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    </div>
-  );
+  selectedLocation?: { lat: number; lng: number } | null;
 }
 
 function MapRecenter({ center }: { center: [number, number] }) {
@@ -109,29 +54,33 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
-function AutoLocate() {
-  const map = useMapEvents({
-    locationfound(e) {
-      map.flyTo(e.latlng, 15);
-      toast({
-        title: "Location found!",
-        description: "Map centered to your current location.",
-      });
-    },
-    locationerror() {
-      toast({
-        title: "Location error",
-        description: "Unable to find your location. Please check your browser permissions.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  useEffect(() => {
-    map.locate();
-  }, [map]);
-
-  return null;
+function MapMarkers({ points, onPointSelect }: { points: MapPoint[]; onPointSelect?: (point: MapPoint) => void }) {
+  return (
+    <>
+      {points.map((point) => (
+        <Marker
+          key={point.id}
+          position={point.coordinates}
+          icon={defaultIcon}
+          eventHandlers={{
+            click: () => onPointSelect?.(point),
+          }}
+        >
+          <Popup>
+            <div className="p-2">
+              <h3 className="font-semibold">{point.name}</h3>
+              {point.details.provider && (
+                <p className="text-sm text-gray-600">Provider: {point.details.provider}</p>
+              )}
+              {point.details.speed && (
+                <p className="text-sm text-gray-600">Speed: {point.details.speed}</p>
+              )}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
 }
 
 export default function MapView({
@@ -141,82 +90,43 @@ export default function MapView({
   onMapClick,
   center = [9.9281, -84.0907], // Default center (Costa Rica)
   zoom = 13,
-  autoLocate = true
+  autoLocate = false,
+  selectedLocation
 }: MapViewProps) {
-  const [mapCenter, setMapCenter] = useState<[number, number]>(center);
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<L.Map>(null);
 
-  const filteredPoints = points.filter(point => {
-    if (activeLayer === 'both') return true;
-    return point.type === activeLayer;
-  });
-
-  const getMarkerIcon = (type: 'wifi' | 'coverage') => {
-    const iconHtml = type === 'wifi' 
-      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><line x1="12" x2="12.01" y1="20" y2="20"/></svg>'
-      : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-signal"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20v-12"/><path d="M22 20v-16"/></svg>';
-
-    return L.divIcon({
-      html: `<div style="color: ${type === 'wifi' ? '#3b82f6' : '#22c55e'}; background: white; border-radius: 50%; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${iconHtml}</div>`,
-      className: 'custom-div-icon',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
-    });
+  const handleMapClick = (e: L.LeafletMouseEvent) => {
+    if (onMapClick) {
+      onMapClick(e.latlng);
+    }
   };
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    const handleMapClick = (e: L.LeafletMouseEvent) => {
-      if (onMapClick) {
-        onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
-      }
-    };
-
-    map.on('click', handleMapClick);
-
-    return () => {
-      map.off('click', handleMapClick);
-    };
-  }, [onMapClick]);
-
   return (
-    <MapContainer
-      center={mapCenter}
-      zoom={zoom}
-      className="w-full h-full"
-      ref={mapRef}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {center && <MapRecenter center={center} />}
-      <LocationControl />
-      {autoLocate && <AutoLocate />}
-      {filteredPoints.map((point) => (
-        <Marker
-          key={point.id}
-          position={point.coordinates}
-          icon={getMarkerIcon(point.type)}
-          eventHandlers={{
-            click: () => onPointSelect(point),
-          }}
-        >
-          <Popup>
-            <div className="p-2">
-              <h3 className="font-semibold">{point.name}</h3>
-              {point.details.speed && (
-                <p className="text-sm">Speed: {point.details.speed}</p>
-              )}
-              {point.details.provider && (
-                <p className="text-sm">Provider: {point.details.provider}</p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="w-full h-[400px] rounded-lg overflow-hidden border relative">
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        className="w-full h-full"
+        ref={mapRef}
+        whenCreated={(map) => {
+          map.on('click', handleMapClick);
+        }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapMarkers points={points} onPointSelect={onPointSelect} />
+        {selectedLocation && (
+          <Marker
+            position={[selectedLocation.lat, selectedLocation.lng]}
+            icon={defaultIcon}
+          >
+            <Popup>Selected Location</Popup>
+          </Marker>
+        )}
+        {center && <MapRecenter center={center} />}
+      </MapContainer>
+    </div>
   );
 }
