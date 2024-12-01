@@ -70,37 +70,33 @@ export class NotificationService {
       return null;
     }
 
-    // Get the user's current streak
     const currentStreak = user.streaks[0]?.current ?? 0;
-    
     const now = new Date();
     const lastCheckin = user.streaks[0]?.lastCheckin ?? new Date(0);
     const today = startOfDay(now);
     
-    // Only send reminder if user hasn't checked in today and has an active streak
     if (isAfter(lastCheckin, today) || currentStreak === 0) {
       return null;
     }
 
-    return {
-      id: '', // Will be set by database
-      userId,
-      type: NotificationType.STREAK_REMINDER,
-      title: 'Don\'t Break Your Streak!',
-      message: `Keep your ${currentStreak}-day streak going! Remember to check in today.`,
-      isRead: false,
-      priority: NotificationPriority.HIGH,
-      style: {
-        icon: '🔥',
-        animation: 'pulse'
-      },
-      metadata: {
-        currentStreak,
-        lastCheckin: lastCheckin.toISOString()
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: NotificationType.STREAK_REMINDER,
+        title: 'Don\'t Break Your Streak!',
+        message: `Keep your ${currentStreak}-day streak going! Remember to check in today.`,
+        isRead: false,
+        priority: NotificationPriority.HIGH,
+        style: {
+          icon: '🔥',
+          animation: 'pulse'
+        },
+        metadata: {
+          currentStreak,
+          lastCheckin: lastCheckin.toISOString()
+        }
+      }
+    });
   }
 
   /**
@@ -123,28 +119,27 @@ export class NotificationService {
       return null;
     }
 
-    return {
-      id: '', // Will be set by database
-      userId,
-      type: NotificationType.ACHIEVEMENT,
-      title: 'New Achievement Unlocked! 🏆',
-      message: `Congratulations! You've earned "${achievement.title}" and ${achievement.points} points!\n${achievement.description}`,
-      isRead: false,
-      priority: NotificationPriority.MEDIUM,
-      style: {
-        backgroundColor: '#4F46E5',
-        textColor: '#FFFFFF',
-        icon: achievement.icon ?? '🏆',
-        animation: 'celebration'
-      },
-      metadata: {
-        achievementTitle: achievement.title,
-        points: achievement.points,
-        description: achievement.description
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: NotificationType.ACHIEVEMENT,
+        title: 'New Achievement Unlocked! 🏆',
+        message: `Congratulations! You've earned "${achievement.title}" and ${achievement.points} points!\n${achievement.description}`,
+        isRead: false,
+        priority: NotificationPriority.MEDIUM,
+        style: {
+          backgroundColor: '#4F46E5',
+          textColor: '#FFFFFF',
+          icon: achievement.icon ?? '🏆',
+          animation: 'celebration'
+        },
+        metadata: {
+          achievementTitle: achievement.title,
+          points: achievement.points,
+          description: achievement.description
+        }
+      }
+    });
   }
 
   /**
@@ -162,30 +157,28 @@ export class NotificationService {
       return null;
     }
 
-    // Calculate multiplier based on streak length
     const multiplier = Math.min(3, 1 + Math.floor(days / 7) * 0.5);
 
-    return {
-      id: '', // Will be set by database
-      userId,
-      type: NotificationType.STREAK_MILESTONE,
-      title: 'Streak Milestone! 🔥',
-      message: `Amazing! You've maintained a ${days}-day streak! Your point multiplier is now ${multiplier}x!`,
-      isRead: false,
-      priority: NotificationPriority.HIGH,
-      style: {
-        backgroundColor: '#DC2626',
-        textColor: '#FFFFFF',
-        icon: '🔥',
-        animation: 'flame'
-      },
-      metadata: {
-        days,
-        multiplier
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: NotificationType.STREAK_MILESTONE,
+        title: 'Streak Milestone! 🔥',
+        message: `Amazing! You've maintained a ${days}-day streak! Your point multiplier is now ${multiplier}x!`,
+        isRead: false,
+        priority: NotificationPriority.HIGH,
+        style: {
+          backgroundColor: '#DC2626',
+          textColor: '#FFFFFF',
+          icon: '🔥',
+          animation: 'flame'
+        },
+        metadata: {
+          days,
+          multiplier
+        }
+      }
+    });
   }
 
   /**
@@ -217,26 +210,25 @@ export class NotificationService {
       follow: '👋'
     };
 
-    return {
-      id: '', // Will be set by database
-      userId,
-      type: NotificationType.SOCIAL,
-      title: type.charAt(0).toUpperCase() + type.slice(1),
-      message: messages[type],
-      isRead: false,
-      priority: NotificationPriority.LOW,
-      style: {
-        icon: icons[type],
-        animation: 'slide'
-      },
-      metadata: {
-        type,
-        actorName,
-        contentType
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: NotificationType.SOCIAL,
+        title: type.charAt(0).toUpperCase() + type.slice(1),
+        message: messages[type],
+        isRead: false,
+        priority: NotificationPriority.LOW,
+        style: {
+          icon: icons[type],
+          animation: 'slide'
+        },
+        metadata: {
+          type,
+          actorName,
+          contentType
+        }
+      }
+    });
   }
 
   /**
@@ -262,20 +254,19 @@ export class NotificationService {
       return null;
     }
 
-    return {
-      id: '', // Will be set by database
-      userId,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      isRead: false,
-      priority: notification.priority ?? NotificationPriority.MEDIUM,
-      style: notification.style,
-      metadata: notification.metadata,
-      scheduledFor: notification.scheduledFor,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        isRead: false,
+        priority: notification.priority ?? NotificationPriority.MEDIUM,
+        style: notification.style,
+        metadata: notification.metadata,
+        scheduledFor: notification.scheduledFor
+      }
+    });
   }
 
   /**
