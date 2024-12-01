@@ -28,7 +28,7 @@ export function DistanceCalculator({
   selectedPoint,
   className = ''
 }: DistanceCalculatorProps) {
-  const t = useTranslations('distance');
+  const t = useTranslations();
 
   if (!currentLocation || !selectedPoint) {
     return null;
@@ -42,17 +42,17 @@ export function DistanceCalculator({
       <div className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <div>
-            <p className="font-medium">{t('from')}:</p>
+            <p className="font-medium">{t('location.distance.from')}:</p>
             <p className="text-muted-foreground">
-              {t('currentLocation')}<br />
+              {t('location.distance.currentLocation')}<br />
               {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
             </p>
           </div>
           <ArrowsRightLeft className="mx-2 text-muted-foreground" />
           <div className="text-right">
-            <p className="font-medium">{t('to')}:</p>
+            <p className="font-medium">{t('location.distance.to')}:</p>
             <p className="text-muted-foreground">
-              {selectedPoint.name || t('selectedPoint')}<br />
+              {selectedPoint.name || t('location.distance.selectedPoint')}<br />
               {selectedPoint.lat.toFixed(6)}, {selectedPoint.lng.toFixed(6)}
             </p>
           </div>
@@ -60,17 +60,17 @@ export function DistanceCalculator({
 
         {selectedPoint.details && (
           <div className="text-sm border-t pt-2">
-            <p className="font-medium">{t('coverageDetails')}:</p>
+            <p className="font-medium">{t('location.coverage.details')}:</p>
             <p className="text-muted-foreground">
-              {selectedPoint.details.provider && `${t('provider')}: ${selectedPoint.details.provider}`}<br />
-              {selectedPoint.details.strength && `${t('strength')}: ${selectedPoint.details.strength}`}<br />
-              {selectedPoint.details.quality && `${t('quality')}: ${selectedPoint.details.quality}`}
+              {selectedPoint.details.provider && `${t('location.coverage.provider')}: ${selectedPoint.details.provider}`}<br />
+              {selectedPoint.details.strength && `${t('location.coverage.strength')}: ${selectedPoint.details.strength}`}<br />
+              {selectedPoint.details.quality && `${t('location.coverage.quality')}: ${selectedPoint.details.quality}`}
             </p>
           </div>
         )}
 
         <div className="text-center border-t pt-2">
-          <p className="text-sm text-muted-foreground">{t('distance')}:</p>
+          <p className="text-sm text-muted-foreground">{t('location.distance.label')}:</p>
           <p className="text-lg font-semibold">{formattedDistance}</p>
         </div>
       </div>

@@ -30,7 +30,7 @@
     },
     "logout": "Logout",
     "leaderboard": "Leaderboard",
-    "offline": "Offline Tracking"
+    "offline": "Offline Mode"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -789,117 +789,79 @@
     }
   },
   "location": {
-    "gpsTracking": "GPS Tracking",
-    "online": "Online",
-    "offline": "Offline",
-    "startTracking": "Start Tracking",
-    "stopTracking": "Stop Tracking",
-    "findMe": "Find Me",
-    "cursorPosition": "Cursor Position",
-    "distanceToPoint": "Distance to Point",
-    "distance": "Distance",
+    "tracking": {
+      "gps": "GPS Tracking",
+      "start": "Start Tracking",
+      "stop": "Stop Tracking"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "waiting": "Waiting for GPS signal...",
+      "tracking": "Tracking location...",
+      "stopped": "Tracking stopped",
+      "error": "Error getting location",
+      "unavailable": "Location services unavailable"
+    },
+    "actions": {
+      "save": "Save Location",
+      "upload": "Upload Locations",
+      "find": "Find Location"
+    },
+    "savedLocations": "Saved Locations",
+    "locationDetails": "Location",
+    "report": "Coverage Report",
+    "coordinates": {
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    },
     "accuracy": {
       "high": "High Accuracy",
       "medium": "Medium Accuracy",
       "low": "Low Accuracy",
       "label": "Accuracy"
     },
-    "coordinates": {
-      "latitude": "Latitude",
-      "longitude": "Longitude"
+    "metrics": {
+      "heading": "Heading",
+      "speed": "Speed",
+      "averageAccuracy": "Average Accuracy",
+      "meters": "m"
     },
-    "heading": "Heading",
-    "speed": "Speed",
-    "averageAccuracy": "Average Accuracy",
-    "latitude": "Latitude",
-    "longitude": "Longitude",
-    "status": {
-      "waiting": "Waiting for GPS signal...",
-      "tracking": "Tracking location...",
-      "stopped": "Tracking stopped",
-      "error": "Error getting location",
-      "unavailable": "Location services unavailable",
-      "permission": "Location permission required"
+    "distance": {
+      "from": "From",
+      "to": "To",
+      "label": "Distance",
+      "currentLocation": "Current Location",
+      "selectedPoint": "Selected Point",
+      "meters": "meters"
     },
-    "permissions": {
-      "required": "Location permission is required",
-      "denied": "Location permission was denied",
-      "prompt": "Please enable location services to use this feature"
+    "coverage": {
+      "details": "Coverage Details",
+      "provider": "Provider",
+      "strength": "Signal Strength",
+      "quality": "Connection Quality"
     },
+    "errors": {
+      "notSupported": "GPS not supported",
+      "permissionDenied": "Location permission denied",
+      "unavailable": "Location unavailable",
+      "timeout": "Location request timeout",
+      "unknown": "Unknown error"
+    },
+    "loading": "Getting location...",
     "getLocation": "Get My Location",
-    "loading": "Getting Location...",
-    "meters": "meters",
-    "errors": {
-      "notSupported": "Geolocation is not supported by your browser",
-      "permissionDenied": "Please allow location access",
-      "unavailable": "Location information unavailable",
-      "timeout": "Location request timed out",
-      "unknown": "An unknown error occurred"
-    },
-    "saveLocation": "Save Location",
-    "uploadLocations": "Upload Locations",
-    "savedLocations": "Saved Locations",
-    "report": "Report",
-    "currentLocation": "Current Location",
-    "form": {
-      "location": "Search Location",
-      "currentLocation": "Use Current Location"
-    }
-  },
-  "report": {
-    "type": "Issue Type",
-    "selectType": "Select issue type",
-    "provider": "Network Provider",
-    "selectProvider": "Select provider",
-    "description": "Description",
-    "descriptionPlaceholder": "Describe the issue you're experiencing...",
-    "contact": "Contact Email (optional)",
-    "contactPlaceholder": "your@email.com",
-    "locationSelected": "Selected Location",
-    "submit": "Submit Report",
-    "saveOffline": "Save Report Offline",
-    "submitted": "Report submitted successfully!",
-    "savedOffline": "Report saved offline successfully!",
-    "errors": {
-      "noLocation": "Please select a location first",
-      "unknown": "An unknown error occurred"
-    }
+    "findMe": "Find My Location"
   },
   "offline": {
-    "title": "Offline Mode",
-    "subtitle": "Track and save locations while offline",
-    "online": "You are currently online",
-    "offline": "You are currently offline",
-    "saveLocation": "Save Current Location",
-    "uploadLocations": "Upload Saved Locations",
-    "savedLocations": "Saved Locations",
-    "report": "Coverage Report",
-    "noLocations": "No locations saved yet",
-    "locationSaved": "Location saved successfully",
-    "uploadSuccess": "Locations uploaded successfully",
-    "uploadError": "Error uploading locations",
-    "deleteLocation": "Delete Location",
-    "deleteConfirm": "Are you sure you want to delete this location?",
-    "locationDetails": "Location Details",
-    "timestamp": "Timestamp",
-    "coordinates": "Coordinates",
-    "accuracy": "Accuracy",
-    "provider": "Provider",
-    "status": "Status",
-    "pending": "Pending Upload",
-    "uploaded": "Uploaded",
-    "delete": "Delete",
-    "confirmDelete": "Confirm Delete",
-    "cancel": "Cancel",
-    "location": "Location",
-    "distance": "Distance",
-    "currentLocation": "Current Location",
-    "selectedLocation": "Selected Location",
-    "distanceTo": "Distance to selected point",
-    "reportTitle": "Coverage Report",
-    "reportDescription": "Submit a coverage report for this location",
-    "reportSubmitted": "Report submitted successfully",
-    "reportError": "Error submitting report"
+    "title": "Offline Location Tracking",
+    "subtitle": "Track and save locations even when you're offline",
+    "status": {
+      "saving": "Saving location...",
+      "saved": "Location saved successfully",
+      "uploading": "Uploading locations...",
+      "uploaded": "Locations uploaded successfully",
+      "error": "Error saving location"
+    }
   },
   "gpsTracking": "GPS Tracking",
   "online": "Online",

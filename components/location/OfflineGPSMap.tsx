@@ -25,7 +25,7 @@ interface OfflineGPSMapProps {
 }
 
 export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMapProps) {
-  const t = useTranslations('location');
+  const t = useTranslations();
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -82,9 +82,9 @@ export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMa
   };
 
   const getAccuracyLevel = (accuracy: number) => {
-    if (accuracy <= 10) return { level: t('accuracy.high'), color: 'bg-green-500' };
-    if (accuracy <= 30) return { level: t('accuracy.medium'), color: 'bg-yellow-500' };
-    return { level: t('accuracy.low'), color: 'bg-red-500' };
+    if (accuracy <= 10) return { level: t('location.accuracy.high'), color: 'bg-green-500' };
+    if (accuracy <= 30) return { level: t('location.accuracy.medium'), color: 'bg-yellow-500' };
+    return { level: t('location.accuracy.low'), color: 'bg-red-500' };
   };
 
   const formatSpeed = (speedMps: number) => {
@@ -96,13 +96,12 @@ export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMa
     <Card className={`p-4 ${className}`}>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            {t('gpsTracking')}
+          <h3 className="text-lg font-semibold">
+            {t('location.tracking.gps')}
           </h3>
           <Badge variant={isOnline ? 'default' : 'secondary'}>
             {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-            {isOnline ? t('online') : t('offline')}
+            {isOnline ? t('location.status.online') : t('location.status.offline')}
           </Badge>
         </div>
 
@@ -111,56 +110,56 @@ export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMa
           variant={isTracking ? 'destructive' : 'default'}
           className="w-full"
         >
-          {isTracking ? t('stopTracking') : t('startTracking')}
+          {isTracking ? t('location.tracking.stop') : t('location.tracking.start')}
         </Button>
 
         {currentLocation && (
           <div className="space-y-2 text-sm">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-muted-foreground">{t('latitude')}:</p>
+                <p className="text-muted-foreground">{t('location.coordinates.latitude')}:</p>
                 <p className="font-medium">{currentLocation.coords.latitude.toFixed(6)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">{t('longitude')}:</p>
+                <p className="text-muted-foreground">{t('location.coordinates.longitude')}:</p>
                 <p className="font-medium">{currentLocation.coords.longitude.toFixed(6)}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Badge className={getAccuracyLevel(currentLocation.coords.accuracy).color}>
-                {getAccuracyLevel(currentLocation.coords.accuracy).level}
+                {t(`location.accuracy.${getAccuracyLevel(currentLocation.coords.accuracy).level}`)}
               </Badge>
               <span className="text-muted-foreground">
-                ±{Math.round(currentLocation.coords.accuracy)}m
+                ±{Math.round(currentLocation.coords.accuracy)}{t('location.metrics.meters')}
               </span>
             </div>
 
             {currentLocation.coords.heading && (
               <div className="flex items-center gap-2">
                 <Navigation className="h-4 w-4" />
-                <span>{Math.round(currentLocation.coords.heading)}°</span>
+                <span>{t('location.metrics.heading')}: {Math.round(currentLocation.coords.heading)}°</span>
               </div>
             )}
 
             {currentSpeed && (
               <div>
-                <p className="text-muted-foreground">{t('speed')}:</p>
+                <p className="text-muted-foreground">{t('location.metrics.speed')}:</p>
                 <p className="font-medium">{formatSpeed(currentSpeed)}</p>
               </div>
             )}
 
             {averageAccuracy && (
               <div>
-                <p className="text-muted-foreground">{t('averageAccuracy')}:</p>
-                <p className="font-medium">±{Math.round(averageAccuracy)}m</p>
+                <p className="text-muted-foreground">{t('location.metrics.averageAccuracy')}:</p>
+                <p className="font-medium">±{Math.round(averageAccuracy)}{t('location.metrics.meters')}</p>
               </div>
             )}
           </div>
         )}
 
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">{t(`location.errors.${error}`)}</p>
         )}
       </div>
     </Card>

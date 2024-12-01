@@ -35,7 +35,7 @@ interface SavedLocation {
 }
 
 export default function OfflinePage() {
-  const t = useTranslations('offline');
+  const t = useTranslations();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [currentLocation, setCurrentLocation] = useState<CurrentLocation | null>(null);
   const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
@@ -127,13 +127,13 @@ export default function OfflinePage() {
               <WifiOff className="w-12 h-12 text-orange-600" />
             )}
           </div>
-          <h1 className="text-4xl font-bold text-gray-900">{t('title')}</h1>
-          <p className="mt-4 text-xl text-gray-600">{t('subtitle')}</p>
+          <h1 className="text-4xl font-bold text-gray-900">{t('navigation.offline')}</h1>
+          <p className="mt-4 text-xl text-gray-600">{t('location.tracking.gps')}</p>
           <Badge 
             variant={isOnline ? 'default' : 'secondary'}
             className="mt-4"
           >
-            {isOnline ? t('online') : t('offline')}
+            {isOnline ? t('location.status.online') : t('location.status.offline')}
           </Badge>
         </motion.div>
 
@@ -158,7 +158,7 @@ export default function OfflinePage() {
                 className="flex-1"
               >
                 <Save className="mr-2 h-4 w-4" />
-                {t('saveLocation')}
+                {t('location.actions.save')}
               </Button>
               <Button
                 onClick={handleUploadLocations}
@@ -167,7 +167,7 @@ export default function OfflinePage() {
                 className="flex-1"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                {t('uploadLocations')}
+                {t('location.actions.upload')}
               </Button>
             </div>
           </div>
@@ -175,8 +175,8 @@ export default function OfflinePage() {
           <div className="space-y-6">
             <Tabs defaultValue="locations" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="locations">{t('savedLocations')}</TabsTrigger>
-                <TabsTrigger value="report">{t('report')}</TabsTrigger>
+                <TabsTrigger value="locations">{t('location.savedLocations')}</TabsTrigger>
+                <TabsTrigger value="report">{t('location.report')}</TabsTrigger>
               </TabsList>
               <TabsContent value="locations">
                 <Card className="p-4">
@@ -186,7 +186,7 @@ export default function OfflinePage() {
                     />
                     {savedLocations.length > 0 && (
                       <div className="space-y-2">
-                        <h3 className="font-medium">{t('savedLocations')}</h3>
+                        <h3 className="font-medium">{t('location.savedLocations')}</h3>
                         <div className="max-h-[300px] overflow-y-auto space-y-2">
                           {savedLocations.map((loc, index) => (
                             <Card
@@ -199,7 +199,7 @@ export default function OfflinePage() {
                               onClick={() => setSelectedLocation(loc)}
                             >
                               <p className="font-medium">
-                                {t('location')} {index + 1}
+                                {t('location.locationDetails')} {index + 1}
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 {new Date(loc.timestamp).toLocaleString()}

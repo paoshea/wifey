@@ -17,7 +17,7 @@ interface LocationFinderProps {
 }
 
 export function LocationFinder({ onLocationFound, className = '' }: LocationFinderProps) {
-  const t = useTranslations('location');
+  const t = useTranslations();
   const [coords, setCoords] = useState<LocationData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export function LocationFinder({ onLocationFound, className = '' }: LocationFind
     setError(null);
 
     if (!navigator.geolocation) {
-      setError(t('errors.notSupported'));
+      setError(t('location.errors.notSupported'));
       setLoading(false);
       return;
     }
@@ -54,16 +54,16 @@ export function LocationFinder({ onLocationFound, className = '' }: LocationFind
         setLoading(false);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setError(t('errors.permissionDenied'));
+            setError(t('location.errors.permissionDenied'));
             break;
           case error.POSITION_UNAVAILABLE:
-            setError(t('errors.unavailable'));
+            setError(t('location.errors.unavailable'));
             break;
           case error.TIMEOUT:
-            setError(t('errors.timeout'));
+            setError(t('location.errors.timeout'));
             break;
           default:
-            setError(t('errors.unknown'));
+            setError(t('location.errors.unknown'));
         }
       },
       {
@@ -83,14 +83,14 @@ export function LocationFinder({ onLocationFound, className = '' }: LocationFind
         className="w-full"
       >
         <MapPin className="mr-2 h-4 w-4" />
-        {loading ? t('loading') : t('getLocation')}
+        {loading ? t('location.loading') : t('location.getLocation')}
       </Button>
       
       {coords && (
         <div className="text-sm space-y-1 bg-muted p-3 rounded-md">
-          <p>{t('latitude')}: {coords.latitude.toFixed(6)}</p>
-          <p>{t('longitude')}: {coords.longitude.toFixed(6)}</p>
-          <p>{t('accuracy.high')}: ±{Math.round(coords.accuracy)} {t('meters')}</p>
+          <p>{t('location.coordinates.latitude')}: {coords.latitude.toFixed(6)}</p>
+          <p>{t('location.coordinates.longitude')}: {coords.longitude.toFixed(6)}</p>
+          <p>{t('location.accuracy.high')}: ±{Math.round(coords.accuracy)} {t('location.metrics.meters')}</p>
         </div>
       )}
       
