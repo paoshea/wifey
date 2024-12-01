@@ -661,23 +661,26 @@
   },
   "leaderboard": {
     "title": "Tabla de Clasificación",
-    "description": "Mira cómo te clasificas entre otros contribuyentes de la comunidad",
+    "description": "Mira cómo te clasificas entre otros contribuyentes",
     "timeframe": {
-      "daily": "Hoy",
-      "weekly": "Esta Semana",
-      "monthly": "Este Mes",
-      "allTime": "Todo el Tiempo"
+      "label": "Período de Tiempo",
+      "all": "Todo el Tiempo",
+      "day": "Hoy",
+      "week": "Esta Semana",
+      "month": "Este Mes",
+      "year": "Este Año"
     },
-    "table": {
-      "rank": "Posición",
-      "user": "Usuario",
+    "stats": {
+      "title": "Tus Estadísticas",
       "points": "Puntos",
+      "rank": "Posición",
       "contributions": "Contribuciones",
-      "noData": "No hay datos disponibles"
+      "streak": "Racha Actual"
     },
-    "filters": {
-      "timeframe": "Período de Tiempo",
-      "perPage": "Resultados por página"
-    }
+    "rank": "Posición",
+    "user": "Usuario",
+    "points": "Puntos",
+    "contributions": "Contribuciones",
+    "streak": "Racha"
   }
 }

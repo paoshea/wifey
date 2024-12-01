@@ -750,25 +750,28 @@
     "language": "Language"
   },
   "leaderboard": {
-    "title": "Community Leaderboard",
-    "description": "See how you rank among other contributors in the community",
+    "title": "Leaderboard",
+    "description": "See how you rank among other contributors",
     "timeframe": {
-      "daily": "Today",
-      "weekly": "This Week",
-      "monthly": "This Month",
-      "allTime": "All Time"
+      "label": "Time Period",
+      "all": "All Time",
+      "day": "Today",
+      "week": "This Week",
+      "month": "This Month",
+      "year": "This Year"
     },
-    "table": {
-      "rank": "Rank",
-      "user": "User",
+    "stats": {
+      "title": "Your Stats",
       "points": "Points",
+      "rank": "Rank",
       "contributions": "Contributions",
-      "noData": "No data available"
+      "streak": "Current Streak"
     },
-    "filters": {
-      "timeframe": "Time Period",
-      "perPage": "Results per page"
-    }
+    "rank": "Rank",
+    "user": "User",
+    "points": "Points",
+    "contributions": "Contributions",
+    "streak": "Streak"
   },
   "gamification": {
     "stats": {
