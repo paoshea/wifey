@@ -87,6 +87,26 @@
       "leaderboard": {
         "title": "Top Contributors",
         "description": "Compete with others and become a top contributor in your area"
+      },
+      "streak": {
+        "title": "Contribution Streak",
+        "current": "Current Streak",
+        "longest": "Longest Streak",
+        "days": "days",
+        "nextMilestone": "Next milestone: {days} days"
+      },
+      "achievements": {
+        "title": "Achievements",
+        "unlocked": "Unlocked",
+        "progress": "{current}/{total} completed"
+      },
+      "stats": {
+        "title": "Your Stats",
+        "points": "Total Points",
+        "rank": "Global Rank",
+        "contributions": "Contributions",
+        "level": "Level",
+        "levelLabel": "LVL"
       }
     },
     "testimonials": {
@@ -414,9 +434,12 @@
   },
   "Dashboard": {
     "title": "Dashboard",
-    "welcome": "Welcome, {name}",
+    "welcome": "Welcome back, {name}",
     "user": "User",
     "settings": "Settings",
+    "quickActions": "Quick Actions",
+    "newReport": "New Report",
+    "viewMap": "View Map",
     "cellularTitle": "Cellular Coverage",
     "cellularDescription": "View and contribute to cellular coverage data in your area.",
     "wifiTitle": "WiFi Hotspots",
@@ -432,12 +455,20 @@
     },
     "notifications": {
       "title": "Notifications",
-      "newCoverage": "New Coverage Area",
-      "newCoverageDesc": "A new cellular coverage area has been mapped in your vicinity.",
-      "wifiSpot": "New WiFi Hotspot",
-      "wifiSpotDesc": "A new public WiFi hotspot has been added near you.",
+      "newCoverage": "New Coverage Point",
+      "newCoverageDesc": "Your coverage point was added successfully!",
+      "wifiSpot": "WiFi Hotspot Added",
+      "wifiSpotDesc": "Thanks for adding a new WiFi hotspot!",
       "achievement": "Achievement Unlocked",
-      "achievementDesc": "You've earned the 'Network Explorer' badge!"
+      "achievementDesc": "You've earned the '7-Day Streak' badge!"
+    },
+    "achievements": {
+      "firstContribution": "First Contribution",
+      "firstContributionDesc": "Made your first contribution to the network map",
+      "weeklyStreak": "Weekly Warrior",
+      "weeklyStreakDesc": "Maintained a 7-day contribution streak",
+      "hundredPoints": "Century Marker",
+      "hundredPointsDesc": "Earn 100 contribution points"
     }
   },
   "wifi": {

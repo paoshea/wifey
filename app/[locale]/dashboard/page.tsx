@@ -9,12 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Icons } from '@/components/ui/icons';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { StreakCard } from '@/components/gamification/streak-card';
+import { AchievementsCard } from '@/components/gamification/achievements-card';
+import { StatsCard } from '@/components/gamification/stats-card';
+import { useGamification } from '@/hooks/use-gamification';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard');
   const locale = useLocale();
   const { data: session } = useSession();
+  const { stats, achievements, isLoading, error } = useGamification();
 
   const notifications = [
     {
@@ -81,64 +87,123 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - 2 columns */}
         <div className="lg:col-span-2 grid gap-6">
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 gap-6">
+            {isLoading ? (
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-8 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="h-4 w-24 mb-2" />
+                        <Skeleton className="h-8 w-32" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : error ? (
+              <Card className="p-6">
+                <p className="text-destructive">Failed to load stats</p>
+              </Card>
+            ) : stats ? (
+              <StatsCard
+                points={stats.points}
+                rank={stats.rank}
+                totalContributions={stats.totalContributions}
+                level={stats.level}
+              />
+            ) : null}
+          </div>
+
+          {/* Streak and Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icons.signal className="w-5 h-5" />
-                  {t('cellularTitle')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">{t('cellularDescription')}</p>
-                <Button asChild>
-                  <Link href={`/${locale}/coverage-map`}>{t('viewCoverage')}</Link>
-                </Button>
-              </CardContent>
-            </Card>
+            {isLoading ? (
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-8 w-48" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <div key={i}>
+                          <Skeleton className="h-4 w-24 mb-2" />
+                          <Skeleton className="h-8 w-32" />
+                        </div>
+                      ))}
+                    </div>
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ) : error ? (
+              <Card className="p-6">
+                <p className="text-destructive">Failed to load streak data</p>
+              </Card>
+            ) : stats ? (
+              <StreakCard
+                currentStreak={stats.currentStreak}
+                longestStreak={stats.longestStreak}
+                nextMilestone={stats.nextMilestone}
+                progressToNextMilestone={stats.progressToNextMilestone}
+              />
+            ) : null}
 
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icons.wifi className="w-5 h-5" />
-                  {t('wifiTitle')}
+                  <Icons.zap className="w-5 h-5 text-primary" />
+                  {t('quickActions')}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">{t('wifiDescription')}</p>
+              <CardContent className="grid gap-4">
                 <Button asChild>
-                  <Link href={`/${locale}/wifi-map`}>{t('findWifi')}</Link>
+                  <Link href={`/${locale}/report`}>
+                    <Icons.plus className="mr-2 h-4 w-4" />
+                    {t('newReport')}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/${locale}/map`}>
+                    <Icons.map className="mr-2 h-4 w-4" />
+                    {t('viewMap')}
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icons.map className="w-5 h-5" />
-                {t('nearbyTitle')}
-              </CardTitle>
-              <CardDescription>{t('nearbyDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Icons.wifi className="w-4 h-4 text-primary" />
-                    <span>{t('stats.wifiSpots', { count: 15 })}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Icons.signal className="w-4 h-4 text-primary" />
-                    <span>{t('stats.coverageAreas', { count: 8 })}</span>
-                  </div>
+          {/* Achievements */}
+          {isLoading ? (
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-8 w-48" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg border">
+                      <Skeleton className="h-8 w-8" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-32 mb-2" />
+                        <Skeleton className="h-4 w-64" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <Button asChild className="w-full">
-                  <Link href={`/${locale}/nearby`}>{t('exploreNearby')}</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card className="p-6">
+              <p className="text-destructive">Failed to load achievements</p>
+            </Card>
+          ) : achievements ? (
+            <AchievementsCard achievements={achievements} />
+          ) : null}
         </div>
 
         {/* Notifications Sidebar */}

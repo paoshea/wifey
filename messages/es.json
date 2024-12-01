@@ -395,7 +395,27 @@
     "contributions": "Contribuciones",
     "rewards": "Recompensas",
     "unlocked": "Desbloqueado",
-    "locked": "Bloqueado"
+    "locked": "Bloqueado",
+    "streak": {
+      "title": "Racha de Contribuciones",
+      "current": "Racha Actual",
+      "longest": "Racha más Larga",
+      "days": "días",
+      "nextMilestone": "Siguiente meta: {days} días"
+    },
+    "achievements": {
+      "title": "Logros",
+      "unlocked": "Desbloqueado",
+      "progress": "{current}/{total} completado"
+    },
+    "stats": {
+      "title": "Tus Estadísticas",
+      "points": "Puntos Totales",
+      "rank": "Rango Global",
+      "contributions": "Contribuciones",
+      "level": "Nivel",
+      "levelLabel": "NIV"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -470,6 +490,29 @@
       "wifiSpotDesc": "Se ha añadido un nuevo punto de WiFi público cerca de ti.",
       "achievement": "Logro Desbloqueado",
       "achievementDesc": "¡Has ganado la insignia 'Explorador de Redes'!"
+    },
+    "welcome": "Bienvenido de nuevo, {name}",
+    "user": "Usuario",
+    "settings": "Configuración",
+    "quickActions": "Acciones Rápidas",
+    "newReport": "Nuevo Reporte",
+    "viewMap": "Ver Mapa",
+    "notifications": {
+      "title": "Notificaciones",
+      "newCoverage": "Nuevo Punto de Cobertura",
+      "newCoverageDesc": "¡Tu punto de cobertura se agregó con éxito!",
+      "wifiSpot": "Punto WiFi Agregado",
+      "wifiSpotDesc": "¡Gracias por agregar un nuevo punto WiFi!",
+      "achievement": "Logro Desbloqueado",
+      "achievementDesc": "¡Has ganado la insignia 'Racha de 7 días'!"
+    },
+    "achievements": {
+      "firstContribution": "Primera Contribución",
+      "firstContributionDesc": "Hiciste tu primera contribución al mapa de red",
+      "weeklyStreak": "Guerrero Semanal",
+      "weeklyStreakDesc": "Mantuviste una racha de contribución de 7 días",
+      "hundredPoints": "Centenario",
+      "hundredPointsDesc": "Gana 100 puntos de contribución"
     }
   },
   "wifi": {
