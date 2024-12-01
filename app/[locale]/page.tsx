@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
-import { MapPin, Signal, Wifi, Trophy, Star, Award } from 'lucide-react';
+import { MapPin, Signal, Wifi, Trophy, Star, Award, ZapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
@@ -35,6 +35,33 @@ export default function Home() {
           <p className="text-xl text-gray-600 mt-6 mb-8 max-w-2xl mx-auto">
             {t('home.subtitle')}
           </p>
+
+          {/* Featured Quick Report Button */}
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <div className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 p-[2px] rounded-lg">
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="relative group bg-white hover:bg-blue-50 dark:bg-gray-950 text-lg font-semibold"
+              >
+                <Link href={`/${locale}/report`}>
+                  <ZapIcon className="mr-2 h-5 w-5 text-blue-600 group-hover:text-blue-700" />
+                  <span>{t('header.quickReport')}</span>
+                  <div className="absolute -top-3 -right-3">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {t('common.new')}
+                    </span>
+                  </div>
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Features Title Section */}

@@ -27,7 +27,7 @@ export default function SignInPage() {
     try {
       setIsLoading(true);
       const result = await signIn(provider, {
-        redirect: true,
+        redirect: false,
         callbackUrl: `/${locale}/dashboard`,
       });
       
@@ -37,6 +37,13 @@ export default function SignInPage() {
           description: t('signInError'),
           variant: 'destructive',
         });
+      } else if (result?.ok) {
+        toast({
+          title: t('success'),
+          description: t('signInSuccess'),
+          variant: 'default',
+        });
+        router.push(`/${locale}/dashboard`);
       }
     } catch (error) {
       toast({
@@ -62,10 +69,17 @@ export default function SignInPage() {
       if (result?.error) {
         toast({
           title: t('error'),
-          description: t('invalidCredentials'),
+          description: result.error === 'CredentialsSignin' 
+            ? t('invalidCredentials') 
+            : t('signInError'),
           variant: 'destructive',
         });
-      } else {
+      } else if (result?.ok) {
+        toast({
+          title: t('success'),
+          description: t('signInSuccess'),
+          variant: 'default',
+        });
         router.push(`/${locale}/dashboard`);
       }
     } catch (error) {

@@ -310,7 +310,9 @@
     "password": "Contraseña",
     "or": "o continuar con",
     "error": "Error",
+    "success": "Éxito",
     "signInError": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "signInSuccess": "¡Has iniciado sesión correctamente! Redirigiendo...",
     "invalidCredentials": "Correo o contraseña inválidos",
     "privacyNotice": "Al iniciar sesión, aceptas nuestros Términos de Servicio y Política de Privacidad",
     "noAccount": "¿No tienes una cuenta?",
@@ -320,16 +322,10 @@
     "loading": "Cargando...",
     "error": "Ocurrió un error",
     "retry": "Intentar de nuevo",
-    "close": "Cerrar",
+    "new": "Nuevo",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "success": "Éxito",
-    "warning": "Advertencia",
-    "info": "Información",
-    "continue": "Continuar",
-    "skip": "Omitir",
-    "next": "Siguiente",
-    "back": "Atrás"
+    "close": "Cerrar"
   },
   "gamification": {
     "points": "Puntos",
@@ -509,5 +505,16 @@
     "notes": "Notas Adicionales",
     "notesPlaceholder": "Cualquier información adicional...",
     "submit": "Enviar Punto"
+  },
+  "header": {
+    "dashboard": "Panel",
+    "map": "Mapa",
+    "leaderboard": "Clasificación",
+    "settings": "Ajustes",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "quickReport": "Reportar Cobertura",
+    "profile": "Perfil",
+    "language": "Idioma"
   }
 }

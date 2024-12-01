@@ -283,7 +283,9 @@
     "password": "Password",
     "or": "or continue with",
     "error": "Error",
+    "success": "Success",
     "signInError": "Something went wrong. Please try again.",
+    "signInSuccess": "Successfully signed in! Redirecting...",
     "invalidCredentials": "Invalid email or password",
     "privacyNotice": "By signing in, you agree to our Terms of Service and Privacy Policy",
     "noAccount": "Don't have an account?",
@@ -307,9 +309,10 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "retry": "Try again",
-    "close": "Close",
+    "new": "New",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "success": "Success",
     "warning": "Warning",
     "info": "Information",
@@ -617,5 +620,16 @@
       "message": "Registration Failed",
       "description": "There was an error completing your profile. Please try again."
     }
+  },
+  "header": {
+    "dashboard": "Dashboard",
+    "map": "Map",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "quickReport": "Quick Report Coverage",
+    "profile": "Profile",
+    "language": "Language"
   }
 }

@@ -75,16 +75,6 @@ export function MainHeader() {
 
         {/* Right Side Items */}
         <div className="flex flex-1 items-center justify-end space-x-6">
-          {/* Quick Report Button */}
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => {}}
-            className="hidden md:flex"
-          >
-            {t('reportCoverage')}
-          </Button>
-
           {/* Settings */}
           <Link
             href={`/${locale}/settings`}
