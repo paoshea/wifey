@@ -14,14 +14,6 @@ const LeaderboardQuerySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const query = LeaderboardQuerySchema.parse({
       timeframe: searchParams.get('timeframe'),
@@ -34,6 +26,15 @@ export async function GET(request: NextRequest) {
       query.page,
       query.limit
     );
+
+    // Add user-specific data if authenticated
+    if (session?.user?.id) {
+      const userRank = await gamificationService.getUserRank(
+        session.user.id,
+        query.timeframe
+      );
+      response.userRank = userRank;
+    }
 
     return NextResponse.json(response);
   } catch (error) {

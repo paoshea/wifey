@@ -648,6 +648,101 @@ export class GamificationService {
 
     return Math.round((metRequirements.length / achievement.requirements.length) * 100);
   }
+
+  async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const cacheKey = `totalUsers:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const dateFilter = this.getDateFilter(timeframe);
+      return this.prisma.user.count({
+        where: {
+          createdAt: dateFilter,
+          stats: {
+            points: { gt: 0 }
+          }
+        }
+      });
+    });
+  }
+
+  async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const cacheKey = `totalContributions:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const dateFilter = this.getDateFilter(timeframe);
+      return this.prisma.measurement.count({
+        where: {
+          createdAt: dateFilter
+        }
+      });
+    });
+  }
+
+  async getUserRank(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
+    const cacheKey = `userRank:${userId}:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const dateFilter = this.getDateFilter(timeframe);
+      const userPoints = await this.getUserPoints(userId);
+
+      if (!userPoints) {
+        return null;
+      }
+
+      const rank = await this.prisma.user.count({
+        where: {
+          stats: {
+            points: { gt: userPoints }
+          },
+          measurements: {
+            some: {
+              createdAt: dateFilter
+            }
+          }
+        }
+      });
+
+      return rank + 1;
+    });
+  }
+
+  async getUserPoints(userId: string): Promise<number | null> {
+    const cacheKey = `userPoints:${userId}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          stats: {
+            select: {
+              points: true
+            }
+          }
+        }
+      });
+
+      return user?.stats?.points ?? null;
+    });
+  }
+
+  private getDateFilter(timeframe: TimeFrame): { gte: Date } {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (timeframe) {
+      case TimeFrame.DAILY:
+        return { gte: startOfDay };
+      
+      case TimeFrame.WEEKLY:
+        const startOfWeek = new Date(startOfDay);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        return { gte: startOfWeek };
+      
+      case TimeFrame.MONTHLY:
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { gte: startOfMonth };
+      
+      case TimeFrame.ALL_TIME:
+      default:
+        return { gte: new Date(0) }; // Beginning of time
+    }
+  }
 }
 
 // Cache-specific functions

@@ -221,6 +221,21 @@ export type ValidatedUserStats = z.infer<typeof UserStatsSchema>;
 export type ValidatedMeasurementStats = z.infer<typeof MeasurementStatsSchema>;
 export type ValidatedMeasurementInput = z.infer<typeof MeasurementInputSchema>;
 
+// Leaderboard Types
+export type LeaderboardResponse = {
+  timeframe: TimeFrame;
+  entries: LeaderboardEntry[];
+  totalUsers: number;
+  userRank?: number;
+};
+
+export type LeaderboardStats = {
+  totalUsers: number;
+  totalContributions: number;
+  userRank?: number;
+  userPoints?: number;
+};
+
 // Type Guards
 export function isValidStatsContent(data: unknown): data is StatsContent {
   return StatsContentSchema.safeParse(data).success;

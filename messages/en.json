@@ -28,7 +28,8 @@
       "appreciationMessage": "Your contribution helps make our coverage map better.",
       "joinMessage": "Join our community to track your contributions!"
     },
-    "logout": "Logout"
+    "logout": "Logout",
+    "leaderboard": "Leaderboard"
   },
   "home": {
     "title": "Find the Best Connection Anywhere",
@@ -689,5 +690,34 @@
     "quickReport": "Quick Report Coverage",
     "profile": "Profile",
     "language": "Language"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "description": "See who's leading the pack in network mapping",
+    "rank": "Rank",
+    "user": "User",
+    "points": "Points",
+    "contributions": "Contributions",
+    "streak": "Streak",
+    "streakMilestone": "{days} day streak!",
+    "timeframe": {
+      "label": "Time Period",
+      "ALL_TIME": "All Time",
+      "MONTHLY": "This Month",
+      "WEEKLY": "This Week",
+      "DAILY": "Today"
+    },
+    "stats": {
+      "title": "Stats",
+      "totalUsers": "Total Users",
+      "totalContributions": "Total Contributions",
+      "yourRank": "Your Rank",
+      "yourPoints": "Your Points"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {current} of {total}"
+    }
   }
 }

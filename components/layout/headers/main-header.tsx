@@ -45,6 +45,11 @@ export function MainHeader() {
       href: '/explore',
       icon: <Icons.map className="w-4 h-4" />,
     },
+    {
+      title: t('leaderboard'),
+      href: '/leaderboard',
+      icon: <Icons.trophy className="w-4 h-4" />,
+    },
   ];
 
   const handleSignOut = async () => {

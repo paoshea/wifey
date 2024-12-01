@@ -15,7 +15,8 @@
     "settings": "Configuración",
     "profile": "Perfil",
     "signOut": "Cerrar Sesión",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "leaderboard": "Tabla de Clasificación"
   },
   "home": {
     "title": "Encuentra Cobertura",
@@ -162,7 +163,7 @@
       "success": {
         "title": "Reporte Enviado",
         "description": "Tu reporte de cobertura se ha guardado exitosamente.",
-        "thanksTitle": "¡Gracias por Contribuir! 🎉",
+        "thanksTitle": "¡Gracias por Contribuir! ",
         "thanksDescription": "Tu reporte ayuda a hacer nuestro mapa de cobertura más preciso para todos.",
         "joinTitle": "Únete a Nuestra Comunidad",
         "joinDescription": "¡Regístrate como Usuario Power para aparecer en la Tabla de Clasificación y desbloquear funciones exclusivas!",
@@ -534,7 +535,8 @@
     "settings": "Configuración",
     "profile": "Perfil",
     "signOut": "Cerrar Sesión",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "leaderboard": "Tabla de Clasificación"
   },
   "points": {
     "addNew": "Agregar Nuevo Punto",
@@ -572,5 +574,34 @@
     "quickReport": "Reportar Cobertura",
     "profile": "Perfil",
     "language": "Idioma"
+  },
+  "leaderboard": {
+    "title": "Tabla de Clasificación",
+    "description": "Mira quién lidera el mapeo de redes",
+    "rank": "Posición",
+    "user": "Usuario",
+    "points": "Puntos",
+    "contributions": "Contribuciones",
+    "streak": "Racha",
+    "streakMilestone": "¡Racha de {days} días!",
+    "timeframe": {
+      "label": "Período",
+      "ALL_TIME": "Todo el Tiempo",
+      "MONTHLY": "Este Mes",
+      "WEEKLY": "Esta Semana",
+      "DAILY": "Hoy"
+    },
+    "stats": {
+      "title": "Estadísticas",
+      "totalUsers": "Total de Usuarios",
+      "totalContributions": "Total de Contribuciones",
+      "yourRank": "Tu Posición",
+      "yourPoints": "Tus Puntos"
+    },
+    "pagination": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "pageInfo": "Página {current} de {total}"
+    }
   }
 }
