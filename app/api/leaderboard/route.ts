@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { gamificationService } from '@/lib/services/gamification-service';
-import { TimeFrame } from '@/lib/gamification/types';
+import { TimeFrame } from '@/lib/gamification/types/TimeFrame'; // Fix: Added /TimeFrame to the import path
 import { z } from 'zod';
 
 const LeaderboardQuerySchema = z.object({

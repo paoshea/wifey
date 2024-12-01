@@ -5,9 +5,9 @@ import { Cache } from 'memory-cache';
 import prisma from '@/lib/prisma';
 import { 
   TimeFrame, 
-  LeaderboardEntry, 
-  LeaderboardResponse,
-  StatsContent 
+  type LeaderboardEntry, 
+  type LeaderboardResponse,
+  type StatsContent 
 } from '../gamification/types';
 
 // Type definitions
@@ -74,28 +74,22 @@ export class LeaderboardService {
     const [users, totalCount] = await Promise.all([
       this.prisma.user.findMany({
         where: {
-          userStats: {
-            some: {
-              createdAt: dateFilter
-            }
+          stats: {
+            createdAt: dateFilter
           }
         },
         select: {
           id: true,
           name: true,
-          userStats: {
-            where: dateFilter,
+          stats: {
             select: {
               points: true,
-              statsData: true
-            },
-            orderBy: {
-              points: 'desc'
+              stats: true
             }
           }
         },
         orderBy: {
-          userStats: {
+          stats: {
             points: 'desc'
           }
         },
@@ -104,10 +98,8 @@ export class LeaderboardService {
       }),
       this.prisma.user.count({
         where: {
-          userStats: {
-            some: {
-              createdAt: dateFilter
-            }
+          stats: {
+            createdAt: dateFilter
           }
         }
       })
@@ -117,8 +109,8 @@ export class LeaderboardService {
       position: skip + index + 1,
       id: user.id,
       name: user.name || 'Anonymous',
-      points: user.userStats?.[0]?.points || 0,
-      stats: user.userStats?.[0]?.statsData || {}
+      points: user.stats?.[0]?.points || 0,
+      stats: user.stats?.[0]?.stats || {}
     }));
 
     const response: LeaderboardResponse = {

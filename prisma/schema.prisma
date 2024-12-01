@@ -149,13 +149,15 @@ model LeaderboardEntry {
 }
 
 model Measurement {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  latitude  Json?
-  longitude Json?
-  userId    Json?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  latitude  Float
+  longitude Float
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([latitude, longitude])
+  @@index([createdAt])
 }
 
 model Notification {

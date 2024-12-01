@@ -14,9 +14,9 @@ import {
   type MeasurementResult,
   type LeaderboardEntry,
   type LeaderboardResponse,
-  type TimeFrame,
   type AchievementProgress
 } from '../gamification/types';
+import { TimeFrame } from '../gamification/types/TimeFrame';
 import {
   validateMeasurement,
   validateRequirement,
@@ -649,31 +649,50 @@ export class GamificationService {
     return Math.round((metRequirements.length / achievement.requirements.length) * 100);
   }
 
+  private getDateFilter(timeframe: TimeFrame): { gte: Date } {
+    const now = new Date();
+    switch (timeframe) {
+      case TimeFrame.DAILY:
+        return {
+          gte: new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        };
+      case TimeFrame.WEEKLY:
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        return { gte: weekStart };
+      case TimeFrame.MONTHLY:
+        return {
+          gte: new Date(now.getFullYear(), now.getMonth(), 1)
+        };
+      case TimeFrame.ALL_TIME:
+      default:
+        return {
+          gte: new Date(0) // Unix epoch
+        };
+    }
+  }
+
   async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const cacheKey = `totalUsers:${timeframe}`;
-    return this.apiCache.wrap(cacheKey, async () => {
-      const dateFilter = this.getDateFilter(timeframe);
-      return this.prisma.user.count({
-        where: {
-          createdAt: dateFilter,
-          stats: {
-            points: { gt: 0 }
-          }
+    const dateFilter = this.getDateFilter(timeframe);
+    const count = await this.prisma.user.count({
+      where: {
+        stats: {
+          createdAt: dateFilter
         }
-      });
+      }
     });
+    return count;
   }
 
   async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const cacheKey = `totalContributions:${timeframe}`;
-    return this.apiCache.wrap(cacheKey, async () => {
-      const dateFilter = this.getDateFilter(timeframe);
-      return this.prisma.measurement.count({
-        where: {
-          createdAt: dateFilter
-        }
-      });
+    const dateFilter = this.getDateFilter(timeframe);
+    const count = await this.prisma.contribution.count({
+      where: {
+        createdAt: dateFilter
+      }
     });
+    return count;
   }
 
   async getUserRank(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
@@ -719,29 +738,6 @@ export class GamificationService {
 
       return user?.stats?.points ?? null;
     });
-  }
-
-  private getDateFilter(timeframe: TimeFrame): { gte: Date } {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    switch (timeframe) {
-      case TimeFrame.DAILY:
-        return { gte: startOfDay };
-      
-      case TimeFrame.WEEKLY:
-        const startOfWeek = new Date(startOfDay);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        return { gte: startOfWeek };
-      
-      case TimeFrame.MONTHLY:
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { gte: startOfMonth };
-      
-      case TimeFrame.ALL_TIME:
-      default:
-        return { gte: new Date(0) }; // Beginning of time
-    }
   }
 }
 
