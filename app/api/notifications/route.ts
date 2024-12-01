@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/auth.config';
+import { authOptions } from '@/lib/auth';
 import { notificationService } from '@/lib/services/notification-service';
 import type { NotificationType } from '@/types/notifications';
 

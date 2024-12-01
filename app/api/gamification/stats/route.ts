@@ -6,7 +6,7 @@ import { TimeFrame } from '@/lib/gamification/types';
 import { z } from 'zod';
 
 const StatsQuerySchema = z.object({
-  timeframe: z.nativeEnum(TimeFrame).optional().default(TimeFrame.ALL_TIME)
+  timeframe: z.nativeEnum(TimeFrame).nullable().transform(val => val ?? TimeFrame.ALL_TIME)
 });
 
 export async function GET(request: NextRequest) {
