@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icons } from '@/components/ui/icons';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import Logo from '@/components/ui/logo';
 
 export default function SignInPage() {
@@ -17,6 +20,8 @@ export default function SignInPage() {
   const router = useRouter();
   const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSignIn = async (provider: string) => {
     try {
@@ -26,13 +31,42 @@ export default function SignInPage() {
         callbackUrl: `/${locale}/dashboard`,
       });
       
-      // This code will only run if redirect: true fails
       if (result?.error) {
         toast({
           title: t('error'),
           description: t('signInError'),
           variant: 'destructive',
         });
+      }
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('signInError'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast({
+          title: t('error'),
+          description: t('invalidCredentials'),
+          variant: 'destructive',
+        });
+      } else {
+        router.push(`/${locale}/dashboard`);
       }
     } catch (error) {
       toast({
@@ -58,6 +92,55 @@ export default function SignInPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
+          <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('email')}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('password')}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Icons.mail className="mr-2 h-4 w-4" />
+              )}
+              {t('signInWithEmail')}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {t('or')}
+              </span>
+            </div>
+          </div>
+
           <Button 
             variant="outline" 
             onClick={() => handleSignIn('google')}
@@ -85,10 +168,16 @@ export default function SignInPage() {
             {t('continueWithGithub')}
           </Button>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground text-center w-full">
             {t('privacyNotice')}
           </p>
+          <div className="text-sm text-center">
+            {t('noAccount')}{' '}
+            <Button variant="link" className="p-0" onClick={() => router.push(`/${locale}/auth/signup`)}>
+              {t('signUp')}
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </div>
