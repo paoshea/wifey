@@ -12,11 +12,11 @@ interface StatsCardProps {
 }
 
 export function StatsCard({
-  points,
-  rank,
-  totalContributions,
-  level,
-}: StatsCardProps) {
+  points = 0,
+  rank = 0,
+  totalContributions = 0,
+  level = 1,
+}: Partial<StatsCardProps>) {
   const t = useTranslations('gamification');
 
   return (

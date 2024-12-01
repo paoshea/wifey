@@ -48,7 +48,21 @@ export function useGamification() {
     error: statsError,
   } = useQuery({
     queryKey: ['gamification', 'stats', userId],
-    queryFn: () => fetchGamificationStats(userId!),
+    queryFn: () => {
+      if (!userId) {
+        return Promise.resolve({
+          points: 0,
+          rank: 0,
+          totalContributions: 0,
+          level: 1,
+          currentStreak: 0,
+          longestStreak: 0,
+          nextMilestone: 0,
+          progressToNextMilestone: 0,
+        });
+      }
+      return fetchGamificationStats(userId);
+    },
     enabled: !!userId,
   });
 
