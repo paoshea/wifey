@@ -31,6 +31,23 @@
     "logout": "Logout",
     "leaderboard": "Leaderboard"
   },
+  "Dashboard": {
+    "welcome": "Welcome, {name}",
+    "user": "User",
+    "settings": "Settings",
+    "quickActions": "Quick Actions",
+    "newReport": "New Report",
+    "viewMap": "View Map",
+    "notifications": {
+      "title": "Notifications",
+      "newCoverage": "New Coverage Detected",
+      "newCoverageDesc": "A new coverage point has been detected near your location.",
+      "wifiSpot": "New WiFi Hotspot",
+      "wifiSpotDesc": "A new WiFi hotspot has been added in your area.",
+      "achievement": "New Achievement!",
+      "achievementDesc": "You've unlocked a new achievement. Congratulations!"
+    }
+  },
   "Footer": {
     "about": "About",
     "privacy": "Privacy Policy",

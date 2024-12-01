@@ -18,6 +18,23 @@
     "about": "Acerca de",
     "leaderboard": "Tabla de Clasificación"
   },
+  "Dashboard": {
+    "welcome": "Bienvenido, {name}",
+    "user": "Usuario",
+    "settings": "Configuración",
+    "quickActions": "Acciones Rápidas",
+    "newReport": "Nuevo Reporte",
+    "viewMap": "Ver Mapa",
+    "notifications": {
+      "title": "Notificaciones",
+      "newCoverage": "Nueva Cobertura Detectada",
+      "newCoverageDesc": "Se ha detectado un nuevo punto de cobertura cerca de tu ubicación.",
+      "wifiSpot": "Nuevo Punto WiFi",
+      "wifiSpotDesc": "Se ha agregado un nuevo punto WiFi en tu área.",
+      "achievement": "¡Nuevo Logro!",
+      "achievementDesc": "Has desbloqueado un nuevo logro. ¡Felicitaciones!"
+    }
+  },
   "Footer": {
     "about": "Acerca de",
     "privacy": "Política de Privacidad",
