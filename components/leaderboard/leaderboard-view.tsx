@@ -1,13 +1,10 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useTranslations } from 'next-intl';
-import { TimeFrame } from '@/lib/gamification/types';
-import { LeaderboardTable } from './leaderboard-table';
-import { LeaderboardStats } from './leaderboard-stats';
-import { LeaderboardTimeframeSelect } from './leaderboard-timeframe-select';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LeaderboardTimeframeSelect } from './leaderboard-timeframe-select';
+import { LeaderboardStats } from './leaderboard-stats';
+import { LeaderboardTable } from './leaderboard-table';
 
 function StatsSkeletons() {
   return (
@@ -34,8 +31,6 @@ function TableSkeleton() {
 }
 
 export function LeaderboardView() {
-  const t = useTranslations('leaderboard');
-
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

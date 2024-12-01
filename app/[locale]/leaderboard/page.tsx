@@ -4,13 +4,16 @@ import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/layout/page-header';
 import { LeaderboardView } from '@/components/leaderboard/leaderboard-view';
 import { Providers } from '@/app/[locale]/providers';
+import { getMessages } from '@/lib/i18n/server';
+import { defaultLocale, type SupportedLocale } from '@/lib/i18n/config';
 
 export async function generateMetadata({
-  params: { locale }
+  params: { locale = defaultLocale }
 }: {
-  params: { locale: string }
+  params: { locale: SupportedLocale }
 }): Promise<Metadata> {
-  const t = await getTranslations(locale, 'leaderboard');
+  const messages = await getMessages(locale);
+  const t = await getTranslations(messages, 'leaderboard');
 
   return {
     title: t('title'),
@@ -18,15 +21,20 @@ export async function generateMetadata({
   };
 }
 
-export default function LeaderboardPage() {
-  const t = useTranslations('leaderboard');
+export default async function LeaderboardPage({
+  params: { locale = defaultLocale }
+}: {
+  params: { locale: SupportedLocale }
+}) {
+  const messages = await getMessages(locale);
+  const timeZone = 'America/Los_Angeles'; // You might want to get this from user preferences
 
   return (
-    <Providers>
+    <Providers locale={locale} messages={messages} timeZone={timeZone}>
       <div className="container space-y-8 py-8">
         <PageHeader
-          heading={t('title')}
-          text={t('description')}
+          heading={messages.leaderboard.title}
+          text={messages.leaderboard.description}
         />
         <LeaderboardView />
       </div>

@@ -576,7 +576,7 @@
     "language": "Idioma"
   },
   "leaderboard": {
-    "title": "Tabla de Clasificación",
+    "title": "Tabla de Clasificación Comunitaria",
     "description": "Mira quién lidera el mapeo de redes",
     "rank": "Posición",
     "user": "Usuario",
@@ -592,7 +592,7 @@
       "DAILY": "Hoy"
     },
     "stats": {
-      "title": "Estadísticas",
+      "title": "Estadísticas de la Comunidad",
       "totalUsers": "Total de Usuarios",
       "totalContributions": "Total de Contribuciones",
       "yourRank": "Tu Posición",

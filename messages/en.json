@@ -692,7 +692,7 @@
     "language": "Language"
   },
   "leaderboard": {
-    "title": "Leaderboard",
+    "title": "Community Leaderboard",
     "description": "See who's leading the pack in network mapping",
     "rank": "Rank",
     "user": "User",
@@ -708,7 +708,7 @@
       "DAILY": "Today"
     },
     "stats": {
-      "title": "Stats",
+      "title": "Community Stats",
       "totalUsers": "Total Users",
       "totalContributions": "Total Contributions",
       "yourRank": "Your Rank",
