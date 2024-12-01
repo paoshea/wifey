@@ -153,59 +153,30 @@
     }
   },
   "coverage": {
-    "title": "Network Coverage",
-    "subtitle": "Find and track network coverage points in your area",
-    "search": {
-      "placeholder": "Search for coverage points...",
-      "button": "Search"
-    },
-    "filters": {
-      "title": "Filter Coverage",
-      "providers": {
-        "title": "Service Providers",
-        "all": "All Providers",
-        "verizon": "Verizon",
-        "att": "AT&T",
-        "tmobile": "T-Mobile",
-        "other": "Other"
-      },
-      "range": {
-        "title": "Coverage Range",
-        "all": "All Ranges",
-        "excellent": "Excellent",
-        "good": "Good",
-        "fair": "Fair",
-        "poor": "Poor"
-      }
-    },
-    "map": {
-      "title": "Coverage Map",
-      "loading": "Loading coverage map...",
-      "search": {
-        "placeholder": "Search for a location...",
-        "button": "Search",
-        "error": "Search Error",
-        "emptyQuery": "Please enter a location to search",
-        "noResults": "No locations found for your search",
-        "failed": "Failed to search for location. Please try again.",
-        "success": "Location Found",
-        "locationFound": "Found: {location}"
-      },
-      "location": {
-        "find": "Find my location",
-        "found": "Location found!",
-        "centered": "Map centered to your current location",
-        "error": "Unable to find your location. Please check your browser permissions."
-      }
-    },
-    "stats": {
-      "title": "Coverage Statistics",
-      "total": "Total Points",
-      "today": "Added Today",
-      "coverage": "Area Coverage",
-      "points": "Coverage Points",
-      "contributors": "Contributors"
-    }
+    "title": "Network Coverage Map",
+    "subtitle": "View and track WiFi and cellular coverage in your area",
+    "findMyLocation": "Find My Location",
+    "locationFound": "Location Found",
+    "locationError": "Location Error",
+    "locationErrorDesc": "Could not get your location. Please check your permissions.",
+    "browserLocationError": "Your browser does not support geolocation",
+    "filters": "Filters",
+    "showWifi": "Show WiFi",
+    "showCellular": "Show Cellular",
+    "provider": "Provider",
+    "selectProvider": "Select Provider",
+    "allProviders": "All Providers",
+    "publicWifi": "Public WiFi",
+    "wifiDetails": "WiFi Details",
+    "coverageDetails": "Coverage Details",
+    "name": "Name",
+    "strength": "Signal Strength",
+    "speed": "Speed",
+    "type": "Type",
+    "pointDetails": "Point Details",
+    "coordinates": "Coordinates",
+    "lastUpdated": "Last Updated",
+    "quality": "Quality"
   },
   "Map": {
     "title": "Interactive Map",
@@ -895,19 +866,40 @@
     }
   },
   "offline": {
-    "title": "Offline Tracking",
+    "title": "Offline Mode",
     "subtitle": "Track and save locations while offline",
-    "online": "Online",
-    "offline": "Offline",
-    "saveLocation": "Save Location",
-    "uploadLocations": "Upload Locations",
+    "online": "You are currently online",
+    "offline": "You are currently offline",
+    "saveLocation": "Save Current Location",
+    "uploadLocations": "Upload Saved Locations",
     "savedLocations": "Saved Locations",
-    "report": "Report",
+    "report": "Coverage Report",
+    "noLocations": "No locations saved yet",
+    "locationSaved": "Location saved successfully",
+    "uploadSuccess": "Locations uploaded successfully",
+    "uploadError": "Error uploading locations",
+    "deleteLocation": "Delete Location",
+    "deleteConfirm": "Are you sure you want to delete this location?",
+    "locationDetails": "Location Details",
+    "timestamp": "Timestamp",
+    "coordinates": "Coordinates",
+    "accuracy": "Accuracy",
+    "provider": "Provider",
+    "status": "Status",
+    "pending": "Pending Upload",
+    "uploaded": "Uploaded",
+    "delete": "Delete",
+    "confirmDelete": "Confirm Delete",
+    "cancel": "Cancel",
+    "location": "Location",
+    "distance": "Distance",
     "currentLocation": "Current Location",
-    "form": {
-      "location": "Search Location",
-      "currentLocation": "Use Current Location"
-    }
+    "selectedLocation": "Selected Location",
+    "distanceTo": "Distance to selected point",
+    "reportTitle": "Coverage Report",
+    "reportDescription": "Submit a coverage report for this location",
+    "reportSubmitted": "Report submitted successfully",
+    "reportError": "Error submitting report"
   },
   "gpsTracking": "GPS Tracking",
   "online": "Online",
@@ -942,5 +934,30 @@
     "required": "Location permission is required",
     "denied": "Location permission was denied",
     "prompt": "Please enable location services to use this feature"
+  },
+  "cellular": {
+    "title": "Cellular Coverage",
+    "subtitle": "Find and track cellular towers and coverage points in your area",
+    "cellularDetails": "Cellular Tower Details",
+    "provider": "Network Provider",
+    "technology": "Technology",
+    "band": "Frequency Band",
+    "search": {
+      "placeholder": "Search for cellular towers...",
+      "button": "Search",
+      "noResults": "No cellular towers found in this area"
+    },
+    "filters": {
+      "provider": "Filter by Provider",
+      "technology": "Filter by Technology",
+      "allProviders": "All Providers",
+      "allTechnologies": "All Technologies"
+    },
+    "location": {
+      "current": "Current Location",
+      "found": "Location Found",
+      "error": "Could not get location",
+      "searching": "Searching for towers..."
+    }
   }
 }
