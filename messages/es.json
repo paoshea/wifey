@@ -144,13 +144,33 @@
     },
     "report": {
       "title": "Reportar Cobertura",
-      "location": "Ubicación",
-      "provider": "Proveedor",
-      "strength": "Fuerza de Señal",
-      "type": "Tipo de Red",
+      "description": "Reporta cobertura WiFi o celular en tu ubicación actual",
+      "selectLocation": "Seleccionar Ubicación",
+      "coverageType": "Tipo de Cobertura",
+      "wifi": "WiFi",
+      "cellular": "Celular",
+      "locationName": "Nombre del Lugar",
+      "locationNamePlaceholder": "ej., Cafetería, Biblioteca, Parque",
+      "speed": "Velocidad (Mbps)",
+      "speedPlaceholder": "Ingresa la velocidad en Mbps",
+      "notes": "Notas Adicionales",
+      "notesPlaceholder": "Cualquier información adicional...",
       "submit": "Enviar Reporte",
-      "success": "¡Reporte enviado exitosamente!",
-      "error": "Error al enviar reporte"
+      "submitting": "Enviando...",
+      "success": {
+        "title": "Reporte Enviado",
+        "description": "Tu reporte de cobertura se ha guardado exitosamente.",
+        "thanksTitle": "¡Gracias por Contribuir! 🎉",
+        "thanksDescription": "Tu reporte ayuda a hacer nuestro mapa de cobertura más preciso para todos.",
+        "joinTitle": "Únete a Nuestra Comunidad",
+        "joinDescription": "¡Regístrate como Usuario Power para aparecer en la Tabla de Clasificación y desbloquear funciones exclusivas!",
+        "signUp": "Regístrate Ahora",
+        "viewMap": "Ver en el Mapa"
+      },
+      "error": {
+        "title": "Error",
+        "description": "Error al enviar el reporte. Por favor, inténtalo de nuevo."
+      }
     },
     "filters": {
       "title": "Filtros",

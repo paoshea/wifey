@@ -491,14 +491,34 @@
     "reportCoverage": "Quick Report"
   },
   "report": {
-    "title": "Report Coverage",
-    "description": "Help others by quickly reporting the coverage in your current location.",
-    "cellular": "Cellular",
+    "title": "Quick Report Coverage",
+    "description": "Report WiFi or cellular coverage at your current location",
+    "selectLocation": "Select Location",
+    "coverageType": "Coverage Type",
     "wifi": "WiFi",
+    "cellular": "Cellular",
+    "locationName": "Location Name",
+    "locationNamePlaceholder": "e.g., Coffee Shop, Library, Park",
+    "speed": "Speed (Mbps)",
+    "speedPlaceholder": "Enter speed in Mbps",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any additional information...",
     "submit": "Submit Report",
-    "success": "Thanks for your report!",
-    "appreciationMessage": "Thank you for contributing to our community!",
-    "joinMessage": "Join our community to track your contributions and earn rewards!"
+    "submitting": "Submitting...",
+    "success": {
+      "title": "Report Submitted",
+      "description": "Your coverage report has been saved successfully.",
+      "thanksTitle": "Thanks for Contributing! 🎉",
+      "thanksDescription": "Your report helps make our coverage map more accurate for everyone.",
+      "joinTitle": "Join Our Community",
+      "joinDescription": "Sign up as a Power User to get on the Leaderboard and unlock exclusive features!",
+      "signUp": "Sign Up Now",
+      "viewMap": "View on Map"
+    },
+    "error": {
+      "title": "Error",
+      "description": "Failed to submit report. Please try again."
+    }
   },
   "community": {
     "title": "Join Our Community",
