@@ -27,7 +27,8 @@
       "success": "Thanks for your report!",
       "appreciationMessage": "Your contribution helps make our coverage map better.",
       "joinMessage": "Join our community to track your contributions!"
-    }
+    },
+    "logout": "Logout"
   },
   "home": {
     "title": "Find the Best Connection Anywhere",
