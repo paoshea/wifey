@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
-import { getTranslator } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/layout/page-header';
 import { LeaderboardView } from '@/components/leaderboard/leaderboard-view';
 import { Providers } from '@/app/[locale]/providers';
@@ -10,7 +10,7 @@ export async function generateMetadata({
 }: {
   params: { locale: string }
 }): Promise<Metadata> {
-  const t = await getTranslator(locale, 'leaderboard');
+  const t = await getTranslations(locale, 'leaderboard');
 
   return {
     title: t('title'),
