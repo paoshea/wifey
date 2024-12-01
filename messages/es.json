@@ -664,11 +664,6 @@
     "description": "Mira cómo te clasificas entre otros contribuyentes",
     "timeframe": {
       "label": "Período de Tiempo",
-      "all": "Todo el Tiempo",
-      "day": "Hoy",
-      "week": "Esta Semana",
-      "month": "Este Mes",
-      "year": "Este Año",
       "daily": "Hoy",
       "weekly": "Esta Semana",
       "monthly": "Este Mes",

@@ -754,11 +754,6 @@
     "description": "See how you rank among other contributors",
     "timeframe": {
       "label": "Time Period",
-      "all": "All Time",
-      "day": "Today",
-      "week": "This Week",
-      "month": "This Month",
-      "year": "This Year",
       "daily": "Today",
       "weekly": "This Week",
       "monthly": "This Month",
