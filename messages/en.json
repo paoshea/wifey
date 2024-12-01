@@ -4,16 +4,18 @@
     "dashboard": "Dashboard",
     "coverageFinder": "Coverage Finder",
     "register": "Register",
-    "login": "Login",
-    "coverage": "Coverage",
+    "login": "Sign In",
+    "cellular": "Cellular",
     "wifi": "WiFi",
-    "explore": "Explore",
+    "coverage": "Coverage",
     "community": "Join Community",
     "reportCoverage": "Quick Report",
+    "settings": "Settings",
     "profile": "Profile",
     "signOut": "Sign Out",
     "signIn": "Sign In",
     "getStarted": "Get Started",
+    "explore": "Explore",
     "report": {
       "button": "Make a Report",
       "title": "Report Coverage Point",
@@ -127,7 +129,23 @@
     },
     "map": {
       "title": "Coverage Map",
-      "loading": "Loading coverage map..."
+      "loading": "Loading coverage map...",
+      "search": {
+        "placeholder": "Search for a location...",
+        "button": "Search",
+        "error": "Search Error",
+        "emptyQuery": "Please enter a location to search",
+        "noResults": "No locations found for your search",
+        "failed": "Failed to search for location. Please try again.",
+        "success": "Location Found",
+        "locationFound": "Found: {location}"
+      },
+      "location": {
+        "find": "Find my location",
+        "found": "Location found!",
+        "centered": "Map centered to your current location",
+        "error": "Unable to find your location. Please check your browser permissions."
+      }
     },
     "stats": {
       "title": "Coverage Statistics",
@@ -569,5 +587,31 @@
     "settingsSaved": "Your settings have been saved successfully.",
     "error": "Error",
     "settingsError": "Failed to save settings. Please try again."
+  },
+  "points": {
+    "addNew": "Add New Point",
+    "addCoveragePoint": "Add Coverage Point",
+    "addWifiPoint": "Add WiFi Point",
+    "helpOthers": "Help others stay connected by adding new coverage points",
+    "locationName": "Location Name",
+    "locationNamePlaceholder": "e.g., Central Park",
+    "provider": "Provider",
+    "providerPlaceholder": "e.g., Movistar, Kolbi",
+    "signalStrength": "Signal Strength",
+    "selectStrength": "Select signal strength",
+    "excellent": "Excellent",
+    "good": "Good",
+    "fair": "Fair",
+    "poor": "Poor",
+    "speed": "Speed (Mbps)",
+    "speedPlaceholder": "e.g., 50",
+    "wifiType": "WiFi Type",
+    "selectType": "Select WiFi type",
+    "free": "Free",
+    "paid": "Paid",
+    "restricted": "Restricted",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any additional information...",
+    "submit": "Submit Point"
   }
 }

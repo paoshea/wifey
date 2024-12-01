@@ -27,20 +27,17 @@ export function Header() {
   
   if (isOnboarding) {
     return (
-      <header className="fixed top-0 right-0 p-4 z-50">
-        <LanguageSwitcher />
+      <header className="fixed top-0 right-0 p-6 z-50">
+        <div className="flex items-center justify-end">
+          <LanguageSwitcher />
+        </div>
       </header>
     );
   }
 
   const navItems = [
     {
-      title: 'Dashboard',
-      href: '/dashboard',
-      icon: <Icons.dashboard className="w-4 h-4" />,
-    },
-    {
-      title: t('coverage'),
+      title: t('cellular'),
       href: '/coverage',
       icon: <Icons.signal className="w-4 h-4" />,
     },
@@ -50,7 +47,7 @@ export function Header() {
       icon: <Icons.wifi className="w-4 h-4" />,
     },
     {
-      title: t('explore'),
+      title: t('coverage'),
       href: '/explore',
       icon: <Icons.map className="w-4 h-4" />,
     },
@@ -68,7 +65,7 @@ export function Header() {
 
           {/* Main Navigation */}
           <nav className="hidden md:flex">
-            <ul className="flex space-x-8">
+            <ul className="flex items-center gap-12">
               {navItems.map((item) => (
                 <li key={item.href}>
                   <Link

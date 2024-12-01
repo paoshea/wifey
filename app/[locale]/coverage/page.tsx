@@ -8,10 +8,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MapView, { MapPoint } from '@/components/map/map-view';
+import { AddPoint } from '@/components/points/add-point';
+import { MapSearch } from '@/components/map/map-search';
 
 export default function CoveragePage() {
   const t = useTranslations('coverage');
   const [searchRadius, setSearchRadius] = useState(5);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([9.9281, -84.0907]);
+  const [mapZoom, setMapZoom] = useState(13);
 
   // Sample coverage data - replace with real data from backend
   const samplePoints: MapPoint[] = [
@@ -50,25 +54,22 @@ export default function CoveragePage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <div className="flex items-center justify-center mb-6">
-            <Signal className="w-12 h-12 text-blue-600" />
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {t('title')}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            {t('subtitle')}
-          </p>
-
-          <div className="max-w-2xl mx-auto flex gap-4">
-            <Input
-              placeholder={t('search.placeholder')}
-              className="h-12"
+          <div className="flex flex-col items-center space-y-6">
+            <div className="flex items-center justify-center mb-6">
+              <Signal className="w-12 h-12 text-blue-600" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="text-xl text-gray-600 max-w-2xl text-center">
+              {t('subtitle')}
+            </p>
+            <AddPoint type="coverage" />
+            <MapSearch 
+              onLocationFound={({ lat, lng }) => {
+                setMapCenter([lat, lng]);
+                setMapZoom(15);
+              }}
+              searchRadius={searchRadius}
             />
-            <Button size="lg" className="px-8">
-              <Search className="w-5 h-5 mr-2" />
-              {t('search.button')}
-            </Button>
           </div>
         </motion.div>
 
@@ -79,7 +80,8 @@ export default function CoveragePage() {
               <MapView
                 points={samplePoints}
                 activeLayer="coverage"
-                onPointSelect={handlePointSelect}
+                center={mapCenter}
+                zoom={mapZoom}
               />
             </div>
           </Card>

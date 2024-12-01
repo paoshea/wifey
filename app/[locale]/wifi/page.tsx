@@ -9,10 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import MapView from '@/components/map/map-view';
 import type { MapPoint } from '@/components/map/map-view';
+import { AddPoint } from '@/components/points/add-point';
+import { MapSearch } from '@/components/map/map-search';
 
 export default function WifiPage() {
   const t = useTranslations('wifi');
   const [searchRadius, setSearchRadius] = useState(5);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([9.9281, -84.0907]);
+  const [mapZoom, setMapZoom] = useState(13);
 
   // Sample wifi data - replace with real data from backend
   const samplePoints: MapPoint[] = [
@@ -56,12 +60,20 @@ export default function WifiPage() {
           <div className="flex items-center justify-center mb-6">
             <Wifi className="w-12 h-12 text-blue-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {t('title')}
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            {t('subtitle')}
-          </p>
+          <div className="flex flex-col items-center space-y-6">
+            <h1 className="text-4xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="text-xl text-gray-600 max-w-2xl text-center">
+              {t('subtitle')}
+            </p>
+            <AddPoint type="wifi" />
+            <MapSearch 
+              onLocationFound={({ lat, lng }) => {
+                setMapCenter([lat, lng]);
+                setMapZoom(15);
+              }}
+              searchRadius={searchRadius}
+            />
+          </div>
 
           <div className="max-w-2xl mx-auto flex gap-4">
             <Input
@@ -82,7 +94,8 @@ export default function WifiPage() {
               <MapView
                 points={samplePoints}
                 activeLayer="wifi"
-                onPointSelect={handlePointSelect}
+                center={mapCenter}
+                zoom={mapZoom}
               />
             </div>
           </Card>

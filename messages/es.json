@@ -5,15 +5,14 @@
     "coverageFinder": "Buscador de Cobertura",
     "register": "Registrarse",
     "login": "Iniciar Sesión",
-    "coverage": "Cobertura",
+    "cellular": "Celular",
     "wifi": "WiFi",
-    "explore": "Explorar",
+    "coverage": "Cobertura",
     "community": "Unirse a la Comunidad",
     "reportCoverage": "Reporte Rápido",
+    "settings": "Configuración",
     "profile": "Perfil",
-    "signOut": "Cerrar Sesión",
-    "signIn": "Iniciar Sesión",
-    "getStarted": "Comenzar"
+    "signOut": "Cerrar Sesión"
   },
   "home": {
     "title": "Encuentra Cobertura",
@@ -176,6 +175,24 @@
     "getDirections": "Obtener Direcciones",
     "centerOnMe": "Centrar en mi ubicación",
     "mapImplementation": "Implementación del mapa próximamente..."
+  },
+  "map": {
+    "search": {
+      "placeholder": "Buscar una ubicación...",
+      "button": "Buscar",
+      "error": "Error de Búsqueda",
+      "emptyQuery": "Por favor ingresa una ubicación para buscar",
+      "noResults": "No se encontraron ubicaciones para tu búsqueda",
+      "failed": "Error al buscar ubicación. Por favor intenta de nuevo.",
+      "success": "Ubicación Encontrada",
+      "locationFound": "Encontrado: {location}"
+    },
+    "location": {
+      "find": "Encontrar mi ubicación",
+      "found": "¡Ubicación encontrada!",
+      "centered": "Mapa centrado en tu ubicación actual",
+      "error": "No se pudo encontrar tu ubicación. Por favor verifica los permisos del navegador."
+    }
   },
   "onboarding": {
     "navigation": {
@@ -470,24 +487,39 @@
     "coverageFinder": "Buscador de Cobertura",
     "register": "Registrarse",
     "login": "Iniciar Sesión",
-    "coverage": "Cobertura",
+    "cellular": "Celular",
     "wifi": "WiFi",
-    "explore": "Explorar",
+    "coverage": "Cobertura",
     "community": "Unirse a la Comunidad",
     "reportCoverage": "Reporte Rápido",
-    "report": {
-      "button": "Hacer un Reporte",
-      "title": "Reportar Punto de Cobertura",
-      "description": "Ayuda a la comunidad marcando un punto con buena cobertura o WiFi.",
-      "cellular": "Cobertura Celular",
-      "wifi": "Punto de WiFi",
-      "submit": "Marcar este Punto",
-      "success": "¡Gracias por tu reporte!",
-      "appreciationMessage": "Tu contribución ayuda a mejorar nuestro mapa de cobertura.",
-      "joinMessage": "¡Únete a nuestra comunidad para seguir tus contribuciones!"
-    },
+    "settings": "Configuración",
     "profile": "Perfil",
-    "signOut": "Cerrar Sesión",
-    "dashboard": "Panel de Control"
+    "signOut": "Cerrar Sesión"
+  },
+  "points": {
+    "addNew": "Agregar Nuevo Punto",
+    "addCoveragePoint": "Agregar Punto de Cobertura",
+    "addWifiPoint": "Agregar Punto WiFi",
+    "helpOthers": "Ayuda a otros a mantenerse conectados agregando nuevos puntos de cobertura",
+    "locationName": "Nombre de la Ubicación",
+    "locationNamePlaceholder": "ej., Parque Central",
+    "provider": "Proveedor",
+    "providerPlaceholder": "ej., Movistar, Kolbi",
+    "signalStrength": "Intensidad de la Señal",
+    "selectStrength": "Selecciona la intensidad",
+    "excellent": "Excelente",
+    "good": "Buena",
+    "fair": "Regular",
+    "poor": "Débil",
+    "speed": "Velocidad (Mbps)",
+    "speedPlaceholder": "ej., 50",
+    "wifiType": "Tipo de WiFi",
+    "selectType": "Selecciona el tipo",
+    "free": "Gratis",
+    "paid": "De Pago",
+    "restricted": "Restringido",
+    "notes": "Notas Adicionales",
+    "notesPlaceholder": "Cualquier información adicional...",
+    "submit": "Enviar Punto"
   }
 }

@@ -27,7 +27,7 @@ export default function LanguageSwitcher() {
       className="flex items-center gap-2"
     >
       <Languages className="h-4 w-4" />
-      <span>{locale === 'en' ? 'English' : 'Español'}</span>
+      <span>{locale === 'en' ? 'Español' : 'English'}</span>
     </Button>
   );
 }
