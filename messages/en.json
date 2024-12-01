@@ -180,83 +180,82 @@
     },
     "welcome": {
       "title": "Welcome to Wifey",
-      "description": "Join our community and help map network coverage around the world.",
-      "getStarted": "Get Started"
+      "description": "Your community-driven network coverage companion"
     },
     "coverage": {
       "intro": {
-        "title": "Map Network Coverage",
-        "description": "Help others find reliable connections by mapping coverage in your area.",
+        "title": "Track Network Coverage",
+        "description": "Help others stay connected by mapping cellular coverage and WiFi hotspots",
         "step1": {
-          "title": "Share Location",
-          "description": "Mark spots with good network coverage"
+          "title": "Find Your Location",
+          "description": "Use your device's GPS to pinpoint your exact location"
         },
         "step2": {
-          "title": "Rate Signal",
-          "description": "Rate the signal strength and connection quality"
+          "title": "Check Signal",
+          "description": "Measure cellular signal strength and WiFi availability"
         },
         "step3": {
-          "title": "Help Others",
-          "description": "Your contributions help others find reliable connections"
+          "title": "Share with Community",
+          "description": "Submit your findings to help others find coverage"
         },
         "tryItOut": "Try It Out"
       },
       "demo": {
-        "title": "Try Our Coverage Mapper",
-        "description": "See how easy it is to contribute to our coverage map.",
-        "signalStrength": "Signal Strength",
-        "carrier": "Network Carrier",
-        "selectCarrier": "Select your carrier",
-        "submit": "Submit Coverage Point"
+        "title": "Let's Try It Out",
+        "description": "Click anywhere on the map to mark a coverage point",
+        "clickMapPrompt": "Click on the map to continue"
       }
     },
     "features": {
       "title": "Powerful Features",
-      "description": "Everything you need to find and share reliable connections.",
+      "description": "Everything you need to stay connected on the go",
       "wifi": {
         "title": "WiFi Hotspots",
-        "description": "Find and share public WiFi locations",
+        "description": "Find and share free WiFi hotspots",
         "benefits": {
-          "speed": "Real-time speed tests",
-          "reliability": "Reliability ratings",
-          "security": "Security information",
-          "updates": "Regular updates"
+          "speed": "Check connection speeds",
+          "reliability": "Verify reliability scores",
+          "security": "See security ratings",
+          "updates": "Get real-time updates"
         }
       },
       "coverage": {
-        "title": "Network Coverage",
-        "description": "Track cellular coverage and signal strength",
+        "title": "Cellular Coverage",
+        "description": "Track and map cellular coverage",
         "benefits": {
-          "realtime": "Real-time coverage data",
-          "accuracy": "Accurate signal mapping",
+          "realtime": "Real-time signal strength",
+          "accuracy": "High accuracy mapping",
           "predictions": "Coverage predictions",
-          "alerts": "Low signal alerts"
+          "alerts": "Dead zone alerts"
         }
       },
       "navigation": {
         "title": "Smart Navigation",
-        "description": "Find the best route with reliable connectivity",
+        "description": "Get to the best connection points",
         "benefits": {
-          "routing": "Coverage-aware routing",
-          "offline": "Offline maps",
+          "routing": "Optimal route planning",
+          "offline": "Offline map support",
           "alternatives": "Alternative routes",
-          "eta": "Accurate ETAs"
+          "eta": "Accurate arrival times"
         }
       },
       "continue": "Continue"
     },
     "registration": {
-      "title": "Complete Your Profile",
-      "description": "Tell us a bit about yourself to get started.",
-      "nameLabel": "Your Name",
-      "emailLabel": "Email Address",
-      "interests": "What interests you most?",
-      "interestOptions": {
-        "wifi": "Finding WiFi Hotspots",
-        "coverage": "Tracking Network Coverage",
-        "navigation": "Coverage-aware Navigation"
-      },
-      "submit": "Complete Registration"
+      "title": "Create an Account",
+      "description": "Join our community of power users",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm Password",
+      "submit": "Create Account",
+      "success": "Account created successfully!",
+      "errors": {
+        "requiredFields": "Please fill in all required fields",
+        "passwordMismatch": "Passwords do not match",
+        "generic": "Something went wrong. Please try again."
+      }
     }
   },
   "testimonials": {
@@ -292,35 +291,43 @@
     "signUp": "Sign up",
     "signup": {
       "title": "Create an Account",
-      "description": "Join our community of power users",
-      "orContinueWith": "or continue with",
-      "email": "Email",
-      "emailPlaceholder": "Enter your email",
+      "description": "Join our community to start mapping network coverage",
       "username": "Username",
       "usernamePlaceholder": "Choose a username",
+      "email": "Email",
+      "emailPlaceholder": "name@example.com",
       "password": "Password",
-      "passwordPlaceholder": "Create a password",
+      "passwordPlaceholder": "••••••••",
       "confirmPassword": "Confirm Password",
-      "confirmPasswordPlaceholder": "Confirm your password",
-      "createAccount": "Create Account",
-      "byClickingAgree": "By clicking continue, you agree to our",
-      "terms": "Terms of Service",
-      "and": "and",
-      "privacy": "Privacy Policy",
-      "alreadyHaveAccount": "Already have an account?",
-      "signIn": "Sign in"
-    },
-    "success": {
-      "signupTitle": "Account Created!",
-      "signupDesc": "Welcome to the community! You're now logged in."
+      "confirmPasswordPlaceholder": "••••••••",
+      "submit": "Create Account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "orContinueWith": "Or continue with"
     },
     "error": {
       "passwordMismatch": "Passwords don't match",
       "passwordMismatchDesc": "Please make sure your passwords match",
       "signupFailed": "Registration failed",
-      "unknownError": "An unknown error occurred",
+      "unknownError": "An unexpected error occurred",
       "oauthFailed": "OAuth sign in failed",
       "tryAgain": "Please try again"
+    },
+    "success": {
+      "signupTitle": "Registration successful",
+      "welcome": "Welcome to Wifey! You're now signed in."
+    },
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "description": "We've sent you a verification link. Please check your email.",
+      "checkInbox": "We've sent a verification link to {email}. Please check your inbox.",
+      "loading": "Verifying your email...",
+      "success": "Your email has been verified! You can now sign in.",
+      "error": "Failed to verify your email. Please try again.",
+      "signIn": "Sign in to your account",
+      "tryAgain": "Try again",
+      "noEmail": "Didn't receive the email?",
+      "signUp": "Sign up with a different email"
     }
   },
   "Auth": {
@@ -338,20 +345,13 @@
     "genericError": "Something went wrong. Please try again."
   },
   "common": {
-    "loading": "Loading...",
-    "error": "An error occurred",
-    "retry": "Try again",
-    "new": "New",
-    "save": "Save",
-    "cancel": "Cancel",
-    "close": "Close",
-    "success": "Success",
-    "warning": "Warning",
-    "info": "Information",
-    "continue": "Continue",
-    "skip": "Skip",
+    "getStarted": "Get Started",
+    "back": "Back",
     "next": "Next",
-    "back": "Back"
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "new": "New"
   },
   "SentryExample": {
     "Page Title": "Sentry Example Page",

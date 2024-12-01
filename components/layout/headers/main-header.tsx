@@ -94,6 +94,13 @@ export function MainHeader() {
             <LanguageSwitcher />
           </div>
 
+          {/* Register Button */}
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/${locale}/auth/signup`}>
+              {t('register')}
+            </Link>
+          </Button>
+
           {/* Sign In Button */}
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/${locale}/auth/signin`}>

@@ -42,6 +42,7 @@ interface MapViewProps {
   onMapClick?: (latlng: { lat: number; lng: number }) => void;
   center?: [number, number];
   zoom?: number;
+  autoLocate?: boolean;
 }
 
 function LocationControl() {
@@ -108,13 +109,39 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
+function AutoLocate() {
+  const map = useMapEvents({
+    locationfound(e) {
+      map.flyTo(e.latlng, 15);
+      toast({
+        title: "Location found!",
+        description: "Map centered to your current location.",
+      });
+    },
+    locationerror() {
+      toast({
+        title: "Location error",
+        description: "Unable to find your location. Please check your browser permissions.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    map.locate();
+  }, [map]);
+
+  return null;
+}
+
 export default function MapView({
   points = [],
   activeLayer = 'both',
   onPointSelect = () => {},
   onMapClick,
   center = [9.9281, -84.0907], // Default center (Costa Rica)
-  zoom = 13
+  zoom = 13,
+  autoLocate = true
 }: MapViewProps) {
   const [mapCenter, setMapCenter] = useState<[number, number]>(center);
   const mapRef = useRef<L.Map | null>(null);
@@ -138,56 +165,6 @@ export default function MapView({
   };
 
   useEffect(() => {
-    // Check if geolocation is available
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setMapCenter([latitude, longitude]);
-          toast({
-            title: "Location found",
-            description: "Map centered to your current location.",
-          });
-        },
-        (error) => {
-          let errorMessage = "Unable to get your location. ";
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage += "Please enable location permissions in your browser settings.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage += "Location information is currently unavailable.";
-              break;
-            case error.TIMEOUT:
-              errorMessage += "Request to get location timed out.";
-              break;
-            default:
-              errorMessage += "An unknown error occurred.";
-          }
-          
-          toast({
-            title: "Location Error",
-            description: errorMessage,
-            variant: "destructive",
-          });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      toast({
-        title: "Location Not Supported",
-        description: "Geolocation is not supported by your browser.",
-        variant: "destructive",
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
@@ -208,46 +185,34 @@ export default function MapView({
     <MapContainer
       center={mapCenter}
       zoom={zoom}
-      className="w-full h-full rounded-lg"
-      style={{ background: '#f3f4f6' }}
+      className="w-full h-full"
       ref={mapRef}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <MapRecenter center={mapCenter} />
+      {center && <MapRecenter center={center} />}
       <LocationControl />
-      
+      {autoLocate && <AutoLocate />}
       {filteredPoints.map((point) => (
         <Marker
           key={point.id}
           position={point.coordinates}
           icon={getMarkerIcon(point.type)}
           eventHandlers={{
-            click: () => onPointSelect(point)
+            click: () => onPointSelect(point),
           }}
         >
           <Popup>
             <div className="p-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                {point.type === 'wifi' ? <Wifi className="w-4 h-4" /> : <Signal className="w-4 h-4" />}
-                {point.name}
-              </h3>
-              <div className="mt-2 text-sm">
-                {point.details.provider && (
-                  <p><span className="font-medium">Provider:</span> {point.details.provider}</p>
-                )}
-                {point.details.strength && (
-                  <p><span className="font-medium">Strength:</span> {point.details.strength}</p>
-                )}
-                {point.details.speed && (
-                  <p><span className="font-medium">Speed:</span> {point.details.speed}</p>
-                )}
-                {point.details.type && (
-                  <p><span className="font-medium">Type:</span> {point.details.type}</p>
-                )}
-              </div>
+              <h3 className="font-semibold">{point.name}</h3>
+              {point.details.speed && (
+                <p className="text-sm">Speed: {point.details.speed}</p>
+              )}
+              {point.details.provider && (
+                <p className="text-sm">Provider: {point.details.provider}</p>
+              )}
             </div>
           </Popup>
         </Marker>

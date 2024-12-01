@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -34,7 +34,7 @@ export default function SignIn() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations('Auth');
-  const pathname = window.location.pathname;
+  const pathname = usePathname();
   const locale = pathname.split('/')[1];
   const callbackUrl = searchParams.get('callbackUrl') || `/${locale}/dashboard`;
 

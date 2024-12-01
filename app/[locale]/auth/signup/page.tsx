@@ -60,10 +60,10 @@ export default function SignUpPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
+        throw new Error(data.error || 'Something went wrong');
       }
 
-      // Sign in the user after successful registration
+      // Sign in the user immediately after successful registration
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -76,9 +76,10 @@ export default function SignUpPage() {
 
       toast({
         title: t('success.signupTitle'),
-        description: t('success.signupDesc'),
+        description: t('success.welcome'),
       });
 
+      // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
       toast({
@@ -209,34 +210,21 @@ export default function SignUpPage() {
                 required
               />
             </div>
-            <Button disabled={isLoading} type="submit" className="w-full">
-              {isLoading && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {t('signup.createAccount')}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? t('common.loading') : t('signup.submit')}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <div className="text-sm text-muted-foreground text-center">
-            {t('signup.byClickingAgree')}{' '}
-            <Link href="/terms" className="underline underline-offset-4 hover:text-primary">
-              {t('signup.terms')}
-            </Link>{' '}
-            {t('signup.and')}{' '}
-            <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">
-              {t('signup.privacy')}
-            </Link>
-          </div>
-          <div className="text-sm text-muted-foreground text-center">
-            {t('signup.alreadyHaveAccount')}{' '}
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-muted-foreground">
+            {t('signup.haveAccount')}{' '}
             <Link
               href="/auth/signin"
-              className="text-primary underline underline-offset-4 hover:text-primary/80"
+              className="text-primary underline-offset-4 hover:underline"
             >
               {t('signup.signIn')}
             </Link>
-          </div>
+          </p>
         </CardFooter>
       </Card>
     </div>

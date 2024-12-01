@@ -3,14 +3,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { Resend } from 'resend';
 import { z } from 'zod';
-import crypto from 'crypto';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const registerSchema = z.object({
-  name: z.string().min(2),
+  username: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
 });
@@ -18,7 +14,7 @@ const registerSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, password } = registerSchema.parse(body);
+    const { username, email, password } = registerSchema.parse(body);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -32,42 +28,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash password and create verification token
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Create user
+    // Create user with emailVerified set to current date
     const user = await prisma.user.create({
       data: {
-        name,
+        name: username,
         email,
         hashedPassword,
-        verificationToken,
+        emailVerified: new Date(), // Set email as verified immediately
       },
     });
 
-    // Send verification email
-    await resend.emails.send({
-      from: 'Wifey <onboarding@resend.dev>',
-      to: email,
-      subject: 'Verify your email',
-      html: `
-        <h1>Welcome to Wifey!</h1>
-        <p>Click the link below to verify your email:</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify?token=${verificationToken}">
-          Verify Email
-        </a>
-      `,
+    return NextResponse.json({ 
+      message: 'Registration successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.name,
+      }
     });
-
-    return NextResponse.json(
-      { message: 'User created successfully' },
-      { status: 201 }
-    );
   } catch (error) {
     console.error('Registration error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.errors },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: 'Something went wrong' },
+      { error: 'Registration failed' },
       { status: 500 }
     );
   }

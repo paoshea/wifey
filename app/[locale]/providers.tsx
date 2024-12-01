@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { NotificationCenter } from '@/components/notifications/notification-center';
 import { Toaster } from '@/components/ui/toaster';
 import { type SupportedLocale } from '@/lib/i18n/config';
+import { Toaster as SonnerToaster } from 'sonner';
 
 interface ProvidersProps {
   locale: SupportedLocale;
@@ -23,6 +24,7 @@ export function Providers({ locale, messages, children, timeZone }: ProvidersPro
             {children}
             <NotificationCenter />
             <Toaster />
+            <SonnerToaster position="top-center" richColors />
           </div>
         </NextIntlClientProvider>
       </ThemeProvider>
