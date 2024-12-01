@@ -2,6 +2,7 @@
 
 import { Providers } from './providers';
 import { type SupportedLocale } from '@/lib/i18n/config';
+import { Header } from '@/components/layout/header';
 
 interface LocaleClientLayoutProps {
   children: React.ReactNode;
@@ -20,7 +21,12 @@ export default function LocaleClientLayout({
       messages={messages}
       timeZone="America/Los_Angeles"
     >
-      {children}
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
     </Providers>
   );
 }

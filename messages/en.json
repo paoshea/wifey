@@ -1,6 +1,7 @@
 {
   "navigation": {
     "home": "Home",
+    "dashboard": "Dashboard",
     "coverageFinder": "Coverage Finder",
     "register": "Register",
     "login": "Login",
@@ -9,6 +10,8 @@
     "explore": "Explore",
     "community": "Join Community",
     "reportCoverage": "Quick Report",
+    "profile": "Profile",
+    "signOut": "Sign Out",
     "report": {
       "button": "Make a Report",
       "title": "Report Coverage Point",
@@ -30,6 +33,23 @@
     "tellUsAboutYourself": "Tell us about yourself",
     "exploreMap": "Explore Coverage Map",
     "explore": "Explore Map",
+    "featuringNow": {
+      "title": "Featuring Now",
+      "subtitle": "Latest from our community",
+      "hotspots": {
+        "title": "Featured Hotspots",
+        "description": "Discover the best connection points in your area"
+      },
+      "contributors": {
+        "title": "Top Contributors",
+        "description": "Members making a difference"
+      },
+      "updates": {
+        "title": "Recent Updates",
+        "description": "Latest coverage improvements in your area"
+      },
+      "viewAll": "View All"
+    },
     "features": {
       "title": "Powerful Features",
       "subtitle": "Everything you need to stay connected on the go",
@@ -135,7 +155,7 @@
   "onboarding": {
     "welcome": {
       "title": "Welcome to Wifey",
-      "description": "Your community-driven WiFi and coverage companion",
+      "description": "Your community-powered WiFi and coverage companion",
       "getStarted": "Get Started"
     },
     "joinTribe": {
@@ -146,30 +166,31 @@
     },
     "coverage": {
       "intro": {
-        "title": "Mark Coverage Spots",
-        "description": "Help build a better coverage map by marking spots with good signal strength.",
+        "title": "Add Coverage Points",
+        "description": "Help the community by marking spots with good coverage",
         "step1": {
-          "title": "Drop a Pin",
-          "description": "Tap the map to mark a spot where you have good coverage"
+          "title": "Select Location",
+          "description": "Tap on the map to mark a spot with good coverage"
         },
         "step2": {
-          "title": "Add Signal Details",
-          "description": "Rate the signal strength and add your carrier information"
+          "title": "Rate Signal",
+          "description": "Rate the signal strength at your location"
         },
         "step3": {
-          "title": "Share with Others",
-          "description": "Your contribution helps others find reliable connections"
+          "title": "Share Details",
+          "description": "Add carrier information and submit"
         },
         "tryItOut": "Try It Out"
       },
       "demo": {
         "title": "Add Your First Coverage Spot",
         "description": "Let's practice adding a coverage spot to the map",
-        "tapToMark": "Tap anywhere to mark a spot",
-        "signalStrength": "How's the signal here?",
-        "carrier": "Select your carrier",
-        "selectCarrier": "Choose your carrier",
-        "continue": "Continue"
+        "tapToMark": "Tap anywhere on the map to mark a spot",
+        "signalStrength": "Signal Strength",
+        "carrier": "Carrier",
+        "selectCarrier": "Select your carrier",
+        "submit": "Submit Coverage Spot",
+        "continue": "Continue to Features"
       }
     },
     "features": {
@@ -249,6 +270,15 @@
     "response": "We typically respond within 1 hour"
   },
   "auth": {
+    "signIn": "Sign In",
+    "signInDescription": "Choose your preferred sign in method to continue",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGithub": "Continue with GitHub",
+    "privacyNotice": "By continuing, you agree to our Terms of Service and Privacy Policy",
+    "error": "Authentication Error",
+    "signInError": "Failed to sign in. Please try again.",
+    "success": "Success",
+    "signInSuccess": "Successfully signed in! Redirecting...",
     "register": {
       "title": "Create Account",
       "subtitle": "Join our community and stay connected",
@@ -288,6 +318,20 @@
       "errorInvalidCredentials": "Invalid email or password",
       "errorGeneric": "An error occurred while signing in"
     }
+  },
+  "Auth": {
+    "welcomeBack": "Welcome back",
+    "chooseSignInMethod": "Choose your preferred sign in method",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGithub": "Continue with GitHub",
+    "orContinueWith": "Or continue with",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "error": "Error",
+    "genericError": "Something went wrong. Please try again."
   },
   "common": {
     "loading": "Loading...",
@@ -499,33 +543,30 @@
     }
   },
   "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings and preferences.",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how Wifey looks on your device.",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
     "notifications": {
-      "title": "Notification Settings",
-      "authRequired": "Authentication Required",
-      "authRequiredDescription": "Please sign in to access notification settings",
-      "general": {
-        "title": "General Settings",
-        "push": "Push Notifications",
-        "pushDescription": "Receive instant updates on your device",
-        "email": "Email Notifications",
-        "emailDescription": "Get important updates in your inbox"
-      },
-      "categories": {
-        "title": "Notification Categories",
-        "coverage": "Coverage Updates",
-        "coverageDescription": "Get notified about cellular coverage changes in your area",
-        "wifi": "WiFi Hotspots",
-        "wifiDescription": "Notifications about new or updated WiFi locations",
-        "achievements": "Achievements",
-        "achievementsDescription": "Stay updated on your badges and rewards",
-        "nearby": "Nearby Alerts",
-        "nearbyDescription": "Get notified about network coverage near you"
-      },
-      "saveButton": "Save Settings",
-      "saveSuccess": "Settings Saved",
-      "saveSuccessDescription": "Your notification preferences have been updated",
-      "saveError": "Error Saving Settings",
-      "saveErrorDescription": "There was a problem saving your settings. Please try again."
-    }
+      "title": "Notifications",
+      "description": "Configure how you want to be notified about updates.",
+      "enable": "Enable notifications"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Manage your account settings and preferences.",
+      "email": "Email address"
+    },
+    "saveChanges": "Save changes",
+    "success": "Success",
+    "settingsSaved": "Your settings have been saved successfully.",
+    "error": "Error",
+    "settingsError": "Failed to save settings. Please try again."
   }
 }

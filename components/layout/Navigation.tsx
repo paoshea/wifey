@@ -8,14 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Wifi, Signal, MapPin, Menu, X } from 'lucide-react';
+import { Icons } from '@/components/ui/icons';
+import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 export function Navigation() {
-  const t = useTranslations();
+  const t = useTranslations('navigation');
   const locale = useLocale();
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportType, setReportType] = useState('cellular');
@@ -23,11 +26,9 @@ export function Navigation() {
 
   const handleReport = () => {
     setReportSubmitted(true);
-    // In a real app, we would send this data to the backend
     setTimeout(() => {
       setReportSubmitted(false);
       setIsReportModalOpen(false);
-      // Reset after closing
       setTimeout(() => {
         setReportType('cellular');
       }, 300);
@@ -35,109 +36,203 @@ export function Navigation() {
   };
 
   const navItems = [
-    { href: '/coverage', label: t('nav.coverage'), icon: Signal },
-    { href: '/wifi', label: t('nav.wifi'), icon: Wifi },
-    { href: '/explore', label: t('nav.explore'), icon: MapPin },
+    {
+      title: t('home'),
+      href: '/',
+      icon: <Icons.home className="w-4 h-4" />,
+    },
+    {
+      title: t('dashboard'),
+      href: '/dashboard',
+      icon: <Icons.dashboard className="w-4 h-4" />,
+    },
+    {
+      title: 'Map',
+      href: '/wifi-map',
+      icon: <Icons.map className="w-4 h-4" />,
+    },
+  ];
+
+  const authItems = session ? [
+    {
+      title: t('profile'),
+      href: '/profile',
+      icon: <Icons.user className="w-4 h-4" />,
+    },
+    {
+      title: t('signOut'),
+      onClick: () => signOut(),
+      icon: <Icons.logout className="w-4 h-4" />,
+    },
+  ] : [
+    {
+      title: t('login'),
+      onClick: () => signIn(),
+      icon: <Icons.login className="w-4 h-4" />,
+    },
+    {
+      title: t('register'),
+      href: '/register',
+      icon: <Icons.userPlus className="w-4 h-4" />,
+    },
   ];
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href={`/${locale}`} className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-blue-600">Wifey</span>
-            </Link>
-          </div>
+    <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden sm:flex sm:space-x-8 items-center">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
+        <div className="flex w-full items-center justify-between">
+          <Link
+            href={`/${locale}`}
+            className={cn(
+              'flex items-center gap-2 font-medium',
+              pathname === `/${locale}`
+                ? 'text-primary'
+                : 'text-muted-foreground hover:text-primary'
+            )}
+          >
+            <Icons.home className="w-4 h-4" />
+            {t('home')}
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-6">
+            {navItems.slice(1).map((item) => (
+              <Link
+                key={item.href}
+                href={`/${locale}${item.href}`}
+                className={cn(
+                  'flex items-center gap-2 font-medium',
+                  pathname.includes(item.href)
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-primary'
+                )}
+              >
+                {item.icon}
+                {item.title}
+              </Link>
+            ))}
+
+            {/* Auth Items */}
+            {authItems.map((item, index) => (
+              item.href ? (
                 <Link
-                  key={item.href}
+                  key={item.title}
                   href={`/${locale}${item.href}`}
                   className={cn(
-                    'inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200',
-                    pathname === `/${locale}${item.href}`
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-900'
+                    'flex items-center gap-2 font-medium',
+                    pathname.includes(item.href)
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-primary'
                   )}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {item.label}
+                  {item.icon}
+                  {item.title}
                 </Link>
-              );
-            })}
-            <Button 
-              variant="default" 
-              onClick={() => setIsReportModalOpen(true)}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-            >
-              {t('nav.reportCoverage')}
-            </Button>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="sm:hidden flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-            >
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" />
               ) : (
-                <Menu className="block h-6 w-6" />
-              )}
+                <Button
+                  key={item.title}
+                  variant="ghost"
+                  className="flex items-center gap-2 font-medium"
+                  onClick={item.onClick}
+                >
+                  {item.icon}
+                  {item.title}
+                </Button>
+              )
+            ))}
+
+            <Button 
+              variant="default"
+              onClick={() => setIsReportModalOpen(true)}
+              className="ml-4"
+            >
+              {t('reportCoverage')}
             </Button>
-          </div>
+          </nav>
+
+          {isMenuOpen && (
+            <div className="fixed inset-0 z-40 bg-background">
+              <nav className="flex flex-col gap-4 p-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={`/${locale}${item.href}`}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-2 text-lg font-medium',
+                      pathname.includes(item.href)
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {item.icon}
+                    {item.title}
+                  </Link>
+                ))}
+
+                {/* Mobile Auth Items */}
+                {authItems.map((item, index) => (
+                  item.href ? (
+                    <Link
+                      key={item.title}
+                      href={`/${locale}${item.href}`}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={cn(
+                        'flex items-center gap-2 text-lg font-medium',
+                        pathname.includes(item.href)
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                      {item.icon}
+                      {item.title}
+                    </Link>
+                  ) : (
+                    <Button
+                      key={item.title}
+                      variant="ghost"
+                      className="flex items-center gap-2 text-lg font-medium justify-start"
+                      onClick={() => {
+                        item.onClick?.();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      {item.icon}
+                      {item.title}
+                    </Button>
+                  )
+                ))}
+
+                <Button 
+                  variant="default"
+                  onClick={() => {
+                    setIsReportModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full mt-4"
+                >
+                  {t('reportCoverage')}
+                </Button>
+              </nav>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="sm:hidden">
-          <div className="pt-2 pb-3 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={`/${locale}${item.href}`}
-                  className={cn(
-                    'block pl-3 pr-4 py-2 text-base font-medium transition-colors duration-200',
-                    pathname === `/${locale}${item.href}`
-                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  )}
-                >
-                  <div className="flex items-center">
-                    <Icon className="w-4 h-4 mr-2" />
-                    {item.label}
-                  </div>
-                </Link>
-              );
-            })}
-            <div className="pl-3 pr-4 py-2">
-              <Button 
-                variant="default" 
-                onClick={() => {
-                  setIsReportModalOpen(true);
-                  setIsMenuOpen(false);
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-              >
-                {t('nav.reportCoverage')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Report Coverage Modal */}
       <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -165,7 +260,7 @@ export function Navigation() {
                     htmlFor="cellular"
                     className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-blue-600 [&:has([data-state=checked])]:border-blue-600 cursor-pointer"
                   >
-                    <Signal className="mb-3 h-6 w-6 text-blue-600" />
+                    <Icons.signal className="mb-3 h-6 w-6 text-blue-600" />
                     <span className="text-sm font-medium">{t('report.cellular')}</span>
                   </Label>
                 </div>
@@ -180,7 +275,7 @@ export function Navigation() {
                     htmlFor="wifi"
                     className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-gray-50 peer-data-[state=checked]:border-blue-600 [&:has([data-state=checked])]:border-blue-600 cursor-pointer"
                   >
-                    <Wifi className="mb-3 h-6 w-6 text-blue-600" />
+                    <Icons.wifi className="mb-3 h-6 w-6 text-blue-600" />
                     <span className="text-sm font-medium">{t('report.wifi')}</span>
                   </Label>
                 </div>
@@ -206,6 +301,6 @@ export function Navigation() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </nav>
+    </div>
   );
 }

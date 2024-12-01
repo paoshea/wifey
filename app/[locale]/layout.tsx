@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { Inter } from 'next/font/google';
 import LocaleClientLayout from './locale-client-layout';
 import '../globals.css';
+import 'leaflet/dist/leaflet.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,7 +47,11 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className={`${inter.variable} font-sans antialiased`}>
-      <body>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body className="min-h-screen bg-background">
         <LocaleClientLayout locale={locale as SupportedLocale} messages={messages}>
           {children}
         </LocaleClientLayout>

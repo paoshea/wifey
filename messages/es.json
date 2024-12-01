@@ -1,6 +1,7 @@
 {
   "navigation": {
     "home": "Inicio",
+    "dashboard": "Panel",
     "coverageFinder": "Buscador de Cobertura",
     "register": "Registrarse",
     "login": "Iniciar Sesión",
@@ -9,6 +10,8 @@
     "explore": "Explorar",
     "community": "Unirse a la Comunidad",
     "reportCoverage": "Reporte Rápido",
+    "profile": "Perfil",
+    "signOut": "Cerrar Sesión",
     "report": {
       "button": "Hacer un Reporte",
       "title": "Reportar Punto de Cobertura",
@@ -27,8 +30,44 @@
     "description": "Localiza puntos de cobertura celular y puntos de WiFi gratuitos cerca de ti. Nunca más te quedes sin conexión.",
     "findCoverageButton": "Encontrar Cobertura Ahora",
     "getStarted": "Comenzar",
-    "exploreMap": "Explorar Mapa",
+    "exploreMap": "Explorar el Mapa",
+    "tellUsAboutYourself": "Cuéntanos sobre ti",
+    "gamification": {
+      "title": "Gana Mientras Contribuyes",
+      "subtitle": "Únete a la diversión mientras ayudas a la comunidad",
+      "points": {
+        "title": "Gana Puntos",
+        "description": "Acumula puntos por cada contribución que hagas al mapa"
+      },
+      "badges": {
+        "title": "Desbloquea Insignias",
+        "description": "Colecciona insignias especiales por tus logros"
+      },
+      "leaderboard": {
+        "title": "Tabla de Clasificación",
+        "description": "Compite con otros miembros y alcanza la cima"
+      }
+    },
+    "featuringNow": {
+      "title": "Destacado Ahora",
+      "subtitle": "Lo más reciente en nuestra comunidad",
+      "hotspots": {
+        "title": "Puntos Destacados",
+        "description": "Descubre los mejores puntos de conexión en tu área"
+      },
+      "contributors": {
+        "title": "Principales Contribuidores",
+        "description": "Miembros que están marcando la diferencia"
+      },
+      "updates": {
+        "title": "Actualizaciones Recientes",
+        "description": "Últimas mejoras en la cobertura de tu zona"
+      },
+      "viewAll": "Ver Todo"
+    },
     "features": {
+      "title": "Características Poderosas",
+      "subtitle": "Todo lo que necesitas para mantenerte conectado en movimiento",
       "cellular": {
         "title": "Cobertura Celular",
         "description": "Encuentra el punto de cobertura más cercano cuando estés en una zona sin señal"
@@ -95,6 +134,40 @@
         "distance": "Distancia",
         "reliability": "Fiabilidad"
       }
+    },
+    "subtitle": "Monitorea y encuentra cobertura celular",
+    "search": {
+      "placeholder": "Buscar cobertura...",
+      "button": "Buscar",
+      "noResults": "No se encontró cobertura",
+      "error": "Error al buscar cobertura"
+    },
+    "monitor": {
+      "title": "Monitor de Señal",
+      "start": "Iniciar Monitoreo",
+      "stop": "Detener Monitoreo",
+      "strength": "Fuerza de Señal",
+      "quality": "Calidad de Señal",
+      "provider": "Proveedor",
+      "type": "Tipo de Red"
+    },
+    "report": {
+      "title": "Reportar Cobertura",
+      "location": "Ubicación",
+      "provider": "Proveedor",
+      "strength": "Fuerza de Señal",
+      "type": "Tipo de Red",
+      "submit": "Enviar Reporte",
+      "success": "¡Reporte enviado exitosamente!",
+      "error": "Error al enviar reporte"
+    },
+    "filters": {
+      "title": "Filtros",
+      "provider": "Proveedor",
+      "strength": "Fuerza de Señal",
+      "type": "Tipo de Red",
+      "apply": "Aplicar Filtros",
+      "clear": "Limpiar Filtros"
     }
   },
   "Map": {
@@ -118,6 +191,35 @@
       "title": "Bienvenido a Wifey",
       "description": "Tu compañero de WiFi y cobertura impulsado por la comunidad",
       "getStarted": "Comenzar"
+    },
+    "coverage": {
+      "intro": {
+        "title": "Agregar Puntos de Cobertura",
+        "description": "Ayuda a la comunidad marcando lugares con buena cobertura",
+        "step1": {
+          "title": "Seleccionar Ubicación",
+          "description": "Toca el mapa para marcar un punto con buena cobertura"
+        },
+        "step2": {
+          "title": "Calificar Señal",
+          "description": "Califica la intensidad de la señal en tu ubicación"
+        },
+        "step3": {
+          "title": "Compartir Detalles",
+          "description": "Agrega información del operador y envía"
+        },
+        "tryItOut": "Pruébalo"
+      },
+      "demo": {
+        "title": "Agrega Tu Primer Punto de Cobertura",
+        "description": "Practiquemos agregando un punto de cobertura al mapa",
+        "tapToMark": "Toca cualquier lugar en el mapa para marcar un punto",
+        "signalStrength": "Intensidad de la Señal",
+        "carrier": "Operador",
+        "selectCarrier": "Selecciona tu operador",
+        "submit": "Enviar Punto de Cobertura",
+        "continue": "Continuar a Características"
+      }
     },
     "joinTribe": {
       "title": "Únete a la Tribu Wifey",
@@ -158,37 +260,28 @@
       "startExploring": "Comenzar a Explorar"
     },
     "features": {
-      "title": "Funciones Potentes",
-      "subtitle": "Todo lo que necesitas para mantenerte conectado",
+      "title": "Características Principales",
+      "description": "Descubre todas las herramientas que tenemos para mantenerte conectado",
       "wifi": {
-        "title": "Buscador de WiFi",
-        "description": "Encuentra puntos de acceso WiFi gratuitos cerca de ti",
-        "benefits": {
-          "security": "Redes seguras verificadas",
-          "updates": "Actualizaciones en tiempo real",
-          "speed": "Información de velocidad de red",
-          "reliability": "Conexiones confiables"
-        }
+        "title": "Conexión WiFi",
+        "speed": "Velocidades de conexión optimizadas",
+        "reliability": "Conexiones confiables y estables",
+        "security": "Seguridad y privacidad mejoradas",
+        "updates": "Actualizaciones en tiempo real"
       },
       "coverage": {
         "title": "Mapa de Cobertura",
-        "description": "Encuentra cobertura celular en tu área",
-        "benefits": {
-          "realtime": "Datos de cobertura en tiempo real",
-          "accuracy": "Mapeo preciso de intensidad de señal",
-          "predictions": "Predicciones de cobertura",
-          "alerts": "Notificaciones de zonas sin señal"
-        }
+        "realtime": "Datos de cobertura en tiempo real",
+        "accuracy": "Ubicaciones precisas y verificadas",
+        "predictions": "Predicciones de calidad de señal",
+        "alerts": "Alertas de zonas sin cobertura"
       },
       "navigation": {
         "title": "Navegación Inteligente",
-        "description": "Llega a la conectividad rápidamente",
-        "benefits": {
-          "routing": "Planificación de ruta óptima",
-          "offline": "Soporte de mapas sin conexión",
-          "alternatives": "Sugerencias de rutas alternativas",
-          "eta": "Estimaciones precisas de llegada"
-        }
+        "routing": "Rutas optimizadas a puntos de conexión",
+        "offline": "Navegación sin conexión",
+        "alternatives": "Rutas alternativas",
+        "eta": "Tiempos de llegada estimados"
       }
     },
     "location": {
@@ -230,6 +323,15 @@
     "response": "Típicamente respondemos en 1 hora"
   },
   "auth": {
+    "signIn": "Iniciar Sesión",
+    "signInDescription": "Elige tu método preferido para iniciar sesión",
+    "continueWithGoogle": "Continuar con Google",
+    "continueWithGithub": "Continuar con GitHub",
+    "privacyNotice": "Al continuar, aceptas nuestros Términos de Servicio y Política de Privacidad",
+    "error": "Error de Autenticación",
+    "signInError": "No se pudo iniciar sesión. Por favor, inténtalo de nuevo.",
+    "success": "Éxito",
+    "signInSuccess": "¡Sesión iniciada con éxito! Redirigiendo...",
     "register": {
       "title": "Crear tu Cuenta",
       "subtitle": "Únete para rastrear y compartir cobertura WiFi en tu área",
@@ -289,5 +391,142 @@
     "rewards": "Recompensas",
     "unlocked": "Desbloqueado",
     "locked": "Bloqueado"
+  },
+  "settings": {
+    "title": "Configuración",
+    "description": "Administra la configuración y preferencias de tu cuenta.",
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Personaliza cómo se ve Wifey en tu dispositivo.",
+      "theme": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Configura cómo quieres recibir notificaciones sobre actualizaciones.",
+      "enable": "Activar notificaciones"
+    },
+    "account": {
+      "title": "Cuenta",
+      "description": "Administra la configuración y preferencias de tu cuenta.",
+      "email": "Correo electrónico"
+    },
+    "saveChanges": "Guardar cambios",
+    "success": "Éxito",
+    "settingsSaved": "Tu configuración se ha guardado correctamente.",
+    "error": "Error",
+    "settingsError": "No se pudo guardar la configuración. Por favor, inténtalo de nuevo."
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Gestiona tu perfil y contribuciones",
+    "personalInfo": {
+      "title": "Información Personal",
+      "name": "Nombre",
+      "email": "Correo Electrónico",
+      "location": "Ubicación",
+      "bio": "Biografía"
+    },
+    "stats": {
+      "title": "Estadísticas",
+      "pointsReported": "Puntos Reportados",
+      "pointsVerified": "Puntos Verificados",
+      "totalContributions": "Contribuciones Totales",
+      "memberSince": "Miembro desde"
+    },
+    "activity": {
+      "title": "Actividad Reciente",
+      "noActivity": "No hay actividad reciente",
+      "viewAll": "Ver Todo"
+    }
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "subtitle": "Vista general de tu actividad y cobertura",
+    "overview": {
+      "title": "Resumen",
+      "totalPoints": "Puntos Totales",
+      "activePoints": "Puntos Activos",
+      "recentActivity": "Actividad Reciente"
+    },
+    "coverage": {
+      "title": "Cobertura",
+      "quality": "Calidad de Señal",
+      "strength": "Fuerza de Señal",
+      "nearby": "Puntos Cercanos"
+    },
+    "contributions": {
+      "title": "Contribuciones",
+      "points": "Puntos",
+      "verifications": "Verificaciones",
+      "impact": "Impacto"
+    }
+  },
+  "wifi": {
+    "title": "Puntos WiFi",
+    "subtitle": "Encuentra y comparte puntos WiFi",
+    "search": {
+      "placeholder": "Buscar puntos WiFi...",
+      "button": "Buscar",
+      "noResults": "No se encontraron resultados",
+      "error": "Error al buscar puntos WiFi"
+    },
+    "filters": {
+      "title": "Filtros",
+      "speed": "Velocidad",
+      "reliability": "Fiabilidad",
+      "distance": "Distancia",
+      "security": "Seguridad",
+      "apply": "Aplicar Filtros",
+      "clear": "Limpiar Filtros"
+    },
+    "details": {
+      "speed": "Velocidad",
+      "reliability": "Fiabilidad",
+      "security": "Seguridad",
+      "lastVerified": "Última Verificación",
+      "reportedBy": "Reportado por",
+      "verifiedBy": "Verificado por",
+      "getDirections": "Obtener Direcciones"
+    },
+    "add": {
+      "title": "Añadir Punto WiFi",
+      "location": "Ubicación",
+      "name": "Nombre",
+      "description": "Descripción",
+      "speed": "Velocidad",
+      "security": "Seguridad",
+      "submit": "Añadir Punto",
+      "success": "¡Punto WiFi añadido exitosamente!",
+      "error": "Error al añadir punto WiFi"
+    }
+  },
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "coverageFinder": "Buscador de Cobertura",
+    "register": "Registrarse",
+    "login": "Iniciar Sesión",
+    "coverage": "Cobertura",
+    "wifi": "WiFi",
+    "explore": "Explorar",
+    "community": "Unirse a la Comunidad",
+    "reportCoverage": "Reporte Rápido",
+    "report": {
+      "button": "Hacer un Reporte",
+      "title": "Reportar Punto de Cobertura",
+      "description": "Ayuda a la comunidad marcando un punto con buena cobertura o WiFi.",
+      "cellular": "Cobertura Celular",
+      "wifi": "Punto de WiFi",
+      "submit": "Marcar este Punto",
+      "success": "¡Gracias por tu reporte!",
+      "appreciationMessage": "Tu contribución ayuda a mejorar nuestro mapa de cobertura.",
+      "joinMessage": "¡Únete a nuestra comunidad para seguir tus contribuciones!"
+    },
+    "profile": "Perfil",
+    "signOut": "Cerrar Sesión",
+    "dashboard": "Panel de Control"
   }
 }

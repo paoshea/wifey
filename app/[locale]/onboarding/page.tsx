@@ -6,6 +6,12 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X, Signal, Share, Check } from 'lucide-react';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
+import dynamic from 'next/dynamic';
+
+const OnboardingMap = dynamic(
+  () => import('@/components/map/OnboardingMap'),
+  { ssr: false }
+);
 
 const steps = ['welcome', 'coverage-intro', 'coverage-demo', 'features', 'registration'] as const;
 type Step = typeof steps[number];
@@ -260,13 +266,10 @@ export default function OnboardingPage({
 
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
-                    {/* Interactive demo map here */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center space-y-4">
-                        <X className="w-12 h-12 text-blue-600 mx-auto animate-pulse" />
-                        <p className="text-lg font-medium">{t('coverage.demo.tapToMark')}</p>
-                      </div>
-                    </div>
+                    <OnboardingMap onLocationSelect={(lat, lng) => {
+                      console.log('Selected location:', lat, lng);
+                      // Here you can handle the selected location
+                    }} />
                   </div>
 
                   <div className="mt-6 space-y-4">
@@ -297,16 +300,17 @@ export default function OnboardingPage({
                         <option value="tmobile">T-Mobile</option>
                       </select>
                     </div>
-                  </div>
-                </div>
 
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={handleNext}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    {t('coverage.demo.continue')}
-                  </button>
+                    <button
+                      onClick={() => {
+                        // Handle coverage spot submission
+                        handleNext();
+                      }}
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {t('coverage.demo.submit')}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </div>

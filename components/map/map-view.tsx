@@ -4,9 +4,10 @@ import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Wifi, Signal, Crosshair } from 'lucide-react';
+import { Wifi, Signal, Crosshair, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 // Fix for Leaflet default marker icons
 const defaultIcon = L.icon({
@@ -44,6 +45,7 @@ interface MapViewProps {
 }
 
 function LocationControl() {
+  const [isLocating, setIsLocating] = useState(false);
   const map = useMapEvents({
     locationfound(e) {
       map.flyTo(e.latlng, map.getZoom());
@@ -51,6 +53,7 @@ function LocationControl() {
         title: "Location found!",
         description: "Map centered to your current location.",
       });
+      setIsLocating(false);
     },
     locationerror() {
       toast({
@@ -58,24 +61,40 @@ function LocationControl() {
         description: "Unable to find your location. Please check your browser permissions.",
         variant: "destructive",
       });
+      setIsLocating(false);
     },
   });
 
   const handleClick = () => {
+    setIsLocating(true);
     map.locate();
   };
 
   return (
     <div className="leaflet-top leaflet-right" style={{ marginTop: '80px' }}>
       <div className="leaflet-control leaflet-bar">
-        <Button
-          variant="secondary"
-          size="icon"
-          className="bg-white hover:bg-gray-100 w-10 h-10"
-          onClick={handleClick}
-        >
-          <Crosshair className="h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="bg-white hover:bg-gray-100 w-10 h-10 shadow-md"
+                onClick={handleClick}
+                disabled={isLocating}
+              >
+                {isLocating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Crosshair className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Find my location</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

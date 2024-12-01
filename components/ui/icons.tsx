@@ -1,23 +1,42 @@
 'use client';
 
-import { LucideProps } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import {
+  Activity,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Wifi,
+  Signal,
+  User,
+  Settings,
+  LogOut,
+  LayoutDashboard,
+  Map,
+  Trophy,
+  Menu,
+  X,
+  Save,
+  type LucideProps
+} from 'lucide-react';
 
-// Dynamically import icons
 export const Icons = {
-  logo: dynamic(() => import('lucide-react').then((mod) => mod.Activity)),
-  spinner: dynamic(() => import('lucide-react').then((mod) => mod.Loader2)),
-  chevronLeft: dynamic(() => import('lucide-react').then((mod) => mod.ChevronLeft)),
-  chevronRight: dynamic(() => import('lucide-react').then((mod) => mod.ChevronRight)),
-  check: dynamic(() => import('lucide-react').then((mod) => mod.Check)),
-  wifi: dynamic(() => import('lucide-react').then((mod) => mod.Wifi)),
-  signal: dynamic(() => import('lucide-react').then((mod) => mod.Signal)),
-  user: dynamic(() => import('lucide-react').then((mod) => mod.User)),
-  settings: dynamic(() => import('lucide-react').then((mod) => mod.Settings)),
-  logout: dynamic(() => import('lucide-react').then((mod) => mod.LogOut)),
-  dashboard: dynamic(() => import('lucide-react').then((mod) => mod.LayoutDashboard)),
-  map: dynamic(() => import('lucide-react').then((mod) => mod.Map)),
-  trophy: dynamic(() => import('lucide-react').then((mod) => mod.Trophy)),
+  logo: Activity,
+  spinner: Loader2,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  check: Check,
+  wifi: Wifi,
+  signal: Signal,
+  user: User,
+  settings: Settings,
+  logout: LogOut,
+  dashboard: LayoutDashboard,
+  map: Map,
+  trophy: Trophy,
+  menu: Menu,
+  close: X,
+  save: Save,
   google: ({ ...props }: LucideProps) => (
     <svg role="img" viewBox="0 0 24 24" {...props}>
       <path

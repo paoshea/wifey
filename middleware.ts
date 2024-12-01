@@ -6,20 +6,14 @@ import { defaultLocale, locales } from '@/lib/i18n/config';
 
 // Paths that don't require authentication
 const publicPaths = [
-  '/',
-  '/auth/signin',
-  '/auth/signup',
-  '/auth/verify',
-  '/auth/verify-request',
-  '/auth/error',
-  '/api/auth/signin',
-  '/api/auth/signup',
-  '/api/auth/verify',
-  '/onboarding',
-  '/api/onboarding',
-  '/coverage',
-  '/wifi',
-  '/explore',
+  '/signin',
+  '/register',
+  '/verify',
+  '/verify-request',
+  '/error',
+  '/api/auth',
+  '/api/trpc',
+  '/api/healthcheck',
 ];
 
 // Paths that require specific roles
@@ -38,9 +32,19 @@ const intlMiddleware = createMiddleware({
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isPublicPath = publicPaths.some(path => 
+    pathname.includes(path) || 
+    pathname === '/' || 
+    pathname.match(/^\/[a-z]{2}(?:-[A-Z]{2})?$/)  // matches locale paths like /en or /en-US
+  );
 
-  // Skip middleware for public API routes
-  if (pathname.startsWith('/api/') && publicPaths.some(path => pathname.startsWith(path))) {
+  // Skip middleware for public API routes and static files
+  if (
+    pathname.startsWith('/_next') || 
+    pathname.includes('/api/auth') || 
+    pathname.includes('.') ||
+    pathname.startsWith('/favicon')
+  ) {
     return NextResponse.next();
   }
 
@@ -49,7 +53,7 @@ export async function middleware(request: NextRequest) {
   if (intlResponse) return intlResponse;
 
   // Allow public paths
-  if (publicPaths.some(path => pathname.startsWith(path))) {
+  if (isPublicPath) {
     return NextResponse.next();
   }
 
@@ -60,16 +64,17 @@ export async function middleware(request: NextRequest) {
   });
 
   // If no token and not a public path, redirect to signin
-  if (!token) {
-    const url = new URL('/auth/signin', request.url);
+  if (!token && !isPublicPath) {
+    const locale = request.cookies.get('NEXT_LOCALE')?.value || defaultLocale;
+    const url = new URL(`/${locale}/signin`, request.url);
     url.searchParams.set('callbackUrl', encodeURI(request.url));
     return NextResponse.redirect(url);
   }
 
   // Check if email is verified for protected routes
-  if (!token.emailVerified && !pathname.startsWith('/auth/verify')) {
+  if (!token.emailVerified && !pathname.startsWith('/verify')) {
     return NextResponse.redirect(
-      new URL('/auth/verify-request', request.url)
+      new URL('/verify-request', request.url)
     );
   }
 

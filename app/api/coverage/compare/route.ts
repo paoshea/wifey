@@ -23,6 +23,8 @@ type CoverageReport = Prisma.CoverageReportGetPayload<{
     signal: true;
     speed: true;
     createdAt: true;
+    provider: true;
+    technology: true;
   }
 }>;
 
@@ -64,6 +66,8 @@ export async function GET(request: NextRequest) {
         signal: true,
         speed: true,
         createdAt: true,
+        provider: true,
+        technology: true,
       },
     });
 
@@ -76,7 +80,8 @@ export async function GET(request: NextRequest) {
     const providerMap = new Map<string, ProviderAnalysis>();
     
     filteredPoints.forEach((point) => {
-      const current = providerMap.get('default') || {
+      const provider = point.provider || 'Unknown';
+      const current = providerMap.get(provider) || {
         avgSignal: 0,
         avgSpeed: 0,
         points: 0,
@@ -88,12 +93,25 @@ export async function GET(request: NextRequest) {
       }
       current.points++;
 
-      providerMap.set('default', current);
+      providerMap.set(provider, current);
     });
 
+    // Format points for the response
+    const formattedPoints = filteredPoints.map(point => ({
+      location: {
+        lat: point.latitude,
+        lng: point.longitude,
+      },
+      provider: point.provider || 'Unknown',
+      signalStrength: point.signal,
+      technology: point.technology || 'Unknown',
+      speed: point.speed,
+      timestamp: point.createdAt,
+    }));
+
     return NextResponse.json({
-      points: filteredPoints,
-      analysis: Array.from(providerMap.values()),
+      points: formattedPoints,
+      analysis: Object.fromEntries(providerMap),
     });
   } catch (error) {
     console.error('Coverage comparison error:', error);

@@ -12,10 +12,10 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/auth/signin',
-    signOut: '/auth/signout',
-    error: '/auth/error',
-    verifyRequest: '/auth/verify',
+    signIn: '/signin',
+    signOut: '/signout',
+    error: '/error',
+    verifyRequest: '/verify-request',
   },
   providers: [
     GoogleProvider({
@@ -80,14 +80,37 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub!;
+        session.user.role = token.role as string;
+        session.user.emailVerified = token.emailVerified as boolean;
       }
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (user) {
         token.sub = user.id;
+        token.role = (user as any).role || 'user';
+        token.emailVerified = (user as any).emailVerified || false;
       }
+
+      // Force refresh the session
+      if (trigger === 'update') {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub }
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.emailVerified = dbUser.emailVerified;
+        }
+      }
+
       return token;
+    },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     }
   }
 };

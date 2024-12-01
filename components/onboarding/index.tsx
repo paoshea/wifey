@@ -5,6 +5,7 @@ import { CoverageDemo } from './coverage-demo';
 import { Features } from './features';
 import { Registration } from './registration';
 import { JoinTribe } from './join-tribe';
+import LanguageSwitcher from '../language-switcher';
 
 export function Onboarding() {
   const [step, setStep] = useState<
@@ -36,6 +37,9 @@ export function Onboarding() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <header className="fixed top-0 right-0 p-4 z-50">
+        <LanguageSwitcher />
+      </header>
       {step === 'welcome' && <Welcome onNext={handleNext} />}
       {step === 'join-tribe' && <JoinTribe onNext={handleNext} />}
       {step === 'coverage-intro' && <CoverageIntro onNext={handleNext} />}

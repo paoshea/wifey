@@ -21,6 +21,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -32,7 +33,10 @@ export default function SignIn() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const t = useTranslations('Auth');
+  const pathname = window.location.pathname;
+  const locale = pathname.split('/')[1];
+  const callbackUrl = searchParams.get('callbackUrl') || `/${locale}/dashboard`;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,23 +53,30 @@ export default function SignIn() {
         email: values.email,
         password: values.password,
         redirect: false,
+        callbackUrl: callbackUrl,
       });
 
       if (result?.error) {
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: t('error'),
           description: result.error,
         });
         return;
       }
 
-      router.push(callbackUrl);
+      // Add locale to the callback URL if it doesn't have one
+      const redirectUrl = callbackUrl.startsWith('/') && !callbackUrl.startsWith(`/${locale}`) 
+        ? `/${locale}${callbackUrl}` 
+        : callbackUrl;
+
+      router.push(redirectUrl);
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        title: t('error'),
+        description: t('genericError'),
       });
     } finally {
       setIsLoading(false);
@@ -73,15 +84,15 @@ export default function SignIn() {
   }
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+    <main className="container flex h-screen w-screen flex-col items-center justify-center">
       <Card className="w-full max-w-md p-8">
         <div className="flex flex-col space-y-6">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Welcome back
+              {t('welcomeBack')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Choose your preferred sign in method
+              {t('chooseSignInMethod')}
             </p>
           </div>
 
@@ -92,7 +103,7 @@ export default function SignIn() {
               onClick={() => signIn('google', { callbackUrl })}
             >
               <Icons.google className="mr-2 h-4 w-4" />
-              Continue with Google
+              {t('continueWithGoogle')}
             </Button>
             <Button
               variant="outline"
@@ -100,7 +111,7 @@ export default function SignIn() {
               onClick={() => signIn('github', { callbackUrl })}
             >
               <Icons.github className="mr-2 h-4 w-4" />
-              Continue with GitHub
+              {t('continueWithGithub')}
             </Button>
           </div>
 
@@ -110,7 +121,7 @@ export default function SignIn() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+                {t('orContinueWith')}
               </span>
             </div>
           </div>
@@ -122,7 +133,7 @@ export default function SignIn() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('email')}</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -139,7 +150,7 @@ export default function SignIn() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('password')}</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -151,22 +162,22 @@ export default function SignIn() {
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Sign In
+                {t('signIn')}
               </Button>
             </form>
           </Form>
 
           <div className="text-center text-sm">
-            Don&apos;t have an account?{' '}
+            {t('noAccount')}{' '}
             <Link
-              href="/auth/signup"
+              href={`/${router.locale}/register`}
               className="font-semibold text-primary hover:underline"
             >
-              Sign up
+              {t('signUp')}
             </Link>
           </div>
         </div>
       </Card>
-    </div>
+    </main>
   );
 }
