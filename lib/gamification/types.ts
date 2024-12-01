@@ -8,10 +8,10 @@ export enum MeasurementType {
 }
 
 export enum TimeFrame {
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  ALL_TIME = 'ALL_TIME'
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  ALL_TIME = 'allTime'
 }
 
 // Prisma Generated Types

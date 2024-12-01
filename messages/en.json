@@ -751,31 +751,23 @@
   },
   "leaderboard": {
     "title": "Community Leaderboard",
-    "description": "See who's leading the pack in network mapping",
-    "rank": "Rank",
-    "user": "User",
-    "points": "Points",
-    "contributions": "Contributions",
-    "streak": "Streak",
-    "streakMilestone": "{days} day streak!",
+    "description": "See how you rank among other contributors in the community",
     "timeframe": {
-      "label": "Time Period",
-      "ALL_TIME": "All Time",
-      "MONTHLY": "This Month",
-      "WEEKLY": "This Week",
-      "DAILY": "Today"
+      "daily": "Today",
+      "weekly": "This Week",
+      "monthly": "This Month",
+      "allTime": "All Time"
     },
-    "stats": {
-      "title": "Community Stats",
-      "totalUsers": "Total Users",
-      "totalContributions": "Total Contributions",
-      "yourRank": "Your Rank",
-      "yourPoints": "Your Points"
+    "table": {
+      "rank": "Rank",
+      "user": "User",
+      "points": "Points",
+      "contributions": "Contributions",
+      "noData": "No data available"
     },
-    "pagination": {
-      "previous": "Previous",
-      "next": "Next",
-      "pageInfo": "Page {current} of {total}"
+    "filters": {
+      "timeframe": "Time Period",
+      "perPage": "Results per page"
     }
   },
   "gamification": {

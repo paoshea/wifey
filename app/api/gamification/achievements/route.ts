@@ -1,51 +1,22 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { gamificationService } from '@/lib/services/gamification-service';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return new NextResponse('Missing userId', { status: 400 });
-    }
-
-    // TODO: Replace with actual database queries
-    const achievements = [
-      {
-        id: '1',
-        name: 'First Contribution',
-        description: 'Made your first contribution to the network map',
-        icon: 'star',
-        unlocked: true,
-      },
-      {
-        id: '2',
-        name: 'Weekly Warrior',
-        description: 'Maintained a 7-day contribution streak',
-        icon: 'flame',
-        unlocked: true,
-      },
-      {
-        id: '3',
-        name: 'Century Club',
-        description: 'Earn 100 contribution points',
-        icon: 'trophy',
-        unlocked: false,
-        progress: 75,
-        total: 100,
-      },
-    ];
-
+    const achievements = await gamificationService.getAchievements(session.user.id);
     return NextResponse.json(achievements);
   } catch (error) {
     console.error('Error fetching achievements:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch achievements' },
+      { status: 500 }
+    );
   }
 }

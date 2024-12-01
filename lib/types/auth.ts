@@ -2,6 +2,26 @@
 
 import { z } from 'zod';
 
+export enum UserRole {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  MODERATOR = 'MODERATOR'
+}
+
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    role: UserRole;
+  }
+
+  interface Session {
+    user: User & {
+      id: string;
+      role: UserRole;
+    };
+  }
+}
+
 export interface User {
   id: string;
   name: string | null;
@@ -13,12 +33,6 @@ export interface User {
   image: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export enum UserRole {
-  USER = 'USER',
-  MODERATOR = 'MODERATOR',
-  ADMIN = 'ADMIN',
 }
 
 export const UserSchema = z.object({

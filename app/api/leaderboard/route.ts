@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/auth.config';
+import { authOptions } from '@/lib/auth';
 import { gamificationService } from '@/lib/services/gamification-service';
 import { TimeFrame } from '@/lib/gamification/types';
 import { z } from 'zod';

@@ -660,32 +660,24 @@
     "language": "Idioma"
   },
   "leaderboard": {
-    "title": "Tabla de Clasificación Comunitaria",
-    "description": "Mira quién lidera el mapeo de redes",
-    "rank": "Posición",
-    "user": "Usuario",
-    "points": "Puntos",
-    "contributions": "Contribuciones",
-    "streak": "Racha",
-    "streakMilestone": "¡Racha de {days} días!",
+    "title": "Tabla de Clasificación",
+    "description": "Mira cómo te clasificas entre otros contribuyentes de la comunidad",
     "timeframe": {
-      "label": "Período",
-      "ALL_TIME": "Todo el Tiempo",
-      "MONTHLY": "Este Mes",
-      "WEEKLY": "Esta Semana",
-      "DAILY": "Hoy"
+      "daily": "Hoy",
+      "weekly": "Esta Semana",
+      "monthly": "Este Mes",
+      "allTime": "Todo el Tiempo"
     },
-    "stats": {
-      "title": "Estadísticas de la Comunidad",
-      "totalUsers": "Total de Usuarios",
-      "totalContributions": "Total de Contribuciones",
-      "yourRank": "Tu Posición",
-      "yourPoints": "Tus Puntos"
+    "table": {
+      "rank": "Posición",
+      "user": "Usuario",
+      "points": "Puntos",
+      "contributions": "Contribuciones",
+      "noData": "No hay datos disponibles"
     },
-    "pagination": {
-      "previous": "Anterior",
-      "next": "Siguiente",
-      "pageInfo": "Página {current} de {total}"
+    "filters": {
+      "timeframe": "Período de Tiempo",
+      "perPage": "Resultados por página"
     }
   }
 }

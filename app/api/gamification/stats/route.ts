@@ -1,36 +1,51 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { gamificationService } from '@/lib/services/gamification-service';
+import { TimeFrame } from '@/lib/gamification/types';
+import { z } from 'zod';
 
-export async function GET(request: Request) {
+const StatsQuerySchema = z.object({
+  timeframe: z.nativeEnum(TimeFrame).optional().default(TimeFrame.ALL_TIME)
+});
+
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const query = StatsQuerySchema.parse({
+      timeframe: searchParams.get('timeframe')
+    });
 
-    if (!userId) {
-      return new NextResponse('Missing userId', { status: 400 });
-    }
+    const [totalUsers, totalContributions] = await Promise.all([
+      gamificationService.getTotalUsers(query.timeframe),
+      gamificationService.getTotalContributions(query.timeframe)
+    ]);
 
-    // TODO: Replace with actual database queries
     const stats = {
-      points: 1250,
-      rank: 42,
-      totalContributions: 28,
-      level: 5,
-      currentStreak: 5,
-      longestStreak: 12,
-      nextMilestone: 7,
-      progressToNextMilestone: 71,
+      totalUsers,
+      totalContributions,
+      userRank: undefined,
+      userPoints: undefined
     };
+
+    // Add user-specific stats if authenticated
+    if (session?.user?.id) {
+      const [userRank, userPoints] = await Promise.all([
+        gamificationService.getUserRank(session.user.id, query.timeframe),
+        gamificationService.getUserPoints(session.user.id)
+      ]);
+
+      stats.userRank = userRank;
+      stats.userPoints = userPoints;
+    }
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('Error fetching gamification stats:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error fetching leaderboard stats:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch leaderboard stats' },
+      { status: 500 }
+    );
   }
 }
