@@ -18,6 +18,16 @@
     "about": "Acerca de",
     "leaderboard": "Tabla de Clasificación"
   },
+  "Footer": {
+    "about": "Acerca de",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "contact": "Contacto",
+    "links": "Enlaces Rápidos",
+    "social": "Conéctate con Nosotros",
+    "description": "Encuentra y comparte puntos de acceso WiFi y cobertura celular en todo el mundo. Únete a nuestra comunidad para ayudar a otros a mantenerse conectados.",
+    "rights": "Todos los derechos reservados."
+  },
   "home": {
     "title": "Encuentra Cobertura",
     "subtitle": "En Cualquier Lugar",

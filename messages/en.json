@@ -31,6 +31,16 @@
     "logout": "Logout",
     "leaderboard": "Leaderboard"
   },
+  "Footer": {
+    "about": "About",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact",
+    "links": "Quick Links",
+    "social": "Connect With Us",
+    "description": "Find and share WiFi hotspots and cellular coverage points worldwide. Join our community to help others stay connected.",
+    "rights": "All rights reserved."
+  },
   "home": {
     "title": "Find the Best Connection Anywhere",
     "subtitle": "Track WiFi and cellular coverage points to stay connected wherever you go",

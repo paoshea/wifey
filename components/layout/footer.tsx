@@ -66,7 +66,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Icons.gitHub className="h-5 w-5" />
+                <Icons.github className="h-5 w-5" />
                 <span className="sr-only">GitHub</span>
               </a>
             </div>
@@ -76,7 +76,7 @@ export function Footer() {
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
           <p>
-            © {currentYear} Wifey. {t('rights')}
+            {currentYear} Wifey. {t('rights')}
           </p>
         </div>
       </div>
