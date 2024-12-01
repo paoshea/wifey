@@ -42,7 +42,7 @@ import { monitoringService } from '../monitoring/monitoring-service';
 import { notificationService } from './notification-service';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { leaderboardService } from './leaderboard-service';
+import { LeaderboardService } from './leaderboard-service';
 
 const AchievementRequirementSchema = z.object({
   metric: z.enum(['totalMeasurements', 'ruralMeasurements', 'uniqueLocations', 'totalDistance', 'contributionScore', 'qualityScore', 'accuracyRate', 'verifiedSpots', 'helpfulActions']),
@@ -160,9 +160,9 @@ export class GamificationService {
   private prisma: PrismaClient;
   private leaderboardService: LeaderboardService;
 
-  constructor(prismaClient: PrismaClient = prisma, leaderboardSvc: LeaderboardService = leaderboardService) {
+  constructor(prismaClient: PrismaClient = prisma) {
     this.prisma = prismaClient;
-    this.leaderboardService = leaderboardSvc;
+    this.leaderboardService = new LeaderboardService(prismaClient);
     this.apiCache = new GamificationCache();
   }
 

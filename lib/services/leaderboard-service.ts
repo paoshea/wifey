@@ -2,7 +2,7 @@
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Cache } from 'memory-cache';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { 
   TimeFrame, 
   LeaderboardEntry, 
@@ -48,140 +48,105 @@ export class LeaderboardService {
   private cache: Cache<string, any>;
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly prisma: PrismaClient = prisma) {
+  constructor(prismaClient: PrismaClient = prisma) {
     this.cache = new Cache();
+    this.prisma = prismaClient;
   }
 
-  async getLeaderboard(
-    timeframe: TimeFrame = TimeFrame.ALL_TIME,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<LeaderboardResponse> {
-    const cacheKey = `leaderboard:${timeframe}:${page}:${limit}`;
+  private readonly prisma: PrismaClient;
+
+  async getLeaderboard(options: LeaderboardOptions = {}): Promise<LeaderboardResponse> {
+    const {
+      timeframe = TimeFrame.ALL_TIME,
+      page = 1,
+      pageSize = 10
+    } = options;
+
+    const cacheKey = `leaderboard:${timeframe}:${page}:${pageSize}`;
     const cached = this.cache.get(cacheKey);
-    
     if (cached) {
       return cached;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * pageSize;
+    const dateFilter = this.getDateFilter(timeframe);
 
-    const [entries, totalUsers] = await Promise.all([
-      this.prisma.leaderboardEntry.findMany({
+    const [users, totalCount] = await Promise.all([
+      this.prisma.user.findMany({
         where: {
-          timeframe
-        },
-        orderBy: {
-          points: 'desc'
-        },
-        take: limit,
-        skip,
-        include: {
-          user: {
-            select: {
-              name: true,
-              userStats: {
-                select: {
-                  statsData: true
-                }
-              }
+          userStats: {
+            some: {
+              createdAt: dateFilter
             }
           }
-        }
+        },
+        select: {
+          id: true,
+          name: true,
+          userStats: {
+            where: dateFilter,
+            select: {
+              points: true,
+              statsData: true
+            },
+            orderBy: {
+              points: 'desc'
+            }
+          }
+        },
+        orderBy: {
+          userStats: {
+            points: 'desc'
+          }
+        },
+        skip,
+        take: pageSize
       }),
-      this.prisma.leaderboardEntry.count({
+      this.prisma.user.count({
         where: {
-          timeframe
+          userStats: {
+            some: {
+              createdAt: dateFilter
+            }
+          }
         }
       })
     ]);
 
-    const formattedEntries: LeaderboardEntry[] = entries.map(entry => ({
-      userId: entry.userId,
-      username: entry.user.name || 'Anonymous',
-      points: entry.points,
-      rank: entry.rank,
-      stats: entry.stats as StatsContent
+    const entries: LeaderboardEntry[] = users.map((user, index) => ({
+      position: skip + index + 1,
+      id: user.id,
+      name: user.name || 'Anonymous',
+      points: user.userStats?.[0]?.points || 0,
+      stats: user.userStats?.[0]?.statsData || {}
     }));
 
     const response: LeaderboardResponse = {
-      timeframe,
-      entries: formattedEntries,
-      totalUsers,
-      userRank: undefined // Will be set by the API route if user is authenticated
+      entries,
+      totalUsers: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / pageSize)
     };
 
     this.cache.put(cacheKey, response, LeaderboardService.CACHE_TTL);
     return response;
   }
 
-  async getLeaderboardWithOptions(options: LeaderboardOptions): Promise<LeaderboardResponse> {
-    const { timeframe = TimeFrame.ALL_TIME, page = 1, pageSize = 10 } = options;
-    return this.getLeaderboard(timeframe, page, pageSize);
-  }
-
-  private getDateFilter(timeframe: TimeFrame): { gte: Date } {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    switch (timeframe) {
-      case TimeFrame.DAILY:
-        return { gte: startOfDay };
-      
-      case TimeFrame.WEEKLY:
-        const startOfWeek = new Date(startOfDay);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        return { gte: startOfWeek };
-      
-      case TimeFrame.MONTHLY:
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { gte: startOfMonth };
-      
-      case TimeFrame.ALL_TIME:
-      default:
-        return { gte: new Date(0) }; // Beginning of time
-    }
-  }
-
-  async getUserRank(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
-    const cacheKey = `userRank:${userId}:${timeframe}`;
-    const cached = this.cache.get(cacheKey);
-    
-    if (cached !== null) {
-      return cached;
-    }
-
+  async getUserPosition(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
     const dateFilter = this.getDateFilter(timeframe);
-    const userPoints = await this.getUserPoints(userId);
 
-    if (userPoints === null) {
-      return null;
-    }
-
-    const userRank = await this.prisma.user.count({
+    const userWithRank = await this.prisma.user.findFirst({
       where: {
-        measurements: {
+        id: userId,
+        userStats: {
           some: {
             createdAt: dateFilter
           }
-        },
-        userStats: {
-          points: {
-            gt: userPoints
-          }
         }
-      }
-    });
-
-    this.cache.put(cacheKey, userRank + 1, LeaderboardService.CACHE_TTL);
-    return userRank + 1;
-  }
-
-  private async getUserPoints(userId: string): Promise<number | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      },
       select: {
         userStats: {
+          where: dateFilter,
           select: {
             points: true
           }
@@ -189,32 +154,77 @@ export class LeaderboardService {
       }
     });
 
-    return user?.userStats?.points ?? null;
+    if (!userWithRank?.userStats?.[0]) {
+      return null;
+    }
+
+    const position = await this.prisma.userStats.count({
+      where: {
+        points: {
+          gt: userWithRank.userStats[0].points
+        },
+        createdAt: dateFilter
+      }
+    });
+
+    return position + 1;
   }
 
-  async getUserStreaks(userId: string): Promise<{ current: number; longest: number }> {
-    const streaks = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        streakHistory: {
-          orderBy: {
-            updatedAt: Prisma.SortOrder.desc
-          },
-          take: 1,
-          select: {
-            current: true,
-            longest: true
+  async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const dateFilter = this.getDateFilter(timeframe);
+    return this.prisma.user.count({
+      where: {
+        userStats: {
+          some: {
+            createdAt: dateFilter
           }
         }
       }
     });
+  }
 
-    const latestStreak = streaks?.streakHistory[0];
-    return {
-      current: latestStreak?.current ?? 0,
-      longest: latestStreak?.longest ?? 0
-    };
+  async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const dateFilter = this.getDateFilter(timeframe);
+    const result = await this.prisma.userStats.aggregate({
+      where: dateFilter,
+      _sum: {
+        totalMeasurements: true
+      }
+    });
+    return result._sum.totalMeasurements || 0;
+  }
+
+  private getDateFilter(timeframe: TimeFrame): Prisma.UserStatsWhereInput {
+    const now = new Date();
+    switch (timeframe) {
+      case TimeFrame.DAILY:
+        return {
+          createdAt: {
+            gte: new Date(now.setHours(0, 0, 0, 0))
+          }
+        };
+      case TimeFrame.WEEKLY:
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        return {
+          createdAt: {
+            gte: weekStart
+          }
+        };
+      case TimeFrame.MONTHLY:
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        return {
+          createdAt: {
+            gte: monthStart
+          }
+        };
+      case TimeFrame.ALL_TIME:
+      default:
+        return {};
+    }
   }
 }
 
+// Export singleton instance
 export const leaderboardService = new LeaderboardService();
