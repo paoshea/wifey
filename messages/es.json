@@ -668,14 +668,20 @@
       "day": "Hoy",
       "week": "Esta Semana",
       "month": "Este Mes",
-      "year": "Este Año"
+      "year": "Este Año",
+      "daily": "Hoy",
+      "weekly": "Esta Semana",
+      "monthly": "Este Mes",
+      "allTime": "Todo el Tiempo"
     },
     "stats": {
       "title": "Tus Estadísticas",
       "points": "Puntos",
       "rank": "Posición",
       "contributions": "Contribuciones",
-      "streak": "Racha Actual"
+      "streak": "Racha Actual",
+      "totalUsers": "Total de Usuarios",
+      "totalContributions": "Total de Contribuciones"
     },
     "rank": "Posición",
     "user": "Usuario",

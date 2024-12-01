@@ -758,14 +758,20 @@
       "day": "Today",
       "week": "This Week",
       "month": "This Month",
-      "year": "This Year"
+      "year": "This Year",
+      "daily": "Today",
+      "weekly": "This Week",
+      "monthly": "This Month",
+      "allTime": "All Time"
     },
     "stats": {
       "title": "Your Stats",
       "points": "Points",
       "rank": "Rank",
       "contributions": "Contributions",
-      "streak": "Current Streak"
+      "streak": "Current Streak",
+      "totalUsers": "Total Users",
+      "totalContributions": "Total Contributions"
     },
     "rank": "Rank",
     "user": "User",
