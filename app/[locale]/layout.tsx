@@ -46,13 +46,14 @@ export default async function LocaleLayout({
   const pathname = headersList.get('x-pathname') || '/';
 
   return (
-    <html lang={locale} className={`${inter.variable} font-sans antialiased`}>
+    <html lang={locale} className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className="min-h-screen bg-background">
-        <LocaleClientLayout locale={locale as SupportedLocale} messages={messages}>
+      <body>
+        <LocaleClientLayout messages={messages} locale={locale} pathname={pathname}>
           {children}
         </LocaleClientLayout>
       </body>

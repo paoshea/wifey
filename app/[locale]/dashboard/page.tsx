@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import { StreakCard } from '@/components/gamification/streak-card';
 import { AchievementsCard } from '@/components/gamification/achievements-card';
 import { StatsCard } from '@/components/gamification/stats-card';
 import { useGamification } from '@/hooks/use-gamification';
+import { Progress } from '@/components/ui/progress';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard');
