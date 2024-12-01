@@ -26,6 +26,11 @@ export function MainHeader() {
 
   const navItems = [
     {
+      title: t('dashboard'),
+      href: '/dashboard',
+      icon: <Icons.dashboard className="w-4 h-4" />,
+    },
+    {
       title: t('cellular'),
       href: '/coverage',
       icon: <Icons.signal className="w-4 h-4" />,
