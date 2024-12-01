@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { MapPin, Wifi, Signal, Search } from 'lucide-react';
+import { Signal, Wifi } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import MapView, { MapPoint } from '@/components/map/map-view';
+import MapView from '@/components/map/map-view';
+import type { MapPoint } from '@/components/map/map-view';
 import { MapSearch } from '@/components/map/map-search';
 
 export default function ExplorePage() {
@@ -33,11 +34,12 @@ export default function ExplorePage() {
     {
       id: '2',
       type: 'coverage',
-      name: 'High Coverage Zone',
+      name: 'Strong Signal Spot',
       coordinates: [9.9290, -84.0920] as [number, number],
       details: {
-        strength: 'Excellent',
-        provider: 'Movistar'
+        strength: '4G',
+        provider: 'Movistar',
+        quality: 'Excellent'
       }
     }
   ];
@@ -45,6 +47,21 @@ export default function ExplorePage() {
   const handlePointSelect = (point: MapPoint) => {
     console.log('Selected point:', point);
   };
+
+  const handleRadiusChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newRadius = parseInt(e.target.value);
+    setSearchRadius(newRadius);
+    // Adjust zoom level based on radius
+    const newZoom = Math.max(15 - Math.log2(newRadius), 10);
+    setMapZoom(Math.round(newZoom));
+  }, []);
+
+  const handleLocationFound = useCallback(({ lat, lng }: { lat: number; lng: number }) => {
+    setMapCenter([lat, lng]);
+    // Adjust zoom based on current search radius
+    const newZoom = Math.max(15 - Math.log2(searchRadius), 10);
+    setMapZoom(Math.round(newZoom));
+  }, [searchRadius]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8">
@@ -61,10 +78,7 @@ export default function ExplorePage() {
               {t('description')}
             </p>
             <MapSearch 
-              onLocationFound={({ lat, lng }) => {
-                setMapCenter([lat, lng]);
-                setMapZoom(15);
-              }}
+              onLocationFound={handleLocationFound}
               searchRadius={searchRadius}
             />
 
@@ -95,11 +109,30 @@ export default function ExplorePage() {
                 {t('wifiPoints')}
               </Button>
             </div>
+
+            <div className="w-full max-w-sm space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>0 km</span>
+                <span>{searchRadius} km</span>
+                <span>10 km</span>
+              </div>
+              <Input
+                type="range"
+                min="0"
+                max="10"
+                value={searchRadius}
+                onChange={handleRadiusChange}
+                className="w-full"
+              />
+              <p className="text-sm text-gray-500 text-center">
+                {t('searchRadius', { radius: searchRadius })}
+              </p>
+            </div>
           </div>
         </motion.div>
 
-        <div className="mt-8">
-          <Card className="p-6">
+        <Card className="p-6">
+          <div className="h-[600px] w-full">
             <MapView
               points={samplePoints}
               activeLayer={activeLayer}
@@ -107,8 +140,8 @@ export default function ExplorePage() {
               zoom={mapZoom}
               onPointSelect={handlePointSelect}
             />
-          </Card>
-        </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

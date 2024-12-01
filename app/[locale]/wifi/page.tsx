@@ -3,10 +3,8 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { MapPin, Wifi, Search } from 'lucide-react';
+import { Wifi } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import MapView from '@/components/map/map-view';
 import type { MapPoint } from '@/components/map/map-view';
 import { AddPoint } from '@/components/points/add-point';
@@ -74,90 +72,19 @@ export default function WifiPage() {
               searchRadius={searchRadius}
             />
           </div>
-
-          <div className="max-w-2xl mx-auto flex gap-4">
-            <Input
-              placeholder={t('search.placeholder')}
-              className="h-12"
-            />
-            <Button size="lg" className="px-8">
-              <Search className="w-5 h-5 mr-2" />
-              {t('search.button')}
-            </Button>
-          </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="p-6 lg:col-span-2">
-            <h2 className="text-2xl font-semibold mb-4">{t('map.title')}</h2>
-            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-              <MapView
-                points={samplePoints}
-                activeLayer="wifi"
-                center={mapCenter}
-                zoom={mapZoom}
-              />
-            </div>
-          </Card>
-
-          <div className="space-y-8">
-            <Card className="p-6">
-              <h2 className="text-2xl font-semibold mb-4">{t('filters.title')}</h2>
-              <div className="space-y-4">
-                <h3 className="font-medium">{t('filters.type.title')}</h3>
-                <div className="space-y-2">
-                  {['Free', 'Restricted', 'Public'].map((type) => (
-                    <div key={type} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={type}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <label htmlFor={type} className="ml-2 block text-sm text-gray-600">
-                        {type}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                <hr className="my-4" />
-                <div className="space-y-4">
-                  <h3 className="font-medium">{t('filters.range.title')}</h3>
-                  <Input
-                    type="range"
-                    min="0"
-                    max="10"
-                    value={searchRadius}
-                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>0 km</span>
-                    <span>{searchRadius} km</span>
-                    <span>10 km</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h2 className="text-2xl font-semibold mb-4">{t('stats.title')}</h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('stats.total')}</span>
-                  <span className="font-semibold">1,234</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('stats.today')}</span>
-                  <span className="font-semibold">28</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">{t('stats.free')}</span>
-                  <span className="font-semibold">843</span>
-                </div>
-              </div>
-            </Card>
+        <Card className="p-6">
+          <div className="h-[600px] w-full">
+            <MapView
+              points={samplePoints}
+              activeLayer="wifi"
+              center={mapCenter}
+              zoom={mapZoom}
+              onPointSelect={handlePointSelect}
+            />
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

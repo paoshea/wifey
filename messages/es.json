@@ -12,7 +12,8 @@
     "reportCoverage": "Reporte Rápido",
     "settings": "Configuración",
     "profile": "Perfil",
-    "signOut": "Cerrar Sesión"
+    "signOut": "Cerrar Sesión",
+    "about": "Acerca de"
   },
   "home": {
     "title": "Encuentra Cobertura",
@@ -180,7 +181,7 @@
     "search": {
       "placeholder": "Buscar una ubicación...",
       "button": "Buscar",
-      "error": "Error de Búsqueda",
+      "error": "Error al encontrar la ubicación",
       "emptyQuery": "Por favor ingresa una ubicación para buscar",
       "noResults": "No se encontraron ubicaciones para tu búsqueda",
       "failed": "Error al buscar ubicación. Por favor intenta de nuevo.",
@@ -192,6 +193,11 @@
       "found": "¡Ubicación encontrada!",
       "centered": "Mapa centrado en tu ubicación actual",
       "error": "No se pudo encontrar tu ubicación. Por favor verifica los permisos del navegador."
+    },
+    "layers": {
+      "all": "Todos los Puntos",
+      "coverage": "Puntos de Cobertura",
+      "wifi": "Puntos WiFi"
     }
   },
   "onboarding": {
@@ -392,26 +398,23 @@
     "settingsError": "No se pudo guardar la configuración. Por favor, inténtalo de nuevo."
   },
   "profile": {
-    "title": "Perfil",
-    "subtitle": "Gestiona tu perfil y contribuciones",
-    "personalInfo": {
-      "title": "Información Personal",
-      "name": "Nombre",
-      "email": "Correo Electrónico",
-      "location": "Ubicación",
-      "bio": "Biografía"
+    "title": "Completa tu Perfil",
+    "description": "Por favor proporciona tus datos para completar tu registro",
+    "fields": {
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "phoneNumber": "Número de Teléfono",
+      "location": "Ubicación"
     },
-    "stats": {
-      "title": "Estadísticas",
-      "pointsReported": "Puntos Reportados",
-      "pointsVerified": "Puntos Verificados",
-      "totalContributions": "Contribuciones Totales",
-      "memberSince": "Miembro desde"
+    "submit": "Completar Registro",
+    "submitting": "Completando...",
+    "success": {
+      "message": "¡Perfil Completado!",
+      "description": "Tu perfil ha sido actualizado exitosamente. Redirigiendo al panel..."
     },
-    "activity": {
-      "title": "Actividad Reciente",
-      "noActivity": "No hay actividad reciente",
-      "viewAll": "Ver Todo"
+    "error": {
+      "message": "Error en el Registro",
+      "description": "Hubo un error al completar tu perfil. Por favor intenta de nuevo."
     }
   },
   "dashboard": {
@@ -481,6 +484,14 @@
       "error": "Error al añadir punto WiFi"
     }
   },
+  "explore": {
+    "title": "Explorar Cobertura",
+    "description": "Encuentra puntos de WiFi y cobertura celular cerca de ti",
+    "allPoints": "Todos los Puntos",
+    "coveragePoints": "Puntos de Cobertura",
+    "wifiPoints": "Puntos WiFi",
+    "searchRadius": "Buscar en un radio de {radius} km"
+  },
   "navigation": {
     "home": "Inicio",
     "dashboard": "Panel",
@@ -494,7 +505,8 @@
     "reportCoverage": "Reporte Rápido",
     "settings": "Configuración",
     "profile": "Perfil",
-    "signOut": "Cerrar Sesión"
+    "signOut": "Cerrar Sesión",
+    "about": "Acerca de"
   },
   "points": {
     "addNew": "Agregar Nuevo Punto",

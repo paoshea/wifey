@@ -16,6 +16,7 @@
     "signIn": "Sign In",
     "getStarted": "Get Started",
     "explore": "Explore",
+    "about": "About",
     "report": {
       "button": "Make a Report",
       "title": "Report Coverage Point",
@@ -472,7 +473,10 @@
   },
   "explore": {
     "title": "Explore Coverage",
-    "subtitle": "Find the best connection points around you",
+    "description": "Find WiFi and cellular coverage points near you",
+    "allPoints": "All Points",
+    "coveragePoints": "Coverage Points",
+    "wifiPoints": "WiFi Points",
     "search": {
       "placeholder": "Search locations...",
       "button": "Search"
@@ -507,7 +511,8 @@
       "today": "Added Today",
       "coverage": "Area Coverage",
       "contributors": "Contributors"
-    }
+    },
+    "searchRadius": "Search within {radius} km radius"
   },
   "nav": {
     "home": "Home",
@@ -613,5 +618,38 @@
     "notes": "Additional Notes",
     "notesPlaceholder": "Any additional information...",
     "submit": "Submit Point"
+  },
+  "map": {
+    "search": {
+      "placeholder": "Search for a location...",
+      "button": "Search",
+      "error": "Error finding location",
+      "success": "Location found: {location}"
+    },
+    "layers": {
+      "all": "All Points",
+      "coverage": "Coverage Points",
+      "wifi": "WiFi Points"
+    }
+  },
+  "profile": {
+    "title": "Complete Your Profile",
+    "description": "Please provide your details to complete your registration",
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "phoneNumber": "Phone Number",
+      "location": "Location"
+    },
+    "submit": "Complete Registration",
+    "submitting": "Completing...",
+    "success": {
+      "message": "Profile Completed!",
+      "description": "Your profile has been successfully updated. Redirecting to dashboard..."
+    },
+    "error": {
+      "message": "Registration Failed",
+      "description": "There was an error completing your profile. Please try again."
+    }
   }
 }

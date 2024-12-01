@@ -10,12 +10,14 @@ import { toast } from '@/components/ui/use-toast';
 interface MapSearchProps {
   onLocationFound: (location: { lat: number; lng: number; name: string }) => void;
   searchRadius?: number;
+  onRadiusChange?: (radius: number) => void;
 }
 
-export function MapSearch({ onLocationFound, searchRadius = 5 }: MapSearchProps) {
+export function MapSearch({ onLocationFound, searchRadius = 5, onRadiusChange }: MapSearchProps) {
   const t = useTranslations('map');
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [radius, setRadius] = useState(searchRadius);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -31,7 +33,7 @@ export function MapSearch({ onLocationFound, searchRadius = 5 }: MapSearchProps)
     try {
       // Using Nominatim for geocoding (OpenStreetMap's geocoding service)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
       const data = await response.json();
 
@@ -71,6 +73,14 @@ export function MapSearch({ onLocationFound, searchRadius = 5 }: MapSearchProps)
     }
   };
 
+  const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newRadius = parseInt(e.target.value, 10);
+    setRadius(newRadius);
+    if (onRadiusChange) {
+      onRadiusChange(newRadius);
+    }
+  };
+
   return (
     <div className="flex gap-4 w-full max-w-2xl">
       <Input
@@ -80,6 +90,13 @@ export function MapSearch({ onLocationFound, searchRadius = 5 }: MapSearchProps)
         placeholder={t('search.placeholder')}
         className="h-12"
         disabled={isSearching}
+      />
+      <Input
+        type="number"
+        value={radius}
+        onChange={handleRadiusChange}
+        placeholder="Search Radius"
+        className="h-12"
       />
       <Button
         size="lg"
