@@ -289,7 +289,39 @@
     "invalidCredentials": "Invalid email or password",
     "privacyNotice": "By signing in, you agree to our Terms of Service and Privacy Policy",
     "noAccount": "Don't have an account?",
-    "signUp": "Sign up"
+    "signUp": "Sign up",
+    "signup": {
+      "title": "Create an Account",
+      "description": "Join our community of power users",
+      "orContinueWith": "or continue with",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "username": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "createAccount": "Create Account",
+      "byClickingAgree": "By clicking continue, you agree to our",
+      "terms": "Terms of Service",
+      "and": "and",
+      "privacy": "Privacy Policy",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "success": {
+      "signupTitle": "Account Created!",
+      "signupDesc": "Welcome to the community! You're now logged in."
+    },
+    "error": {
+      "passwordMismatch": "Passwords don't match",
+      "passwordMismatchDesc": "Please make sure your passwords match",
+      "signupFailed": "Registration failed",
+      "unknownError": "An unknown error occurred",
+      "oauthFailed": "OAuth sign in failed",
+      "tryAgain": "Please try again"
+    }
   },
   "Auth": {
     "welcomeBack": "Welcome back",

@@ -336,7 +336,39 @@
     "invalidCredentials": "Correo o contraseña inválidos",
     "privacyNotice": "Al iniciar sesión, aceptas nuestros Términos de Servicio y Política de Privacidad",
     "noAccount": "¿No tienes una cuenta?",
-    "signUp": "Regístrate"
+    "signUp": "Regístrate",
+    "signup": {
+      "title": "Crear una Cuenta",
+      "description": "Únete a nuestra comunidad de usuarios power",
+      "orContinueWith": "o continuar con",
+      "email": "Correo electrónico",
+      "emailPlaceholder": "Ingresa tu correo electrónico",
+      "username": "Nombre de usuario",
+      "usernamePlaceholder": "Elige un nombre de usuario",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Crea una contraseña",
+      "confirmPassword": "Confirmar Contraseña",
+      "confirmPasswordPlaceholder": "Confirma tu contraseña",
+      "createAccount": "Crear Cuenta",
+      "byClickingAgree": "Al hacer clic en continuar, aceptas nuestros",
+      "terms": "Términos de Servicio",
+      "and": "y",
+      "privacy": "Política de Privacidad",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Iniciar sesión"
+    },
+    "success": {
+      "signupTitle": "¡Cuenta Creada!",
+      "signupDesc": "¡Bienvenido a la comunidad! Has iniciado sesión."
+    },
+    "error": {
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "passwordMismatchDesc": "Por favor, asegúrate de que las contraseñas coincidan",
+      "signupFailed": "Error en el registro",
+      "unknownError": "Ocurrió un error desconocido",
+      "oauthFailed": "Error en el inicio de sesión con OAuth",
+      "tryAgain": "Por favor, inténtalo de nuevo"
+    }
   },
   "common": {
     "loading": "Cargando...",
