@@ -760,5 +760,41 @@
       "next": "Next",
       "pageInfo": "Page {current} of {total}"
     }
+  },
+  "gamification": {
+    "stats": {
+      "title": "Your Stats",
+      "points": "Total Points",
+      "rank": "Global Rank",
+      "contributions": "Contributions",
+      "level": "Current Level",
+      "levelLabel": "Level"
+    },
+    "streak": {
+      "title": "Daily Streak",
+      "current": "Current Streak",
+      "longest": "Longest Streak",
+      "days": "days",
+      "nextMilestone": "Next Milestone",
+      "progress": "Progress"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "unlocked": "Unlocked",
+      "locked": "Locked",
+      "progress": "Progress",
+      "description": {
+        "firstReport": "Submit your first coverage report",
+        "tenReports": "Submit 10 coverage reports",
+        "fiftyReports": "Submit 50 coverage reports",
+        "hundredReports": "Submit 100 coverage reports",
+        "threeStreak": "Maintain a 3-day streak",
+        "sevenStreak": "Maintain a 7-day streak",
+        "thirtyStreak": "Maintain a 30-day streak",
+        "firstWifi": "Report your first WiFi hotspot",
+        "firstCellular": "Report your first cellular coverage point",
+        "communityHelper": "Help 10 users find coverage"
+      }
+    }
   }
 }

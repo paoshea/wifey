@@ -407,24 +407,38 @@
     "unlocked": "Desbloqueado",
     "locked": "Bloqueado",
     "streak": {
-      "title": "Racha de Contribuciones",
+      "title": "Racha Diaria",
       "current": "Racha Actual",
       "longest": "Racha más Larga",
       "days": "días",
-      "nextMilestone": "Siguiente meta: {days} días"
+      "nextMilestone": "Siguiente Meta",
+      "progress": "Progreso"
     },
     "achievements": {
       "title": "Logros",
       "unlocked": "Desbloqueado",
-      "progress": "{current}/{total} completado"
+      "locked": "Bloqueado",
+      "progress": "Progreso",
+      "description": {
+        "firstReport": "Envía tu primer reporte de cobertura",
+        "tenReports": "Envía 10 reportes de cobertura",
+        "fiftyReports": "Envía 50 reportes de cobertura",
+        "hundredReports": "Envía 100 reportes de cobertura",
+        "threeStreak": "Mantén una racha de 3 días",
+        "sevenStreak": "Mantén una racha de 7 días",
+        "thirtyStreak": "Mantén una racha de 30 días",
+        "firstWifi": "Reporta tu primer punto WiFi",
+        "firstCellular": "Reporta tu primer punto de cobertura celular",
+        "communityHelper": "Ayuda a 10 usuarios a encontrar cobertura"
+      }
     },
     "stats": {
       "title": "Tus Estadísticas",
       "points": "Puntos Totales",
       "rank": "Rango Global",
       "contributions": "Contribuciones",
-      "level": "Nivel",
-      "levelLabel": "NIV"
+      "level": "Nivel Actual",
+      "levelLabel": "Nivel"
     }
   },
   "settings": {
