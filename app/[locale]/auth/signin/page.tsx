@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,32 +15,24 @@ export default function SignInPage() {
   const t = useTranslations('auth');
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
-  
-  const callbackUrl = searchParams.get('callbackUrl') || `/${locale}/dashboard`;
 
   const handleSignIn = async (provider: string) => {
     try {
       setIsLoading(true);
       const result = await signIn(provider, {
-        callbackUrl,
-        redirect: false,
+        redirect: true,
+        callbackUrl: `/${locale}/dashboard`,
       });
-
+      
+      // This code will only run if redirect: true fails
       if (result?.error) {
         toast({
           title: t('error'),
           description: t('signInError'),
           variant: 'destructive',
         });
-      } else if (result?.ok) {
-        toast({
-          title: t('success'),
-          description: t('signInSuccess'),
-        });
-        router.push(callbackUrl);
       }
     } catch (error) {
       toast({

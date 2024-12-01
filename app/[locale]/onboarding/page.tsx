@@ -6,6 +6,10 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LucideWifi, MapPin, Navigation, Star, Mail, Phone, X, Signal, Share, Check } from 'lucide-react';
 import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
+import { Button } from '@/components/ui/button';
+import { Icons } from '@/components/ui/icons';
+import Logo from '@/components/ui/logo';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const OnboardingMap = dynamic(
@@ -455,139 +459,308 @@ export default function OnboardingPage({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Hero Section */}
-      {renderStep()}
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href={`/${locale}`} className="flex items-center gap-2">
+              <Logo width={32} height={32} />
+              <span className="font-semibold">Wifey</span>
+            </Link>
+          </div>
+          <nav className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/${locale}/auth/signin`}>
+                {t('navigation.signIn')}
+              </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href={`/${locale}/auth/signup`}>
+                {t('navigation.getStarted')}
+              </Link>
+            </Button>
+          </nav>
+        </div>
+      </header>
 
-      {/* Testimonials Section */}
-      <div ref={testimonialsRef} className="min-h-screen bg-gray-50 py-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="space-y-12"
-          >
-            <h2 className="text-4xl font-bold text-center text-gray-900">{t('testimonials.title')}</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, index) => (
+      {/* Main Content */}
+      <main className="flex-1">
+        <AnimatePresence mode="wait">
+          {currentStep === 'welcome' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-4xl w-full">
                 <motion.div
-                  key={index}
                   initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 }}
-                  className="bg-white p-6 rounded-xl shadow-lg"
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center space-y-6"
                 >
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                      ))}
+                  <h1 className="text-5xl font-bold text-gray-900">{t('welcome.title')}</h1>
+                  <p className="text-xl text-gray-600">{t('welcome.description')}</p>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={handleNext}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {t('welcome.getStarted')}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
+          {currentStep === 'coverage-intro' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-4xl w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('coverage.intro.title')}</h2>
+                    <p className="text-xl text-gray-600">{t('coverage.intro.description')}</p>
+                  </div>
+                  
+                  <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <MapPin className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{t('coverage.intro.step1.title')}</h3>
+                        <p className="text-gray-600">{t('coverage.intro.step1.description')}</p>
+                      </div>
                     </div>
-                    <p className="text-gray-600 italic">&ldquo;{testimonial.content}&rdquo;</p>
-                    <div>
-                      <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                      <p className="text-gray-500 text-sm">{testimonial.role}</p>
+                    
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <Signal className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{t('coverage.intro.step2.title')}</h3>
+                        <p className="text-gray-600">{t('coverage.intro.step2.description')}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0">
+                        <Share className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{t('coverage.intro.step3.title')}</h3>
+                        <p className="text-gray-600">{t('coverage.intro.step3.description')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={handleNext}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {t('coverage.intro.tryItOut')}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
+          {currentStep === 'coverage-demo' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-4xl w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('coverage.demo.title')}</h2>
+                    <p className="text-xl text-gray-600">{t('coverage.demo.description')}</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="aspect-video relative bg-gray-100 rounded-lg overflow-hidden">
+                      <OnboardingMap onLocationSelect={(lat, lng) => {
+                        console.log('Selected location:', lat, lng);
+                        // Here you can handle the selected location
+                      }} />
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t('coverage.demo.signalStrength')}
+                        </label>
+                        <div className="flex space-x-2">
+                          {[1, 2, 3, 4, 5].map((strength) => (
+                            <button
+                              key={strength}
+                              className="p-2 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+                            >
+                              <Signal className={`w-5 h-5 ${strength <= 3 ? 'text-gray-400' : 'text-blue-600'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t('coverage.demo.carrier')}
+                        </label>
+                        <select className="w-full rounded-lg border border-gray-200 p-2">
+                          <option value="">{t('coverage.demo.selectCarrier')}</option>
+                          <option value="verizon">Verizon</option>
+                          <option value="att">AT&T</option>
+                          <option value="tmobile">T-Mobile</option>
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          // Handle coverage spot submission
+                          handleNext();
+                        }}
+                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        {t('coverage.demo.submit')}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Contact Section */}
-      <div ref={contactRef} className="min-h-screen bg-white py-20">
-        <div className="max-w-4xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="space-y-12"
-          >
-            <h2 className="text-4xl font-bold text-center text-gray-900">{t('contact.title')}</h2>
-            <div className="grid md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <Mail className="w-6 h-6 text-blue-600" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{t('contact.email')}</h3>
-                    <p className="text-gray-600">support@wifeyapp.com</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Phone className="w-6 h-6 text-blue-600" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{t('contact.phone')}</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
-                  </div>
-                </div>
               </div>
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('contact.form.name')}</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('contact.form.email')}</label>
-                  <input
-                    type="email"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('contact.form.message')}</label>
-                  <textarea
-                    rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {t('contact.form.submit')}
-                </button>
-              </form>
             </div>
-          </motion.div>
-        </div>
-      </div>
+          )}
+          {currentStep === 'features' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-4xl w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('features.title')}</h2>
+                    <p className="text-xl text-gray-600">{t('features.description')}</p>
+                  </div>
 
-      {/* Fixed Navigation Dots */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 space-y-4">
-        {[featuresRef, testimonialsRef, contactRef].map((ref, index) => (
-          <button
-            key={index}
-            onClick={() => scrollToSection(ref)}
-            className="w-3 h-3 rounded-full bg-blue-600 opacity-50 hover:opacity-100 transition-opacity"
-          />
-        ))}
-      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Object.entries(featureDetails).map(([key, feature]) => (
+                      <motion.div
+                        key={key}
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-white rounded-xl shadow-lg p-6"
+                      >
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-r ${feature.color} mb-4`}>
+                          {feature.icon}
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                        <p className="text-gray-600 mb-4">{feature.description}</p>
+                        <ul className="space-y-2">
+                          {feature.benefits.map((benefit, index) => (
+                            <li key={index} className="flex items-center text-sm text-gray-600">
+                              <Check className="w-4 h-4 text-green-500 mr-2" />
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                      </motion.div>
+                    ))}
+                  </div>
 
-      {/* Language Selection */}
-      <div className="fixed top-4 right-4 space-x-4">
-        <button
-          onClick={() => router.push('/en/map')}
-          className="text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          EN
-        </button>
-        <button
-          onClick={() => router.push('/es/map')}
-          className="text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          ES
-        </button>
-      </div>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      onClick={handleNext}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {t('features.continue')}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
+          {currentStep === 'registration' && (
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <div className="max-w-4xl w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('registration.title')}</h2>
+                    <p className="text-xl text-gray-600">{t('registration.description')}</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <form className="space-y-6" onSubmit={handleRegistration}>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('registration.nameLabel')}
+                          </label>
+                          <input
+                            type="text"
+                            value={userDetails.name}
+                            onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 p-2"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('registration.emailLabel')}
+                          </label>
+                          <input
+                            type="email"
+                            value={userDetails.email}
+                            onChange={(e) => setUserDetails({ ...userDetails, email: e.target.value })}
+                            className="w-full rounded-lg border border-gray-200 p-2"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {t('registration.interests')}
+                          </label>
+                          <div className="space-y-2">
+                            {['wifi', 'coverage', 'navigation'].map((interest) => (
+                              <label key={interest} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={userDetails.interests.includes(interest)}
+                                  onChange={(e) => {
+                                    const newInterests = e.target.checked
+                                      ? [...userDetails.interests, interest]
+                                      : userDetails.interests.filter(i => i !== interest);
+                                    setUserDetails({ ...userDetails, interests: newInterests });
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 mr-2"
+                                />
+                                {t(`registration.interestOptions.${interest}`)}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center space-x-4">
+                        <button
+                          type="submit"
+                          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          {t('registration.submit')}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+      </main>
     </div>
   );
 }

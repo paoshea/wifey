@@ -53,5 +53,14 @@ export const authOptions: AuthOptions = {
         },
       };
     },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to dashboard after sign in
+      if (url.startsWith(baseUrl)) {
+        // Get the user's locale from the URL
+        const locale = url.split('/')[3] || 'en';
+        return `${baseUrl}/${locale}/dashboard`;
+      }
+      return url;
+    },
   },
 };

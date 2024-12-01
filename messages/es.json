@@ -12,17 +12,8 @@
     "reportCoverage": "Reporte Rápido",
     "profile": "Perfil",
     "signOut": "Cerrar Sesión",
-    "report": {
-      "button": "Hacer un Reporte",
-      "title": "Reportar Punto de Cobertura",
-      "description": "Ayuda a la comunidad marcando un punto con buena cobertura o WiFi.",
-      "cellular": "Cobertura Celular",
-      "wifi": "Punto de WiFi",
-      "submit": "Marcar este Punto",
-      "success": "¡Gracias por tu reporte!",
-      "appreciationMessage": "Tu contribución ayuda a mejorar nuestro mapa de cobertura.",
-      "joinMessage": "¡Únete a nuestra comunidad para seguir tus contribuciones!"
-    }
+    "signIn": "Iniciar Sesión",
+    "getStarted": "Comenzar"
   },
   "home": {
     "title": "Encuentra Cobertura",
@@ -187,125 +178,89 @@
     "mapImplementation": "Implementación del mapa próximamente..."
   },
   "onboarding": {
+    "navigation": {
+      "signIn": "Iniciar Sesión",
+      "getStarted": "Comenzar"
+    },
     "welcome": {
       "title": "Bienvenido a Wifey",
-      "description": "Tu compañero de WiFi y cobertura impulsado por la comunidad",
+      "description": "Únete a nuestra comunidad y ayuda a mapear la cobertura de red en todo el mundo.",
       "getStarted": "Comenzar"
     },
     "coverage": {
       "intro": {
-        "title": "Agregar Puntos de Cobertura",
-        "description": "Ayuda a la comunidad marcando lugares con buena cobertura",
+        "title": "Mapear Cobertura de Red",
+        "description": "Ayuda a otros a encontrar conexiones confiables mapeando la cobertura en tu área.",
         "step1": {
-          "title": "Seleccionar Ubicación",
-          "description": "Toca el mapa para marcar un punto con buena cobertura"
+          "title": "Compartir Ubicación",
+          "description": "Marca lugares con buena cobertura de red"
         },
         "step2": {
           "title": "Calificar Señal",
-          "description": "Califica la intensidad de la señal en tu ubicación"
+          "description": "Califica la fuerza de la señal y la calidad de conexión"
         },
         "step3": {
-          "title": "Compartir Detalles",
-          "description": "Agrega información del operador y envía"
+          "title": "Ayudar a Otros",
+          "description": "Tus contribuciones ayudan a otros a encontrar conexiones confiables"
         },
         "tryItOut": "Pruébalo"
       },
       "demo": {
-        "title": "Agrega Tu Primer Punto de Cobertura",
-        "description": "Practiquemos agregando un punto de cobertura al mapa",
-        "tapToMark": "Toca cualquier lugar en el mapa para marcar un punto",
-        "signalStrength": "Intensidad de la Señal",
-        "carrier": "Operador",
+        "title": "Prueba Nuestro Mapeador de Cobertura",
+        "description": "Mira lo fácil que es contribuir a nuestro mapa de cobertura.",
+        "signalStrength": "Fuerza de la Señal",
+        "carrier": "Operador de Red",
         "selectCarrier": "Selecciona tu operador",
-        "submit": "Enviar Punto de Cobertura",
-        "continue": "Continuar a Características"
+        "submit": "Enviar Punto de Cobertura"
       }
     },
-    "joinTribe": {
-      "title": "Únete a la Tribu Wifey",
-      "subtitle": "Sé parte de una comunidad global",
-      "description": "Conéctate con miles de personas que comparten tu pasión por mantenerse conectados",
-      "featuredNow": "Destacado Ahora",
-      "stats": {
-        "members": "10K+ Miembros",
-        "cities": "50+ Ciudades",
-        "experiences": "1M+ Experiencias Compartidas"
-      },
-      "benefits": {
-        "connect": {
-          "title": "Conecta",
-          "description": "Conoce a personas con intereses similares"
-        },
-        "share": {
-          "title": "Comparte",
-          "description": "Intercambia experiencias valiosas"
-        },
-        "achieve": {
-          "title": "Logra",
-          "description": "Gana insignias y clasificaciones"
-        },
-        "grow": {
-          "title": "Crece",
-          "description": "Aprende de la comunidad"
+    "features": {
+      "title": "Funciones Potentes",
+      "description": "Todo lo que necesitas para encontrar y compartir conexiones confiables.",
+      "wifi": {
+        "title": "Puntos WiFi",
+        "description": "Encuentra y comparte ubicaciones de WiFi público",
+        "benefits": {
+          "speed": "Pruebas de velocidad en tiempo real",
+          "reliability": "Calificaciones de confiabilidad",
+          "security": "Información de seguridad",
+          "updates": "Actualizaciones regulares"
         }
       },
-      "joinButton": "Únete a la Tribu",
-      "disclaimer": "Al unirte, aceptas nuestros términos y condiciones",
-      "activeMembers": "Miembros Activos",
-      "activeCities": "Ciudades Activas"
-    },
-    "coverageIntro": {
-      "title": "Encuentra la Mejor Cobertura",
-      "description": "Descubre puntos de cobertura celular y WiFi cerca de ti",
-      "startExploring": "Comenzar a Explorar"
-    },
-    "features": {
-      "title": "Características Principales",
-      "description": "Descubre todas las herramientas que tenemos para mantenerte conectado",
-      "wifi": {
-        "title": "Conexión WiFi",
-        "speed": "Velocidades de conexión optimizadas",
-        "reliability": "Conexiones confiables y estables",
-        "security": "Seguridad y privacidad mejoradas",
-        "updates": "Actualizaciones en tiempo real"
-      },
       "coverage": {
-        "title": "Mapa de Cobertura",
-        "realtime": "Datos de cobertura en tiempo real",
-        "accuracy": "Ubicaciones precisas y verificadas",
-        "predictions": "Predicciones de calidad de señal",
-        "alerts": "Alertas de zonas sin cobertura"
+        "title": "Cobertura de Red",
+        "description": "Rastrea la cobertura celular y la fuerza de la señal",
+        "benefits": {
+          "realtime": "Datos de cobertura en tiempo real",
+          "accuracy": "Mapeo preciso de señal",
+          "predictions": "Predicciones de cobertura",
+          "alerts": "Alertas de señal baja"
+        }
       },
       "navigation": {
         "title": "Navegación Inteligente",
-        "routing": "Rutas optimizadas a puntos de conexión",
-        "offline": "Navegación sin conexión",
-        "alternatives": "Rutas alternativas",
-        "eta": "Tiempos de llegada estimados"
-      }
+        "description": "Encuentra la mejor ruta con conectividad confiable",
+        "benefits": {
+          "routing": "Rutas con conciencia de cobertura",
+          "offline": "Mapas sin conexión",
+          "alternatives": "Rutas alternativas",
+          "eta": "ETAs precisos"
+        }
+      },
+      "continue": "Continuar"
     },
-    "location": {
-      "title": "Habilitar Ubicación",
-      "description": "Permite el acceso a la ubicación para encontrar la mejor cobertura cerca de ti",
-      "next": "Siguiente"
-    },
-    "language": {
-      "title": "Selecciona tu Idioma",
-      "description": "Elige el idioma que prefieras para la aplicación"
-    },
-    "testimonials": {
-      "title": "Lo que dicen nuestros usuarios"
-    },
-    "contact": {
-      "title": "Contáctanos",
-      "email": "Correo electrónico",
-      "phone": "Teléfono",
-      "form": {
-        "name": "Nombre",
-        "email": "Correo electrónico",
-        "message": "Mensaje",
-        "submit": "Enviar"
-      }
+    "registration": {
+      "title": "Completa Tu Perfil",
+      "description": "Cuéntanos un poco sobre ti para comenzar.",
+      "nameLabel": "Tu Nombre",
+      "emailLabel": "Correo Electrónico",
+      "interests": "¿Qué te interesa más?",
+      "interestOptions": {
+        "wifi": "Encontrar Puntos WiFi",
+        "coverage": "Rastrear Cobertura de Red",
+        "navigation": "Navegación con Cobertura"
+      },
+      "submit": "Completar Registro"
     }
   },
   "testimonials": {
@@ -444,24 +399,30 @@
   },
   "dashboard": {
     "title": "Panel de Control",
-    "subtitle": "Vista general de tu actividad y cobertura",
-    "overview": {
-      "title": "Resumen",
-      "totalPoints": "Puntos Totales",
-      "activePoints": "Puntos Activos",
-      "recentActivity": "Actividad Reciente"
+    "welcome": "Bienvenido, {name}",
+    "user": "Usuario",
+    "settings": "Configuración",
+    "cellularTitle": "Cobertura Celular",
+    "cellularDescription": "Ver y contribuir a los datos de cobertura celular en tu área.",
+    "wifiTitle": "Puntos WiFi",
+    "wifiDescription": "Encuentra y comparte puntos de WiFi públicos cerca de ti.",
+    "nearbyTitle": "Redes Cercanas",
+    "nearbyDescription": "Descubre redes en tu vecindario y su rendimiento.",
+    "viewCoverage": "Ver Mapa de Cobertura",
+    "findWifi": "Buscar WiFi",
+    "exploreNearby": "Explorar Cercanías",
+    "stats": {
+      "wifiSpots": "{count} puntos WiFi cercanos",
+      "coverageAreas": "{count} áreas de cobertura"
     },
-    "coverage": {
-      "title": "Cobertura",
-      "quality": "Calidad de Señal",
-      "strength": "Fuerza de Señal",
-      "nearby": "Puntos Cercanos"
-    },
-    "contributions": {
-      "title": "Contribuciones",
-      "points": "Puntos",
-      "verifications": "Verificaciones",
-      "impact": "Impacto"
+    "notifications": {
+      "title": "Notificaciones",
+      "newCoverage": "Nueva Área de Cobertura",
+      "newCoverageDesc": "Se ha mapeado una nueva área de cobertura celular en tu vecindario.",
+      "wifiSpot": "Nuevo Punto WiFi",
+      "wifiSpotDesc": "Se ha añadido un nuevo punto de WiFi público cerca de ti.",
+      "achievement": "Logro Desbloqueado",
+      "achievementDesc": "¡Has ganado la insignia 'Explorador de Redes'!"
     }
   },
   "wifi": {
