@@ -273,6 +273,11 @@
     "response": "We typically respond within 1 hour"
   },
   "auth": {
+    "common": {
+      "loading": "Loading...",
+      "error": "Error occurred",
+      "success": "Success"
+    },
     "signIn": "Sign In",
     "signInDescription": "Sign in to your account to continue",
     "signInWithEmail": "Sign in with Email",

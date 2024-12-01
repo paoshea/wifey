@@ -59,10 +59,17 @@ export function NotificationCenter() {
   const fetchNotifications = async () => {
     try {
       const response = await fetch('/api/notifications');
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
       const data = await response.json();
-      setNotifications(data.notifications);
-      setGroups(data.groups);
-      setUnreadCount(data.notifications.filter((n: Notification) => !n.isRead).length);
+      if (data.notifications) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.notifications.filter((n: Notification) => !n.isRead).length);
+      }
+      if (data.groups) {
+        setGroups(data.groups);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -106,31 +113,31 @@ export function NotificationCenter() {
   const notificationGroups: NotificationGroup[] = [
     {
       type: 'STREAK_REMINDER',
-      notifications: groups['STREAK_REMINDER'] || [],
+      notifications: groups?.STREAK_REMINDER || [],
       icon: '🔥',
       label: 'Streak Reminders'
     },
     {
       type: 'ACHIEVEMENT',
-      notifications: groups['ACHIEVEMENT'] || [],
+      notifications: groups?.ACHIEVEMENT || [],
       icon: '🏆',
       label: 'Achievements'
     },
     {
       type: 'STREAK_MILESTONE',
-      notifications: groups['STREAK_MILESTONE'] || [],
+      notifications: groups?.STREAK_MILESTONE || [],
       icon: '⭐',
       label: 'Milestones'
     },
     {
       type: 'SOCIAL',
-      notifications: groups['SOCIAL'] || [],
+      notifications: groups?.SOCIAL || [],
       icon: '👥',
       label: 'Social'
     },
     {
       type: 'DIGEST',
-      notifications: groups['DIGEST'] || [],
+      notifications: groups?.DIGEST || [],
       icon: '📰',
       label: 'Digests'
     }
@@ -194,37 +201,40 @@ export function NotificationCenter() {
                     key={group.type}
                     value={group.type}
                     className="flex-1"
-                    disabled={group.notifications.length === 0}
+                    disabled={!groups?.[group.type]?.length}
                   >
                     {group.icon}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <div className="max-h-96 overflow-y-auto">
-                <TabsContent value="all">
-                  {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      No notifications
-                    </div>
-                  ) : (
-                    notifications.map((notification) => (
+              <TabsContent value="all" className="p-4">
+                {notifications.length === 0 ? (
+                  <div className="text-center text-gray-500 py-4">
+                    No notifications
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.map((notification) => (
                       <NotificationItem
                         key={notification.id}
                         notification={notification}
                         onMarkAsRead={() => markAsRead([notification.id])}
                       />
-                    ))
-                  )}
-                </TabsContent>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
 
-                {notificationGroups.map((group) => (
-                  <TabsContent key={group.type} value={group.type}>
-                    <div className="py-2">
-                      <div className="px-4 py-2 text-sm font-medium text-gray-500">
-                        {group.label}
-                      </div>
-                      {group.notifications.map((notification) => (
+              {notificationGroups.map((group) => (
+                <TabsContent key={group.type} value={group.type} className="p-4">
+                  {(!groups?.[group.type] || groups[group.type].length === 0) ? (
+                    <div className="text-center text-gray-500 py-4">
+                      No {group.label.toLowerCase()}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {groups[group.type].map((notification) => (
                         <NotificationItem
                           key={notification.id}
                           notification={notification}
@@ -232,112 +242,13 @@ export function NotificationCenter() {
                         />
                       ))}
                     </div>
-                  </TabsContent>
-                ))}
-              </div>
+                  )}
+                </TabsContent>
+              ))}
             </Tabs>
-
-            {notifications.length > 0 && (
-              <div className="p-4 border-t">
-                <Button onClick={() => markAsRead(notifications.map((n) => n.id))}>
-                  Mark all as read
-                </Button>
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Settings Dialog */}
-      <Dialog.Root open={showSettings} onOpenChange={setShowSettings}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-          <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <Dialog.Title className="text-lg font-semibold mb-4">
-              Notification Settings
-            </Dialog.Title>
-
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h4 className="font-medium">Notification Channels</h4>
-                <div className="space-y-2">
-                  {Object.entries({
-                    inApp: 'In-app notifications',
-                    email: 'Email notifications',
-                    push: 'Push notifications',
-                    dailyDigest: 'Daily digest'
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span>{label}</span>
-                      <Switch
-                        checked={preferences[key as keyof NotificationPreferences] as boolean}
-                        onCheckedChange={(checked) =>
-                          updatePreferences({ [key]: checked })
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Notification Types</h4>
-                <div className="space-y-2">
-                  {Object.entries({
-                    streakReminders: 'Streak reminders',
-                    achievementAlerts: 'Achievement alerts',
-                    socialNotifications: 'Social notifications'
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span>{label}</span>
-                      <Switch
-                        checked={preferences[key as keyof NotificationPreferences] as boolean}
-                        onCheckedChange={(checked) =>
-                          updatePreferences({ [key]: checked })
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Quiet Hours</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-500">Start</label>
-                    <input
-                      type="time"
-                      value={preferences.quietHoursStart}
-                      onChange={(e) =>
-                        updatePreferences({ quietHoursStart: e.target.value })
-                      }
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-500">End</label>
-                    <input
-                      type="time"
-                      value={preferences.quietHoursEnd}
-                      onChange={(e) =>
-                        updatePreferences({ quietHoursEnd: e.target.value })
-                      }
-                      className="w-full mt-1 px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <Dialog.Close asChild>
-                <Button>Close</Button>
-              </Dialog.Close>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
     </div>
   );
 }
@@ -349,43 +260,28 @@ function NotificationItem({
   notification: Notification
   onMarkAsRead: () => void
 }) {
-  const style = notification.style || {};
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className={`p-4 border-b hover:bg-gray-50 ${!notification.isRead ? 'bg-blue-50' : ''
-        }`}
-      style={{
-        backgroundColor: style.backgroundColor,
-        color: style.textColor
-      }}
+    <div
+      className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative"
+      style={notification.style}
     >
-      <div className="flex items-start gap-3">
-        <div className="text-2xl">
-          {style.icon || '📢'}
-        </div>
-        <div className="flex-1">
-          <h4 className="font-semibold">{notification.title}</h4>
-          <p className="text-sm text-gray-600">
-            {notification.message}
-          </p>
-          <div className="mt-2 text-xs text-gray-400">
-            {new Date(notification.createdAt).toLocaleDateString()} at{' '}
-            {new Date(notification.createdAt).toLocaleTimeString()}
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="font-medium">{notification.title}</h4>
+          <p className="text-sm text-gray-600">{notification.message}</p>
+          <div className="text-xs text-gray-400 mt-1">
+            {new Date(notification.createdAt).toLocaleString()}
           </div>
         </div>
         {!notification.isRead && (
           <button
             onClick={onMarkAsRead}
-            className="text-blue-500 hover:text-blue-700"
+            className="text-blue-500 hover:text-blue-600"
           >
-            <Check className="w-5 h-5" />
+            <Check className="w-4 h-4" />
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

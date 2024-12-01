@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/auth.config';
 import { notificationService } from '@/lib/services/notification-service';
+import type { NotificationType } from '@/types/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +16,29 @@ export async function GET(req: NextRequest) {
     }
 
     const notifications = await notificationService.getUnreadNotifications(session.user.id);
-    return NextResponse.json({ notifications });
+    
+    // Group notifications by type
+    const groups: Record<NotificationType, any[]> = {
+      STREAK_REMINDER: [],
+      ACHIEVEMENT: [],
+      STREAK_MILESTONE: [],
+      SOCIAL: [],
+      SYSTEM: [],
+      DIGEST: []
+    };
+
+    notifications.forEach((notification: any) => {
+      if (notification.type in groups) {
+        groups[notification.type as NotificationType].push(notification);
+      } else {
+        groups.SYSTEM.push(notification);
+      }
+    });
+
+    return NextResponse.json({ 
+      notifications,
+      groups 
+    });
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return NextResponse.json(
