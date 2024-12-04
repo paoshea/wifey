@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
@@ -59,7 +61,7 @@ export default function RangeCoverage() {
           const location: LatLngTuple = [position.coords.latitude, position.coords.longitude];
           setUserLocation(location);
           setMapKey(prev => prev + 1);
-          
+
           // Center and zoom the map to user location
           if (mapRef.current) {
             mapRef.current.setView(location, 16);
@@ -86,7 +88,7 @@ export default function RangeCoverage() {
       const { lat, lng } = e.latlng;
       setNewPoint([lat, lng]);
       setIsAddingPoint(false);
-      
+
       // Here you would typically make an API call to save the coverage point
       toast({
         title: "Coverage Point Added",
@@ -156,7 +158,7 @@ export default function RangeCoverage() {
           onValueChange={(value) => setSearchRadius(value[0])}
         />
         <div className="grid grid-cols-2 gap-4">
-          <Button 
+          <Button
             onClick={fetchCoverageInRange}
             disabled={isLoading}
           >
@@ -191,13 +193,12 @@ export default function RangeCoverage() {
             style={{ height: '100%', width: '100%' }}
             className="z-0"
             ref={mapRef}
-            onClick={handleMapClick}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            
+
             {/* User location marker */}
             <Marker position={userLocation}>
               <Popup>

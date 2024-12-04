@@ -5,7 +5,7 @@ import { MainHeader } from './headers/main-header';
 import { OnboardingHeader } from './headers/onboarding-header';
 import { AuthHeader } from './headers/auth-header';
 
-export function Header() {
+export const Header = () => {
   const pathname = usePathname();
 
   if (pathname.includes('/onboarding')) {

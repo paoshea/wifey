@@ -25,6 +25,8 @@ import {
   Twitter,
   Github,
   WifiOff,
+  CheckCircle,
+  XCircle,
   type LucideProps
 } from 'lucide-react';
 
@@ -34,6 +36,8 @@ export const Icons = {
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   check: Check,
+  checkCircle: CheckCircle,
+  xCircle: XCircle,
   wifi: Wifi,
   signal: Signal,
   user: User,

@@ -31,17 +31,18 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with emailVerified set to current date
+    // Create user with emailVerified set to current date and default role
     const user = await prisma.user.create({
       data: {
         name: username,
         email,
         hashedPassword,
         emailVerified: new Date(), // Set email as verified immediately
+        role: 'user', // Set default role for new registrations
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Registration successful',
       user: {
         id: user.id,

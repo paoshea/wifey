@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import prisma from '@/lib/prisma';
+import prisma from 'lib/prisma';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -14,16 +14,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find user with matching verification token
+    // Find verification token
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: {
+        token: token,
+      },
+    });
+
+    if (!verificationToken) {
+      return NextResponse.json(
+        { message: 'Invalid verification token' },
+        { status: 400 }
+      );
+    }
+
+    // Find and update user
     const user = await prisma.user.findFirst({
       where: {
-        verificationToken: token,
+        email: verificationToken.identifier,
       },
     });
 
     if (!user) {
       return NextResponse.json(
-        { message: 'Invalid verification token' },
+        { message: 'User not found' },
         { status: 400 }
       );
     }
@@ -35,7 +49,13 @@ export async function GET(request: NextRequest) {
       },
       data: {
         emailVerified: new Date(),
-        verificationToken: null,
+      },
+    });
+
+    // Delete the verification token
+    await prisma.verificationToken.delete({
+      where: {
+        id: verificationToken.id,
       },
     });
 

@@ -1,60 +1,65 @@
-import type { 
+import type {
   Prisma,
   PrismaClient,
-  UserRole,
   User,
-  WifiSpot,
-  CoverageReport,
+  UserStats,
   Achievement,
-  UserStreak
+  UserStreak,
+  Measurement,
+  LeaderboardEntry
 } from '@prisma/client';
+import { UserRole } from 'scripts/update-roles';
 
 // Export Prisma types for reuse
-export type { 
+export type {
   Prisma,
   PrismaClient,
   UserRole,
   User,
-  WifiSpot,
-  CoverageReport,
+  UserStats,
   Achievement,
-  UserStreak
+  UserStreak,
+  Measurement,
+  LeaderboardEntry
 };
 
 // Input Types
 export type UserCreateInput = Prisma.UserCreateInput;
-export type WifiSpotCreateInput = Prisma.WifiSpotCreateInput;
-export type CoverageReportCreateInput = Prisma.CoverageReportCreateInput;
-export type UserStreakCreateInput = Prisma.UserStreakCreateInput;
+export type UserStatsCreateInput = Prisma.UserStatsCreateInput;
 export type AchievementCreateInput = Prisma.AchievementCreateInput;
+export type UserStreakCreateInput = Prisma.UserStreakCreateInput;
+export type MeasurementCreateInput = Prisma.MeasurementCreateInput;
+export type LeaderboardEntryCreateInput = Prisma.LeaderboardEntryCreateInput;
 
 // Prisma Select Types
 export type UserSelect = Prisma.UserSelect;
-export type WifiSpotSelect = Prisma.WifiSpotSelect;
-export type CoverageReportSelect = Prisma.CoverageReportSelect;
+export type UserStatsSelect = Prisma.UserStatsSelect;
 export type AchievementSelect = Prisma.AchievementSelect;
 export type UserStreakSelect = Prisma.UserStreakSelect;
+export type MeasurementSelect = Prisma.MeasurementSelect;
+export type LeaderboardEntrySelect = Prisma.LeaderboardEntrySelect;
 
 // Prisma Include Types
 export type UserInclude = Prisma.UserInclude;
-export type WifiSpotInclude = Prisma.WifiSpotInclude;
-export type CoverageReportInclude = Prisma.CoverageReportInclude;
+export type UserStatsInclude = Prisma.UserStatsInclude;
 export type AchievementInclude = Prisma.AchievementInclude;
 export type UserStreakInclude = Prisma.UserStreakInclude;
 
 // Prisma Where Types
 export type UserWhereInput = Prisma.UserWhereInput;
-export type WifiSpotWhereInput = Prisma.WifiSpotWhereInput;
-export type CoverageReportWhereInput = Prisma.CoverageReportWhereInput;
+export type UserStatsWhereInput = Prisma.UserStatsWhereInput;
 export type AchievementWhereInput = Prisma.AchievementWhereInput;
 export type UserStreakWhereInput = Prisma.UserStreakWhereInput;
+export type MeasurementWhereInput = Prisma.MeasurementWhereInput;
+export type LeaderboardEntryWhereInput = Prisma.LeaderboardEntryWhereInput;
 
 // Prisma OrderBy Types
 export type UserOrderByWithRelationInput = Prisma.UserOrderByWithRelationInput;
-export type WifiSpotOrderByWithRelationInput = Prisma.WifiSpotOrderByWithRelationInput;
-export type CoverageReportOrderByWithRelationInput = Prisma.CoverageReportOrderByWithRelationInput;
+export type UserStatsOrderByWithRelationInput = Prisma.UserStatsOrderByWithRelationInput;
 export type AchievementOrderByWithRelationInput = Prisma.AchievementOrderByWithRelationInput;
 export type UserStreakOrderByWithRelationInput = Prisma.UserStreakOrderByWithRelationInput;
+export type MeasurementOrderByWithRelationInput = Prisma.MeasurementOrderByWithRelationInput;
+export type LeaderboardEntryOrderByWithRelationInput = Prisma.LeaderboardEntryOrderByWithRelationInput;
 
 // Filter Types
 export enum OperatorType {
@@ -101,74 +106,32 @@ export function isJsonValue(value: unknown): value is JsonFilter {
 }
 
 // Payload Types with Relations
-export type UserWithRelations = Prisma.UserGetPayload<{
-  include: {
-    stats: true;
-    streaks: true;
-    achievements: true;
-  };
-}>;
-
-export type WifiSpotWithRelations = Prisma.WifiSpotGetPayload<{
-  include: {
-    user: true;
-    verifiedByUser: true;
-  };
-}>;
-
-export type CoverageReportWithRelations = Prisma.CoverageReportGetPayload<{
-  include: {
-    user: true;
-    verifiedByUser: true;
-  };
-}>;
-
-export type AchievementWithRelations = Prisma.AchievementGetPayload<{
-  include: {
-    user: true;
-  };
-}>;
-
-export type UserStats = {
-  id: string;
-  userId: string;
-  totalMeasurements: number;
-  ruralMeasurements: number;
-  uniqueLocations: number;
-  totalDistance: number;
-  contributionScore: number;
-  qualityScore: number;
-  accuracyRate: number;
-  verifiedSpots: number;
-  helpfulActions: number;
-  consecutiveDays: number;
-  createdAt: Date;
-  updatedAt: Date;
+export type UserWithRelations = User & {
+  stats: UserStats | null;
+  achievements: Achievement[];
+  streaks: UserStreak[];
+  measurements: Measurement[];
+  leaderboard: LeaderboardEntry[];
 };
 
-export type Measurement = {
-  id: string;
-  userId: string;
-  type: 'wifi' | 'coverage';
-  latitude: number;
-  longitude: number;
-  signal: number;
-  speed?: number;
-  isRural: boolean;
-  isFirstInArea: boolean;
-  quality?: number;
-  accuracy?: number;
-  points: number;
-  createdAt: Date;
-  // WiFi specific fields
-  name?: string;
-  security?: string;
-  // Coverage specific fields
-  operator?: string;
-  networkType?: string;
-  deviceModel?: string;
-  connectionType?: string;
-  verified?: boolean;
+export type UserStatsWithRelations = UserStats & {
+  user: User;
+};
+
+export type AchievementWithRelations = Achievement & {
+  user: User;
+};
+
+export type UserStreakWithRelations = UserStreak & {
+  user: User;
+};
+
+export type MeasurementWithRelations = Measurement & {
+  user: User;
+};
+
+export type LeaderboardEntryWithRelations = LeaderboardEntry & {
+  user: User;
 };
 
 // Transaction Context Type

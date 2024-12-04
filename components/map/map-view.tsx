@@ -32,6 +32,7 @@ export type MapPoint = {
     speed?: string;
     provider?: string;
     type?: 'free' | 'paid' | 'restricted';
+    timestamp?: string;
   };
 };
 
@@ -86,7 +87,7 @@ function MapMarkers({ points, onPointSelect }: { points: MapPoint[]; onPointSele
 export default function MapView({
   points = [],
   activeLayer = 'both',
-  onPointSelect = () => {},
+  onPointSelect = () => { },
   onMapClick,
   center = [9.9281, -84.0907], // Default center (Costa Rica)
   zoom = 13,
@@ -108,8 +109,10 @@ export default function MapView({
         zoom={zoom}
         className="w-full h-full"
         ref={mapRef}
-        whenCreated={(map) => {
-          map.on('click', handleMapClick);
+        whenReady={() => {
+          if (mapRef.current) {
+            mapRef.current.on('click', handleMapClick);
+          }
         }}
       >
         <TileLayer

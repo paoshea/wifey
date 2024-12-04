@@ -8,6 +8,7 @@ import { Badge as BadgeUI } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Star, Flame, Medal, Award } from 'lucide-react';
 import { Badge, BADGES } from '@/lib/types/gamification';
+import { useGamificationStore } from '@/lib/store/gamification-store';
 
 interface BadgePopupProps {
   badge: Badge;
@@ -84,7 +85,7 @@ export default function AchievementDisplay() {
   return (
     <>
       <Card className="bg-white shadow-lg">
-        <CardContent className="p-6">
+        <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -151,7 +152,7 @@ export default function AchievementDisplay() {
               })}
             </div>
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       <AnimatePresence>

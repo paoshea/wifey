@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Wifi, WifiOff } from 'lucide-react';
 import { OfflineLocationService } from '@/lib/location/OfflineLocationService';
+
+// Initialize service outside component to maintain singleton
+const locationService = OfflineLocationService.getInstance();
 
 interface LocationData {
   coords: {
@@ -29,16 +32,20 @@ export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMa
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [averageAccuracy, setAverageAccuracy] = useState<number | null>(null);
   const [currentSpeed, setCurrentSpeed] = useState<number | null>(null);
 
-  const locationService = OfflineLocationService.getInstance();
+  // Memoize service-related functions
+  const getServiceData = useMemo(() => ({
+    getAverageAccuracy: () => locationService.getAverageAccuracy(),
+    getCurrentSpeed: () => locationService.getCurrentSpeed(),
+  }), []);
 
   const handleLocationUpdate = useCallback((location: LocationData) => {
     setCurrentLocation(location);
-    setAverageAccuracy(locationService.getAverageAccuracy());
-    setCurrentSpeed(locationService.getCurrentSpeed());
+    setAverageAccuracy(getServiceData.getAverageAccuracy());
+    setCurrentSpeed(getServiceData.getCurrentSpeed());
 
     if (onLocationUpdate) {
       onLocationUpdate({
@@ -47,9 +54,11 @@ export function OfflineGPSMap({ onLocationUpdate, className = '' }: OfflineGPSMa
         accuracy: location.coords.accuracy
       });
     }
-  }, [onLocationUpdate]);
+  }, [onLocationUpdate, getServiceData]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', handleOnlineStatus);
     window.addEventListener('offline', handleOnlineStatus);

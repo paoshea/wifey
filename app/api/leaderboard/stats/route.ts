@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
       gamificationService.getTotalContributions(query.timeframe)
     ]);
 
-    const stats = {
+    const stats: {
+      totalUsers: number;
+      totalContributions: number;
+      userRank: number | null | undefined;
+      userPoints: number | null | undefined;
+    } = {
       totalUsers,
       totalContributions,
       userRank: undefined,

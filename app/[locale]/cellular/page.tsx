@@ -16,6 +16,14 @@ interface CurrentLocation {
   lng: number;
 }
 
+interface CellularDetails {
+  technology: string;
+  band: string;
+}
+
+// Store cellular details in localStorage to avoid type conflicts
+const CELLULAR_DETAILS_KEY = 'cellular_details';
+
 export default function CellularPage() {
   const t = useTranslations('cellular');
   const [searchRadius, setSearchRadius] = useState(5);
@@ -28,27 +36,45 @@ export default function CellularPage() {
   const samplePoints: MapPoint[] = [
     {
       id: '1',
-      type: 'cellular',
+      type: 'coverage',
       name: 'Cell Tower A',
       coordinates: [9.9281, -84.0907] as [number, number],
       details: {
         provider: 'Movistar',
-        technology: '4G LTE',
-        band: 'Band 7'
+        strength: '4G',
+        timestamp: new Date().toISOString()
       }
     },
     {
       id: '2',
-      type: 'cellular',
+      type: 'coverage',
       name: 'Cell Tower B',
       coordinates: [9.9290, -84.0920] as [number, number],
       details: {
         provider: 'Claro',
-        technology: '5G',
-        band: 'Band n78'
+        strength: '5G',
+        timestamp: new Date().toISOString()
       }
     }
   ];
+
+  // Store additional cellular details
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(CELLULAR_DETAILS_KEY, JSON.stringify({
+      '1': { technology: '4G LTE', band: 'Band 7' },
+      '2': { technology: '5G', band: 'Band n78' }
+    }));
+  }
+
+  const getCellularDetails = (pointId: string): CellularDetails | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const details = JSON.parse(localStorage.getItem(CELLULAR_DETAILS_KEY) || '{}');
+      return details[pointId] || null;
+    } catch {
+      return null;
+    }
+  };
 
   const handlePointSelect = (point: MapPoint) => {
     setSelectedPoint(point);
@@ -71,7 +97,7 @@ export default function CellularPage() {
             <p className="text-xl text-gray-600 max-w-2xl text-center">
               {t('subtitle')}
             </p>
-            <AddPoint type="cellular" />
+            <AddPoint type="coverage" />
           </div>
         </motion.div>
 
@@ -81,7 +107,7 @@ export default function CellularPage() {
               <div className="h-[600px] w-full">
                 <MapView
                   points={samplePoints}
-                  activeLayer="cellular"
+                  activeLayer="coverage"
                   center={mapCenter}
                   zoom={mapZoom}
                   onPointSelect={handlePointSelect}
@@ -90,14 +116,15 @@ export default function CellularPage() {
             </Card>
           </div>
           <div className="space-y-4">
-            <MapSearch 
+            <MapSearch
               onLocationFound={({ lat, lng }) => {
                 setMapCenter([lat, lng]);
                 setMapZoom(15);
               }}
               searchRadius={searchRadius}
+              onRadiusChange={setSearchRadius}
             />
-            <LocationFinder 
+            <LocationFinder
               onLocationFound={({ lat, lng }) => {
                 setCurrentLocation({ lat, lng });
                 setMapCenter([lat, lng]);
@@ -108,9 +135,17 @@ export default function CellularPage() {
               <Card className="p-4">
                 <h3 className="font-medium mb-2">{t('cellularDetails')}</h3>
                 <div className="space-y-2 text-sm">
-                  <p>{t('provider')}: {selectedPoint.details?.provider}</p>
-                  <p>{t('technology')}: {selectedPoint.details?.technology}</p>
-                  <p>{t('band')}: {selectedPoint.details?.band}</p>
+                  <p>{t('provider')}: {selectedPoint.details.provider}</p>
+                  <p>{t('strength')}: {selectedPoint.details.strength}</p>
+                  {selectedPoint.id && (() => {
+                    const cellDetails = getCellularDetails(selectedPoint.id);
+                    return cellDetails && (
+                      <>
+                        <p>{t('technology')}: {cellDetails.technology}</p>
+                        <p>{t('band')}: {cellDetails.band}</p>
+                      </>
+                    );
+                  })()}
                 </div>
               </Card>
             )}

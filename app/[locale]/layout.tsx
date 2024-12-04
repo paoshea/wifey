@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 async function getLocaleMessages(locale: string) {
   try {
-    return await getMessages(locale);
+    return await getMessages({ locale });
   } catch (error) {
     notFound();
   }
@@ -53,7 +53,7 @@ export default async function LocaleLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
-        <LocaleClientLayout messages={messages} locale={locale} pathname={pathname}>
+        <LocaleClientLayout messages={messages} locale={locale as SupportedLocale} pathname={pathname}>
           {children}
         </LocaleClientLayout>
       </body>

@@ -2,41 +2,36 @@
 
 'use client';
 
-import { AwaitedReactNode, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AchievementShowcase } from '@/components/gamification/achievement-showcase';
-import { Leaderboard } from '@/components/gamification/leaderboard';
-import { ProgressVisualization } from '@/components/gamification/progress-visualization';
-import { cn } from '@/lib/utils';
-import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
+import { AchievementShowcase } from 'components/gamification/achievement-showcase';
+import { Leaderboard } from 'components/gamification/leaderboard';
+import { ProgressVisualization } from 'components/gamification/progress-visualization';
+import { cn } from 'lib/utils';
+import { getCachedUserProgress, getCachedLeaderboard } from 'lib/services/gamification-service';
 import { useQuery } from '@tanstack/react-query';
-import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import { Trophy, Medal, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { TIER_COLORS } from '@/lib/gamification/constants';
-import { type ValidatedUserProgress, AchievementTier, RequirementType, StatsMetric } from '@/lib/gamification/types';
-import { Achievement, UserProgress, UserStats } from '@prisma/client';
+import { Button } from 'components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 'components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
+import { Progress } from 'components/ui/progress';
+import { TIER_COLORS } from 'lib/gamification/constants';
+import { TimeFrame, type ValidatedAchievement, AchievementTier, RequirementType } from 'lib/gamification/types';
+import { Achievement, UserStats } from '@prisma/client';
 
-// Type for achievement in user progress
-type UserAchievement = {
-  id: string;
-  title: string;
-  description: string;
-  tier: AchievementTier;
-  points: number;
-  progress: number;
-  completed: boolean;
-  unlockedAt: Date | null;
-};
+// Helper function to map ValidatedAchievement to display format
+function mapAchievementForDisplay(achievement: ValidatedAchievement) {
+  return {
+    ...achievement,
+    completed: achievement.isCompleted,
+  };
+}
 
 // Helper function to calculate achievement progress
 function getAchievementProgress(
-  achievement: UserAchievement
+  achievement: ValidatedAchievement
 ): number {
   if (!achievement) return 0;
   return achievement.progress;
@@ -51,7 +46,7 @@ const tabs = [
 export default function ProfilePage() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('progress');
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'daily' | 'weekly' | 'monthly' | 'allTime'>('weekly');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeFrame>(TimeFrame.WEEKLY);
 
   const { data: progress, isLoading: isLoadingProgress } = useQuery({
     queryKey: ['userProgress', session?.user?.id],
@@ -110,7 +105,7 @@ export default function ProfilePage() {
                 <p className="text-gray-600">{session.user?.email}</p>
                 {progress && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Level {progress.level} • {progress.currentXP} / {progress.totalXP} XP
+                    Level {progress.level} • {progress.currentXP} / {progress.nextLevelXP} XP
                   </p>
                 )}
               </div>
@@ -175,38 +170,41 @@ export default function ProfilePage() {
 
             {activeTab === 'achievements' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress?.achievements?.map((achievement: UserAchievement) => (
-                  <Card key={achievement.id} className="p-4">
-                    <CardHeader>
-                      <div className="flex items-center space-x-2">
-                        {achievement.tier === AchievementTier.PLATINUM ? (
-                          <Trophy className="h-5 w-5 text-yellow-500" />
-                        ) : achievement.tier === AchievementTier.GOLD ? (
-                          <Medal className="h-5 w-5 text-purple-500" />
-                        ) : achievement.tier === AchievementTier.SILVER ? (
-                          <Medal className="h-5 w-5 text-blue-500" />
-                        ) : (
-                          <Medal className="h-5 w-5 text-gray-500" />
-                        )}
-                        <CardTitle className="text-lg">{achievement.title}</CardTitle>
-                      </div>
-                      <CardDescription>{achievement.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Progress value={getAchievementProgress(achievement)} className="mb-2" />
-                      <p className="text-sm text-gray-500">
-                        Progress: {Math.round(getAchievementProgress(achievement))}%
-                      </p>
-                    </CardContent>
-                    <CardFooter>
-                      <p className="text-sm text-gray-500">
-                        {achievement.completed
-                          ? `Unlocked on ${new Date(achievement.unlockedAt!).toLocaleDateString()}`
-                          : 'Not yet unlocked'}
-                      </p>
-                    </CardFooter>
-                  </Card>
-                ))}
+                {progress?.achievements?.map((achievement) => {
+                  const displayAchievement = mapAchievementForDisplay(achievement);
+                  return (
+                    <Card key={achievement.id} className="p-4">
+                      <CardHeader>
+                        <div className="flex items-center space-x-2">
+                          {achievement.tier === AchievementTier.LEGENDARY ? (
+                            <Trophy className="h-5 w-5 text-yellow-500" />
+                          ) : achievement.tier === AchievementTier.EPIC ? (
+                            <Medal className="h-5 w-5 text-purple-500" />
+                          ) : achievement.tier === AchievementTier.RARE ? (
+                            <Medal className="h-5 w-5 text-blue-500" />
+                          ) : (
+                            <Medal className="h-5 w-5 text-gray-500" />
+                          )}
+                          <CardTitle className="text-lg">{achievement.title}</CardTitle>
+                        </div>
+                        <CardDescription>{achievement.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Progress value={getAchievementProgress(achievement)} className="mb-2" />
+                        <p className="text-sm text-gray-500">
+                          Progress: {Math.round(getAchievementProgress(achievement))}%
+                        </p>
+                      </CardContent>
+                      <CardFooter>
+                        <p className="text-sm text-gray-500">
+                          {displayAchievement.completed
+                            ? `Unlocked on ${new Date(achievement.unlockedAt!).toLocaleDateString()}`
+                            : 'Not yet unlocked'}
+                        </p>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
               </div>
             )}
 

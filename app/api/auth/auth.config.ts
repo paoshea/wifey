@@ -4,10 +4,19 @@ import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import prisma from '@/lib/prisma';
+import prisma from 'lib/prisma';
+import { UserRole } from 'lib/types/auth';
+import type { User } from 'next-auth';
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role?: UserRole;
+    emailVerified?: Date | null;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   session: {
     strategy: 'jwt',
   },
@@ -54,12 +63,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error("User not found");
         }
 
-        const isValid = await bcrypt.compare(
+        const passwordValid = await bcrypt.compare(
           credentials.password,
           user.hashedPassword
         );
 
-        if (!isValid) {
+        if (!passwordValid) {
           throw new Error("Invalid password");
         }
 
@@ -71,8 +80,9 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          image: user.image,
-        };
+          role: user.role as UserRole,
+          emailVerified: user.emailVerified
+        } as User;
       }
     })
   ],
@@ -80,36 +90,27 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub!;
-        session.user.role = token.role as string;
-        session.user.emailVerified = token.emailVerified as boolean;
+        session.user.role = (token.role as UserRole) || UserRole.USER;
+        // Handle undefined case by defaulting to null
+        session.user.emailVerified = token.emailVerified ?? null;
       }
       return session;
     },
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-        token.role = (user as any).role || 'user';
-        token.emailVerified = (user as any).emailVerified || false;
+        token.role = user.role;
+        // Keep the Date object in the token
+        token.emailVerified = user.emailVerified;
       }
-
-      // Force refresh the session
-      if (trigger === 'update') {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub }
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.emailVerified = dbUser.emailVerified;
-        }
-      }
-
       return token;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      } else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
       return baseUrl;
     }
   }

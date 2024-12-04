@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGamification } from '@/hooks/useGamification';
+import { useGamification } from 'hooks/useGamification';
 import {
   Achievement,
   AchievementRequirement,
@@ -11,8 +11,8 @@ import {
   RequirementType,
   RequirementOperator,
   StatsMetric
-} from '@/lib/gamification/types';
-import { cn } from '@/lib/utils';
+} from 'lib/gamification/types';
+import { cn } from 'lib/utils';
 
 interface AchievementCardProps {
   achievement: ValidatedAchievement;
@@ -24,10 +24,10 @@ interface AchievementCardProps {
 
 const AchievementCard = ({ achievement, progress, target, isUnlocked, onClick }: AchievementCardProps) => {
   const rarityColors: Record<AchievementTier, string> = {
-    [AchievementTier.BRONZE]: 'bg-blue-600',
-    [AchievementTier.SILVER]: 'bg-purple-600',
-    [AchievementTier.GOLD]: 'bg-gradient-to-r from-yellow-400 to-orange-500',
-    [AchievementTier.PLATINUM]: 'bg-gradient-to-r from-purple-400 to-pink-500'
+    [AchievementTier.LEGENDARY]: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    [AchievementTier.EPIC]: 'bg-gradient-to-r from-purple-400 to-pink-500',
+    [AchievementTier.RARE]: 'bg-blue-600',
+    [AchievementTier.COMMON]: 'bg-gray-600'
   };
 
   const progressPercentage = Math.min((progress / target) * 100, 100);

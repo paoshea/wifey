@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
+import prisma from 'lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
 import { Prisma } from '@prisma/client';
-import { StatsContentSchema } from '@/lib/gamification/types';
+import { StatsContent } from 'lib/gamification/types';
 
 const contributionSchema = z.object({
   latitude: z.number(),
@@ -18,6 +18,26 @@ const contributionSchema = z.object({
   connectionType: z.string(),  // Required field
 });
 
+type DbStats = {
+  id: string;
+  userId: string;
+  points: number;
+};
+
+const StatsContentSchema = z.object({
+  totalMeasurements: z.number(),
+  contributionScore: z.number(),
+  ruralMeasurements: z.number(),
+  uniqueLocations: z.number(),
+  totalDistance: z.number(),
+  qualityScore: z.number(),
+  accuracyRate: z.number(),
+  verifiedSpots: z.number(),
+  helpfulActions: z.number(),
+  consecutiveDays: z.number(),
+  points: z.number()
+});
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -28,77 +48,79 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = contributionSchema.parse(body);
 
+    const now = new Date();
+
     // Create coverage report
     const coverageReport = await prisma.coverageReport.create({
       data: {
         userId: session.user.id,
         latitude: data.latitude,
         longitude: data.longitude,
-        signal: data.signal,
+        signal: BigInt(data.signal),
         speed: data.speed,
         operator: data.operator,
         networkType: data.networkType,
         deviceModel: data.deviceModel,
         connectionType: data.connectionType,
+        createdAt: now,
+        updatedAt: now,
+        points: BigInt(0),
+        verified: false
       } as Prisma.CoverageReportUncheckedCreateInput,
     });
 
     // Get current stats or initialize new ones
-    const currentStats = await prisma.userStats.findUnique({
+    const result = await prisma.userStats.findUnique({
       where: { userId: session.user.id },
       select: {
         id: true,
         userId: true,
-        points: true,
-        statsData: true
+        points: true
       }
     });
 
-    const defaultStats = {
-      totalMeasurements: 0,
+    // Cast the result to our known type
+    const currentStats = result as DbStats | null;
+
+    // Get the current points
+    const currentPoints = currentStats?.points || 0;
+
+    // Initialize stats with default values
+    const statsForValidation = {
+      totalMeasurements: currentPoints + 1,
+      contributionScore: currentPoints + 1,
       ruralMeasurements: 0,
       uniqueLocations: 0,
       totalDistance: 0,
-      contributionScore: 0,
       qualityScore: 0,
       accuracyRate: 0,
       verifiedSpots: 0,
       helpfulActions: 0,
-      consecutiveDays: 0
+      consecutiveDays: 0,
+      points: currentPoints + 1
     };
 
-    // Type assertion for the JSON data
-    const stats = currentStats?.statsData as Record<string, number> || defaultStats;
+    // Validate stats
+    const validatedStats = StatsContentSchema.parse(statsForValidation);
 
-    // Update stats
-    const updatedStats = {
-      ...stats,
-      totalMeasurements: stats.totalMeasurements + 1,
-      contributionScore: stats.contributionScore + 1
-    };
-
-    // Validate updated stats
-    const validatedStats = StatsContentSchema.parse(updatedStats);
-
-    // Create data with proper Prisma types
-    const createData: Prisma.UserStatsUncheckedCreateInput = {
-      userId: session.user.id,
-      points: 0,
-      statsData: validatedStats as Prisma.InputJsonValue
-    };
-
-    const updateData: Prisma.UserStatsUncheckedUpdateInput = {
-      statsData: validatedStats as Prisma.InputJsonValue
-    };
-
-    // Update user stats
-    await prisma.userStats.upsert({
-      where: {
-        userId: session.user.id,
-      },
-      create: createData,
-      update: updateData
-    });
+    if (!currentStats) {
+      // If no stats exist, create new record
+      await prisma.userStats.create({
+        data: {
+          userId: session.user.id,
+          points: 1,
+          stats: {}
+        } as Prisma.UserStatsUncheckedCreateInput
+      });
+    } else {
+      // If stats exist, update them
+      await prisma.userStats.update({
+        where: { userId: session.user.id },
+        data: {
+          points: { increment: 1 }
+        } as Prisma.UserStatsUncheckedUpdateInput
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -28,7 +28,8 @@ export default function ExplorePage() {
       details: {
         speed: '50 Mbps',
         type: 'free',
-        provider: 'Local Cafe'
+        provider: 'Local Cafe',
+        timestamp: new Date().toISOString()
       }
     },
     {
@@ -37,9 +38,9 @@ export default function ExplorePage() {
       name: 'Strong Signal Spot',
       coordinates: [9.9290, -84.0920] as [number, number],
       details: {
-        strength: '4G',
+        strength: '4G (Excellent)',  // Encoded quality in the strength field
         provider: 'Movistar',
-        quality: 'Excellent'
+        timestamp: new Date().toISOString()
       }
     }
   ];
@@ -77,9 +78,10 @@ export default function ExplorePage() {
             <p className="text-xl text-gray-600 max-w-2xl text-center">
               {t('description')}
             </p>
-            <MapSearch 
+            <MapSearch
               onLocationFound={handleLocationFound}
               searchRadius={searchRadius}
+              onRadiusChange={setSearchRadius}
             />
 
             <div className="flex gap-4">

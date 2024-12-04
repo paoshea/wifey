@@ -2,7 +2,7 @@ export interface SignalMeasurement {
   id?: string;  // Optional for new measurements
   timestamp: number;
   carrier: string;
-  network: string;
+  network: '2G' | '3G' | '4G' | '5G';
   networkType: string;
   device: {
     type: string;

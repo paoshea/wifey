@@ -1,31 +1,29 @@
-// components/gamification/leaderboard.tsx
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, Star, Search, Calendar } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
-import { TimeFrame, LeaderboardEntry } from '@/lib/gamification/types';
-import { getCachedLeaderboard } from '@/lib/services/gamification-service';
+import { Avatar, AvatarImage, AvatarFallback } from 'components/ui/avatar';
+import { Badge } from 'components/ui/badge';
+import { Input } from 'components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
+import { Card } from 'components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
+import { Skeleton } from 'components/ui/skeleton';
+import { useToast } from 'components/ui/use-toast';
+import { cn } from 'lib/utils';
+import { TimeFrame, LeaderboardEntry } from 'lib/gamification/types';
+import { getCachedLeaderboard } from 'lib/services/gamification-service';
 
 interface LeaderboardProps {
   refreshInterval?: number;
 }
 
 const timeframes: { value: TimeFrame; label: string }[] = [
-  { value: 'daily', label: 'Today' },
-  { value: 'weekly', label: 'This Week' },
-  { value: 'monthly', label: 'This Month' },
-  { value: 'allTime', label: 'All Time' },
+  { value: TimeFrame.DAILY, label: 'Today' },
+  { value: TimeFrame.WEEKLY, label: 'This Week' },
+  { value: TimeFrame.MONTHLY, label: 'This Month' },
+  { value: TimeFrame.ALL_TIME, label: 'All Time' },
 ];
 
 const rankColors = {
@@ -38,7 +36,7 @@ export function Leaderboard({ refreshInterval = 30000 }: LeaderboardProps) {
   const { toast } = useToast();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<TimeFrame>('daily');
+  const [timeframe, setTimeframe] = useState<TimeFrame>(TimeFrame.DAILY);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('points');
 

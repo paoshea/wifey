@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
-import { gamificationService } from '@/lib/services/gamification-service';
-import { TimeFrame } from '@/lib/gamification/types/TimeFrame'; // Fix: Added /TimeFrame to the import path
+import { authOptions } from '../../../lib/auth';
+import { gamificationService } from '../../../lib/services/gamification-service';
+import { TimeFrame } from '../../../lib/gamification/types/TimeFrame';
 import { z } from 'zod';
 
 const LeaderboardQuerySchema = z.object({
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         session.user.id,
         query.timeframe
       );
-      response.userRank = userRank;
+      response.userRank = userRank ?? undefined;
     }
 
     return NextResponse.json(response);

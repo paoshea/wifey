@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
@@ -43,8 +44,8 @@ export default function CoveragePage() {
     { id: 'claro', name: 'Claro' },
   ];
 
-  // Sample combined coverage data - replace with real data from backend
-  const samplePoints: MapPoint[] = [
+  // Sample combined coverage data - wrapped in useMemo
+  const samplePoints = useMemo<MapPoint[]>(() => [
     {
       id: '1',
       type: 'coverage',
@@ -52,9 +53,7 @@ export default function CoveragePage() {
       coordinates: [9.9281, -84.0907] as [number, number],
       details: {
         strength: '4G',
-        provider: 'Movistar',
-        quality: 'Excellent',
-        timestamp: new Date().toISOString()
+        provider: 'Movistar'
       }
     },
     {
@@ -65,16 +64,15 @@ export default function CoveragePage() {
       details: {
         type: 'free',
         speed: '50 Mbps',
-        provider: 'Public WiFi',
-        timestamp: new Date().toISOString()
+        provider: 'Public WiFi'
       }
     }
-  ];
+  ], []); // Empty dependency array since this data is static
 
   const [filteredPoints, setFilteredPoints] = useState<MapPoint[]>(samplePoints);
 
+  // Filter points based on current settings
   useEffect(() => {
-    // Filter points based on current settings
     const filtered = samplePoints.filter(point => {
       if (!showWifi && point.type === 'wifi') return false;
       if (!showCellular && point.type === 'coverage') return false;
@@ -82,7 +80,7 @@ export default function CoveragePage() {
       return true;
     });
     setFilteredPoints(filtered);
-  }, [showWifi, showCellular, selectedProvider]);
+  }, [showWifi, showCellular, selectedProvider, samplePoints]);
 
   const handleLocationFound = ({ lat, lng, name }: { lat: number; lng: number; name: string }) => {
     setMapCenter([lat, lng]);
@@ -99,9 +97,8 @@ export default function CoveragePage() {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, lng } = position.coords;
           handleLocationFound({
-            lat: latitude,
+            lat: position.coords.latitude,
             lng: position.coords.longitude,
             name: t('currentLocation')
           });
@@ -210,15 +207,15 @@ export default function CoveragePage() {
           <div className="space-y-4">
             <Card className="p-4">
               <div className="space-y-4">
-                <MapSearch 
+                <MapSearch
                   onLocationFound={handleLocationFound}
                   searchRadius={searchRadius}
                   onRadiusChange={setSearchRadius}
                 />
-                
+
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleFindMyLocation}
                     disabled={isLocating}
                     className="w-full"
@@ -244,7 +241,7 @@ export default function CoveragePage() {
                         ×
                       </Button>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         {selectedPoint.type === 'wifi' ? (
@@ -254,7 +251,7 @@ export default function CoveragePage() {
                         )}
                         <span className="font-medium">{selectedPoint.name}</span>
                       </div>
-                      
+
                       <div className="text-sm space-y-1">
                         <p>
                           <span className="text-gray-500">{t('provider')}:</span>{' '}
@@ -276,10 +273,10 @@ export default function CoveragePage() {
                           <span className="text-gray-500">{t('coordinates')}:</span>{' '}
                           {selectedPoint.coordinates[0].toFixed(6)}, {selectedPoint.coordinates[1].toFixed(6)}
                         </p>
-                        {selectedPoint.details.timestamp && (
+                        {selectedPoint.details && selectedPoint.details.timestamp && (
                           <p>
                             <span className="text-gray-500">{t('lastUpdated')}:</span>{' '}
-                            {new Date(selectedPoint.details.timestamp).toLocaleString()}
+                            {selectedPoint.details.timestamp ? new Date(selectedPoint.details.timestamp).toLocaleString() : 'N/A'}
                           </p>
                         )}
                       </div>

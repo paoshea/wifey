@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { UserAchievement, BADGES, Badge } from '@/lib/types/Gamification';
+import { UserAchievement, BADGES, Badge } from '@/lib/types/gamification';
 
 interface GamificationState {
   achievements: UserAchievement;
@@ -29,7 +29,7 @@ const INITIAL_STATE: UserAchievement = {
 
 const checkForNewBadges = (achievements: UserAchievement): Badge[] => {
   const newBadges: Badge[] = [];
-  
+
   BADGES.forEach(badge => {
     if (achievements.badges.includes(badge.id)) return;
 

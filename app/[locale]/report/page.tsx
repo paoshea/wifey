@@ -21,7 +21,7 @@ import { LocationFinder } from '@/components/location/LocationFinder';
 
 // Dynamically import the MapSearch component to avoid SSR issues with Leaflet
 const MapSearch = dynamic(
-  () => import('@/components/map/map-search').then(mod => mod.MapSearch),
+  () => import('@/components/map/map-search').then((mod) => mod.MapSearch),
   {
     ssr: false,
     loading: () => (
@@ -56,7 +56,7 @@ export default function ReportPage() {
     setLocation(prev => ({ ...prev, ...loc }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!location.lat || !location.lng || !name) return;
 
@@ -198,9 +198,9 @@ export default function ReportPage() {
               <div>
                 <Label>{t('form.location')}</Label>
                 <div className="mt-2 space-y-4">
-                  <LocationFinder 
-                    onLocationFound={({ lat, lng }) => {
-                      setLocation({ lat, lng });
+                  <LocationFinder
+                    onLocationFound={({ lat, lng }: { lat: number; lng: number }) => {
+                      setLocation(prev => ({ ...prev, lat, lng }));
                     }}
                   />
                   <div className="h-[300px]">

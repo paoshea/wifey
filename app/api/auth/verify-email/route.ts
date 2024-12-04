@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find the verification token
-    const verificationToken = await prisma.verificationToken.findUnique({
+    const verificationToken = await prisma.verificationToken.findFirst({
       where: { token },
     });
 

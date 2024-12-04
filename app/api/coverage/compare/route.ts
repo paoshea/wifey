@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
-import { getDistance, getBoundingBox } from '@/lib/utils/geo';
+import { getDistance, getBoundingBox } from 'lib/utils/geo';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
-import prisma from '@/lib/prisma';
+import prisma from 'lib/prisma';
 
 // Input validation schema
 const querySchema = z.object({
@@ -23,8 +23,7 @@ type CoverageReport = Prisma.CoverageReportGetPayload<{
     signal: true;
     speed: true;
     createdAt: true;
-    provider: true;
-    technology: true;
+    operator: true;
   }
 }>;
 
@@ -66,28 +65,29 @@ export async function GET(request: NextRequest) {
         signal: true,
         speed: true,
         createdAt: true,
-        provider: true,
-        technology: true,
+        operator: true,
       },
     });
 
     // Filter points within actual radius using Haversine formula
-    const filteredPoints = points.filter((point) =>
+    const filteredPoints = points.filter((point: CoverageReport) =>
       getDistance(lat, lng, point.latitude, point.longitude) <= radius
     );
 
     // Group and analyze by provider
     const providerMap = new Map<string, ProviderAnalysis>();
-    
-    filteredPoints.forEach((point) => {
-      const provider = point.provider || 'Unknown';
+
+    filteredPoints.forEach((point: CoverageReport) => {
+      const provider = point.operator || 'Unknown';
       const current = providerMap.get(provider) || {
         avgSignal: 0,
         avgSpeed: 0,
         points: 0,
       };
 
-      current.avgSignal = (current.avgSignal * current.points + point.signal) / (current.points + 1);
+      // Convert BigInt to number for calculations
+      const signalValue = Number(point.signal);
+      current.avgSignal = (current.avgSignal * current.points + signalValue) / (current.points + 1);
       if (point.speed) {
         current.avgSpeed = ((current.avgSpeed || 0) * current.points + point.speed) / (current.points + 1);
       }
@@ -97,14 +97,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Format points for the response
-    const formattedPoints = filteredPoints.map(point => ({
+    const formattedPoints = filteredPoints.map((point: CoverageReport) => ({
       location: {
         lat: point.latitude,
         lng: point.longitude,
       },
-      provider: point.provider || 'Unknown',
-      signalStrength: point.signal,
-      technology: point.technology || 'Unknown',
+      provider: point.operator || 'Unknown',
+      signalStrength: Number(point.signal), // Convert BigInt to number for JSON
       speed: point.speed,
       timestamp: point.createdAt,
     }));

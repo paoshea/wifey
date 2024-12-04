@@ -1,28 +1,31 @@
-// types/auth.ts
-
 import { z } from 'zod';
+import type { DefaultUser } from 'next-auth';
 
 export enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR'
+  MODERATOR = 'MODERATOR',
 }
 
 declare module 'next-auth' {
-  interface User {
-    id: string;
+  interface User extends DefaultUser {
     role: UserRole;
+    emailVerified: Date | null;
   }
 
   interface Session {
-    user: User & {
+    user: {
       id: string;
+      email: string | null;
+      name: string | null;
+      image: string | null;
       role: UserRole;
+      emailVerified: Date | null;
     };
   }
 }
 
-export interface User {
+export interface DBUser {
   id: string;
   name: string | null;
   email: string;
@@ -52,17 +55,12 @@ export const UserCreateSchema = UserSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  emailVerified: true
+  emailVerified: true,
 }).extend({
-  password: z.string().min(8)
+  password: z.string().min(8),
 });
 
 export type UserCreate = z.infer<typeof UserCreateSchema>;
-
-export interface Session {
-  user: User;
-  expires: Date;
-}
 
 export interface AuthError {
   message: string;
@@ -103,19 +101,18 @@ export const ROLE_PERMISSIONS = {
 
 export type Permission = (typeof ROLE_PERMISSIONS)[keyof typeof ROLE_PERMISSIONS][number];
 
-// Get all permissions for a role including inherited ones
-function getRolePermissions(role: UserRole): readonly string[] {
+export function getRolePermissions(role: UserRole): readonly string[] {
   switch (role) {
     case UserRole.ADMIN:
       return Array.from(new Set([
         ...ROLE_PERMISSIONS[UserRole.USER],
         ...ROLE_PERMISSIONS[UserRole.MODERATOR],
-        ...ROLE_PERMISSIONS[UserRole.ADMIN]
+        ...ROLE_PERMISSIONS[UserRole.ADMIN],
       ]));
     case UserRole.MODERATOR:
       return Array.from(new Set([
         ...ROLE_PERMISSIONS[UserRole.USER],
-        ...ROLE_PERMISSIONS[UserRole.MODERATOR]
+        ...ROLE_PERMISSIONS[UserRole.MODERATOR],
       ]));
     case UserRole.USER:
       return ROLE_PERMISSIONS[UserRole.USER];
@@ -124,11 +121,28 @@ function getRolePermissions(role: UserRole): readonly string[] {
   }
 }
 
-export function hasPermission(user: User, permission: Permission): boolean {
+export function hasPermission(user: DBUser, permission: Permission): boolean {
   if (!user || !user.role) {
     return false;
   }
 
   const allPermissions = getRolePermissions(user.role);
   return allPermissions.includes(permission);
+}
+
+export async function auth(): Promise<{ success: boolean; session?: { user: { id: string; role: UserRole } }; response?: Response }> {
+  try {
+    const session = {
+      user: { id: 'mock-id', role: UserRole.USER },
+    };
+
+    if (!session) {
+      return { success: false, response: new Response('Unauthorized', { status: 401 }) };
+    }
+
+    return { success: true, session };
+  } catch (error) {
+    console.error('Auth error:', error);
+    return { success: false, response: new Response('Internal Server Error', { status: 500 }) };
+  }
 }

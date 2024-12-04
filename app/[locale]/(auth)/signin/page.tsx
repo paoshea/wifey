@@ -66,8 +66,8 @@ export default function SignIn() {
       }
 
       // Add locale to the callback URL if it doesn't have one
-      const redirectUrl = callbackUrl.startsWith('/') && !callbackUrl.startsWith(`/${locale}`) 
-        ? `/${locale}${callbackUrl}` 
+      const redirectUrl = callbackUrl.startsWith('/') && !callbackUrl.startsWith(`/${locale}`)
+        ? `/${locale}${callbackUrl}`
         : callbackUrl;
 
       router.push(redirectUrl);
@@ -170,7 +170,7 @@ export default function SignIn() {
           <div className="text-center text-sm">
             {t('noAccount')}{' '}
             <Link
-              href={`/${router.locale}/register`}
+              href={`/${locale}/register`}
               className="font-semibold text-primary hover:underline"
             >
               {t('signUp')}

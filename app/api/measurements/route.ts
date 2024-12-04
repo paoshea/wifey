@@ -1,33 +1,39 @@
-// app/api/measurements/route.ts
-
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../../lib/auth';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { detectCarrier } from '@/lib/carriers/detection';
-import { GamificationService } from '@/lib/services/gamification-service';
+import prisma from '../../../lib/prisma';
+import { measurementSchema } from '../../../lib/validations/measurement';
 import { Prisma } from '@prisma/client';
-import { SignalMeasurement } from '@/lib/types/monitoring';
 
-// Initialize services
-const gamificationService = new GamificationService(prisma);
+export const dynamic = 'force-dynamic';
 
-// Validation schema for measurements
+// Location schema for measurement validation
+const LocationSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+  accuracy: z.number().optional(),
+});
+
+// Device schema for measurement validation
+const DeviceSchema = z.object({
+  platform: z.string().optional(),
+  model: z.string().optional(),
+});
+
+// Schema for individual measurement validation
 const MeasurementSchema = z.object({
-  signalStrength: z.number().min(0).max(4),
-  technology: z.enum(['2G', '3G', '4G', '5G']),
-  location: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
-  }),
-  provider: z.string().optional(),
-  connectionType: z.string().optional(),
-  timestamp: z.number(),
-  device: z.object({
-    model: z.string().optional(),
-    platform: z.string().optional(),
-    userAgent: z.string().optional(),
-  }).optional(),
+  signalStrength: z.number(),
+  location: LocationSchema,
+  connectionType: z.string(),
+  technology: z.string(),
+  device: DeviceSchema.optional(),
+});
+
+// Pagination schema
+const PaginationSchema = z.object({
+  take: z.string().transform(Number).default('10'),
+  skip: z.string().transform(Number).default('0'),
 });
 
 type MeasurementInput = z.infer<typeof MeasurementSchema>;
@@ -35,151 +41,106 @@ type BatchMeasurementInput = MeasurementInput[];
 
 const BatchMeasurementsSchema = z.array(MeasurementSchema).max(100);
 
-// Helper function to convert MeasurementInput to SignalMeasurement
-function toSignalMeasurement(input: MeasurementInput): SignalMeasurement {
+// Helper function to convert MeasurementInput to database format
+async function toDbMeasurement(input: MeasurementInput, userId: string) {
   return {
-    timestamp: input.timestamp,
-    carrier: input.provider || 'unknown',
-    network: input.technology,
-    networkType: input.technology,
-    geolocation: input.location,
+    userId,
     signalStrength: input.signalStrength,
-    technology: input.technology,
-    provider: input.provider || 'unknown',
+    latitude: input.location.latitude,
+    longitude: input.location.longitude,
     connectionType: input.connectionType,
-    device: {
-      type: input.device?.platform || 'unknown',
-      model: input.device?.model || 'unknown',
-      os: input.device?.platform || 'unknown'
-    }
+    networkType: input.technology,
+    provider: input.device?.platform || 'unknown',
+    timestamp: new Date(),
   };
 }
 
 export async function POST(request: Request) {
   try {
-    // Get authenticated user
-    const authResult = await auth();
-
-    if (!authResult.success) {
-      return authResult.response;
+    // Authenticate the user
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = authResult.session.user.id;
+    const userId = session.user.id;
 
     // Parse and validate request body
     const rawData = await request.json();
     const measurements = Array.isArray(rawData) ? rawData : [rawData];
-
     const validationResult = BatchMeasurementsSchema.safeParse(measurements);
+
     if (!validationResult.success) {
       return NextResponse.json(
         { error: 'Invalid measurement data', details: validationResult.error },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const results = await Promise.all(
-      validationResult.data.map(async (measurement: MeasurementInput) => {
-        // Convert to SignalMeasurement type and detect carrier
-        const signalMeasurement = toSignalMeasurement(measurement);
-        const provider = measurement.provider || await detectCarrier(signalMeasurement);
-
-        // Create measurement record
-        const result = await prisma.measurement.create({
-          data: {
-            userId,
-            type: 'coverage',
-            value: measurement.signalStrength,
-            latitude: measurement.location.lat,
-            longitude: measurement.location.lng,
-            timestamp: new Date(measurement.timestamp),
-            deviceInfo: measurement.device || {} as Prisma.InputJsonValue,
-            metadata: {
-              technology: measurement.technology,
-              provider,
-              connectionType: measurement.connectionType,
-            } as Prisma.InputJsonValue,
-            networkType: measurement.technology,
-            operator: provider,
-            signalStrength: Math.round(measurement.signalStrength * 100), // Convert 0-4 to 0-100 scale
-            points: 10,
-            isRural: false, // This will be calculated by a background job
-          },
-        });
-
-        // Process the measurement for gamification
-        await gamificationService.processMeasurement(userId, {
-          type: 'coverage',
-          value: measurement.signalStrength,
-          latitude: measurement.location.lat,
-          longitude: measurement.location.lng,
-          isRural: false,
-          isFirstInArea: false, // This will be calculated by a background job
-          operator: provider,
-          stats: {
-            isUnique: false, // Will be calculated by background job
-            distance: 0, // Will be calculated based on previous measurements
-            contributionScore: 1, // Base contribution score
-            qualityScore: measurement.signalStrength / 4 * 100 // Convert to percentage
-          },
-          streak: 0 // Will be updated by the gamification service
-        });
-
-        return result;
-      })
+    // Convert inputs to database format
+    const dbMeasurements = await Promise.all(
+      validationResult.data.map(m => toDbMeasurement(m, userId))
     );
 
-    return NextResponse.json({ success: true, results });
+    // Save measurements
+    const savedMeasurements = await prisma.measurement.createMany({
+      data: dbMeasurements,
+    });
+
+    return NextResponse.json({
+      message: 'Measurements saved successfully',
+      savedCount: savedMeasurements.count,
+    });
   } catch (error) {
-    console.error('Error processing measurements:', error);
+    console.error('Error saving measurements:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(request: Request) {
-  try {
-    const authResult = await auth();
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    if (!authResult.success) {
-      return authResult.response;
-    }
+  const userId = session.user.id;
 
-    const userId = authResult.session.user.id;
-    const searchParams = new URL(request.url).searchParams;
-    
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
+  // Get pagination parameters from URL
+  const url = new URL(request.url);
+  const searchParams = Object.fromEntries(url.searchParams);
+  const paginationResult = PaginationSchema.safeParse(searchParams);
 
-    const [measurements, total] = await Promise.all([
-      prisma.measurement.findMany({
-        where: { userId },
-        orderBy: { timestamp: 'desc' },
-        take: limit,
-        skip,
-      }),
-      prisma.measurement.count({
-        where: { userId },
-      }),
-    ]);
-
-    return NextResponse.json({
-      measurements,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        currentPage: page,
-        perPage: limit,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching measurements:', error);
+  if (!paginationResult.success) {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Invalid pagination parameters' },
+      { status: 400 },
     );
   }
+
+  const { take, skip } = paginationResult.data;
+
+  const [rawMeasurements, total] = await Promise.all([
+    prisma.measurement.findRaw({
+      filter: { userId },
+      options: {
+        sort: { timestamp: -1 },
+        skip,
+        limit: take
+      }
+    }) as Promise<Prisma.JsonObject>,
+    prisma.measurement.count({
+      where: { userId },
+    }),
+  ]);
+
+  // Convert the raw MongoDB result to an array of measurements
+  const measurements = Array.isArray(rawMeasurements) ? rawMeasurements : [];
+
+  return NextResponse.json({
+    measurements,
+    total,
+  });
 }

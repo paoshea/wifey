@@ -27,7 +27,6 @@ export function OfflineMap({
   const t = useTranslations('location');
   const [mapCenter, setMapCenter] = useState<[number, number]>([9.9281, -84.0907]);
   const [mapZoom, setMapZoom] = useState(13);
-  const [hoveredPoint, setHoveredPoint] = useState<MapPoint | null>(null);
   const [cursorPosition, setCursorPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
 
@@ -38,12 +37,8 @@ export function OfflineMap({
     }
   }, [currentLocation]);
 
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    setCursorPosition({ lat, lng });
-  }, []);
-
-  const handlePointHover = useCallback((point: MapPoint | null) => {
-    setHoveredPoint(point);
+  const handleMapClick = useCallback((latlng: { lat: number; lng: number }) => {
+    setCursorPosition(latlng);
   }, []);
 
   const handlePointSelect = useCallback((point: MapPoint) => {
@@ -64,10 +59,10 @@ export function OfflineMap({
     const Δφ = (point2.lat - point1.lat) * Math.PI / 180;
     const Δλ = (point2.lng - point1.lng) * Math.PI / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   }, []);
@@ -82,9 +77,8 @@ export function OfflineMap({
             center={mapCenter}
             zoom={mapZoom}
             onPointSelect={handlePointSelect}
-            onPointHover={handlePointHover}
             onMapClick={handleMapClick}
-            currentLocation={currentLocation}
+            selectedLocation={currentLocation}
           />
         </div>
         <Button
@@ -109,16 +103,16 @@ export function OfflineMap({
             </div>
           </Card>
         )}
-        
-        {hoveredPoint && currentLocation && (
+
+        {selectedPoint && currentLocation && (
           <Card className="p-3">
             <h4 className="text-sm font-medium mb-2">{t('distanceToPoint')}</h4>
             <div className="space-y-1 text-sm">
               <p>{t('distance')}: {(calculateDistance(currentLocation, {
-                lat: hoveredPoint.coordinates[0],
-                lng: hoveredPoint.coordinates[1]
+                lat: selectedPoint.coordinates[0],
+                lng: selectedPoint.coordinates[1]
               }) / 1000).toFixed(2)} km</p>
-              <p>{hoveredPoint.name}</p>
+              <p>{selectedPoint.name}</p>
             </div>
           </Card>
         )}

@@ -1,134 +1,38 @@
-// lib/services/gamification-service.ts
-
-import { PrismaClient, type User, type Achievement, type UserStreak, type WifiSpot, type CoverageReport, type OperatorType, type Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, Achievement, LeaderboardEntry as PrismaLeaderboardEntry } from '@prisma/client';
 import {
   type StatsContent,
   type ValidatedAchievement,
-  AchievementTier,
-  type Requirement,
-  RequirementOperator,
-  type ValidatedMeasurementInput,
-  type AchievementNotification,
   type ValidatedRequirement,
-  type StatsMetric,
-  type MeasurementResult,
   type LeaderboardEntry,
   type LeaderboardResponse,
-  type AchievementProgress
+  RequirementOperator,
+  RequirementType,
+  AchievementTier,
+  TimeFrame,
+  jsonToStats
 } from '../gamification/types';
-import { TimeFrame } from '../gamification/types/TimeFrame';
 import {
-  validateMeasurement,
-  validateRequirement,
-  validateAchievementRequirements,
   calculateLevel,
-  calculatePointsForMeasurement,
-  calculateProgress
+  validateRequirement
 } from '../gamification/validation';
-import {
-  calculateMeasurementPoints,
-  calculateAchievementXP,
-  DEFAULT_ACHIEVEMENTS,
-  type AchievementDefinition
-} from '../gamification/achievements';
 import {
   GamificationError,
   ValidationError,
-  UserNotFoundError,
-  AchievementNotFoundError,
-  DatabaseError,
+  UserNotFoundError
 } from '../gamification/errors';
-import { monitoringService } from '../monitoring/monitoring-service';
-import { notificationService } from './notification-service';
-import prisma from '@/lib/prisma';
-import { z } from 'zod';
-import { LeaderboardService } from './leaderboard-service';
-
-const AchievementRequirementSchema = z.object({
-  metric: z.enum(['totalMeasurements', 'ruralMeasurements', 'uniqueLocations', 'totalDistance', 'contributionScore', 'qualityScore', 'accuracyRate', 'verifiedSpots', 'helpfulActions']),
-  operator: z.enum(['GREATER_THAN', 'LESS_THAN', 'EQUAL', 'NOT_EQUAL', 'GREATER_THAN_EQUAL', 'LESS_THAN_EQUAL']),
-  value: z.number()
-});
-
-type UserStatsSelect = Prisma.UserGetPayload<{
-  select: {
-    id: true;
-    stats: {
-      select: {
-        points: true;
-        stats: true;
-      }
-    }
-  }
-}>;
-
-type UserWithStats = Prisma.UserGetPayload<{
-  include: {
-    stats: true;
-  };
-}>;
-
-type UserWithRelations = Prisma.UserGetPayload<{
-  include: {
-    achievements: true;
-    stats: true;
-    streaks: true;
-  };
-}>;
-
-interface UserProgress {
-  points: number;
-  level: number;
-  currentXP: number;
-  nextLevelXP: number;
-  streak: {
-    current: number;
-    longest: number;
-  };
-  stats: StatsContent;
-  achievements?: Achievement[];
-}
-
-interface UserStats {
-  points: number;
-  stats: StatsContent;
-}
-
-function isUserStats(stats: any): stats is UserStats {
-  return stats && typeof stats.points === 'number' && typeof stats.stats === 'object';
-}
-
-const defaultStats: StatsContent = {
-  totalMeasurements: 0,
-  ruralMeasurements: 0,
-  uniqueLocations: 0,
-  totalDistance: 0,
-  contributionScore: 0,
-  qualityScore: 0,
-  accuracyRate: 0,
-  verifiedSpots: 0,
-  helpfulActions: 0,
-  consecutiveDays: 0
-};
-
-import { Cache } from 'memory-cache';
-
-interface CacheConfig {
-  stdTTL: number;
-  checkperiod: number;
-  useClones: boolean;
-}
+import prisma from '../prisma';
+import * as memoryCache from 'memory-cache';
 
 interface CacheOptions {
   ttl?: number;
 }
 
 class GamificationCache {
-  private cache: Cache<string, any>;
+  private cache: memoryCache.CacheClass<string, any>;
   private defaultTTL: number = 300; // 5 minutes default TTL
 
   constructor() {
-    this.cache = new Cache();
+    this.cache = new memoryCache.Cache();
   }
 
   async wrap<T>(
@@ -155,71 +59,194 @@ class GamificationCache {
   }
 }
 
+type AchievementWithUser = Prisma.AchievementGetPayload<{
+  include: { user: true };
+}>;
+
+type LeaderboardEntryWithUser = Prisma.LeaderboardEntryGetPayload<{
+  include: { user: true };
+}>;
+
 export class GamificationService {
   private apiCache: GamificationCache;
   private prisma: PrismaClient;
-  private leaderboardService: LeaderboardService;
 
   constructor(prismaClient: PrismaClient = prisma) {
     this.prisma = prismaClient;
-    this.leaderboardService = new LeaderboardService(prismaClient);
     this.apiCache = new GamificationCache();
   }
 
-  // Cache keys
-  private static readonly LEADERBOARD_CACHE_KEY = 'leaderboard';
-  private static readonly USER_STATS_CACHE_KEY = 'user_stats';
-  private static readonly ACHIEVEMENTS_CACHE_KEY = 'achievements';
+  async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const cacheKey = `totalUsers:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const dateFilter = this.getDateFilter(timeframe);
+      return this.prisma.user.count();
+    });
+  }
 
-  async getAchievements(userId: string): Promise<ValidatedAchievement[]> {
+  async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
+    const cacheKey = `totalContributions:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const dateFilter = this.getDateFilter(timeframe);
+      return this.prisma.coverageReport.count();
+    });
+  }
+
+  private mapUserStatsToStatsContent(userStats: Prisma.UserStatsGetPayload<{}>): StatsContent {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          achievements: true,
-          stats: true,
-          streaks: true
-        },
-      });
-
-      if (!user) {
-        throw new UserNotFoundError(`User not found: ${userId}`);
+      if (typeof userStats.stats !== 'object' || userStats.stats === null) {
+        throw new ValidationError('Invalid stats format');
       }
 
-      const achievements = user.achievements;
-      const userProgress = await this.getUserProgress(userId);
-      const stats = user.stats?.stats as StatsContent || defaultStats;
-
-      return achievements.map(achievement => ({
-        ...achievement,
-        requirements: this.parseRequirements(achievement),
-        progress: this.calculateProgress(this.parseRequirements(achievement), stats),
-        isCompleted: this.calculateProgress(this.parseRequirements(achievement), stats) === 100,
-        tier: this.calculateTier(this.parseRequirements(achievement), stats)
-      }));
+      const statsData = jsonToStats(userStats.stats);
+      return {
+        ...statsData,
+        points: userStats.points
+      };
     } catch (error) {
-      console.error('Error getting achievements:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error parsing user stats:', err);
+      return { ...defaultStats, points: userStats.points };
     }
   }
 
-  async getUserProgress(userId: string): Promise<UserProgress> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          stats: true,
-          streaks: true,
-          achievements: true
-        }
-      });
+  private validateRequirements(requirements: Prisma.JsonValue): ValidatedRequirement[] {
+    if (!Array.isArray(requirements)) {
+      throw new ValidationError('Requirements must be an array');
+    }
 
-      if (!user) {
-        throw new UserNotFoundError(`User not found: ${userId}`);
+    return requirements.map(req => {
+      if (!isValidRequirement(req)) {
+        throw new ValidationError('Invalid requirement format');
       }
 
-      const stats = user.stats?.stats as StatsContent || defaultStats;
-      const points = user.stats?.points || 0;
+      if (!Object.values(RequirementType).includes(req.type as RequirementType)) {
+        throw new ValidationError(`Invalid requirement type: ${req.type}`);
+      }
+
+      return {
+        type: req.type as RequirementType,
+        metric: req.metric as keyof StatsContent,
+        value: req.value,
+        operator: req.operator as RequirementOperator,
+        description: req.description
+      };
+    });
+  }
+
+  private mapAchievementToValidated(achievement: Achievement): ValidatedAchievement {
+    try {
+      const requirementsData = this.validateRequirements(achievement.requirements);
+      const target = requirementsData.length > 0 ? requirementsData[0].value : 100;
+
+      return {
+        id: achievement.id,
+        userId: achievement.userId,
+        title: achievement.title,
+        description: achievement.description,
+        points: achievement.points,
+        icon: achievement.icon,
+        type: achievement.type,
+        tier: achievement.tier as AchievementTier,
+        requirements: requirementsData,
+        progress: achievement.progress,
+        target,
+        isCompleted: achievement.isCompleted,
+        unlockedAt: achievement.unlockedAt,
+        createdAt: achievement.createdAt,
+        updatedAt: achievement.updatedAt
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error mapping achievement:', err);
+      throw new ValidationError(`Invalid achievement data: ${err.message}`);
+    }
+  }
+
+  private mapPrismaToLeaderboardEntry(entry: PrismaLeaderboardEntry): LeaderboardEntry {
+    return {
+      id: entry.id,
+      timeframe: entry.timeframe as TimeFrame,
+      points: entry.points,
+      rank: entry.rank,
+      username: entry.username,
+      level: Math.floor(entry.points / 1000), // Calculate level from points
+      contributions: entry.measurements,
+      badges: 0, // This would need to be calculated from achievements if needed
+      streak: {
+        current: 0, // These would need to be fetched from UserStreak if needed
+        longest: 0
+      },
+      recentAchievements: [], // This would need to be fetched from achievements if needed
+      user: {
+        id: entry.userId,
+        name: entry.username,
+        rank: entry.rank,
+        measurements: entry.measurements,
+        lastActive: entry.lastActive
+      }
+    };
+  }
+
+  async getAchievements(userId: string): Promise<ValidatedAchievement[]> {
+    try {
+      const achievements = await this.prisma.achievement.findMany({
+        where: {
+          userId
+        }
+      });
+      return achievements.map(achievement => this.mapAchievementToValidated(achievement));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error getting achievements:', err);
+      throw new GamificationError('Failed to fetch achievements', 'ACHIEVEMENT_FETCH_ERROR');
+    }
+  }
+
+  async getUserProgress(userId: string): Promise<UserProgressData> {
+    try {
+      const [stats, streaks, achievements] = await Promise.all([
+        this.prisma.userStats.findUnique({
+          where: {
+            userId
+          }
+        }),
+        this.prisma.userStreak.findMany({
+          where: {
+            userId
+          },
+          orderBy: {
+            lastCheckin: 'desc'
+          },
+          take: 1
+        }),
+        this.prisma.achievement.findMany({
+          where: {
+            userId
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        })
+      ]);
+
+      if (!stats) {
+        return {
+          points: 0,
+          level: 0,
+          currentXP: 0,
+          nextLevelXP: 1000,
+          streak: {
+            current: 0,
+            longest: 0
+          },
+          stats: defaultStats,
+          achievements: []
+        };
+      }
+
+      const mappedStats = this.mapUserStatsToStatsContent(stats);
+      const points = mappedStats.points;
       const level = calculateLevel(points);
       const currentXP = points % 1000;
       const nextLevelXP = 1000;
@@ -230,423 +257,99 @@ export class GamificationService {
         currentXP,
         nextLevelXP,
         streak: {
-          current: user.streaks?.[0]?.current || 0,
-          longest: user.streaks?.[0]?.longest || 0
+          current: streaks[0]?.current ?? 0,
+          longest: streaks[0]?.longest ?? 0
         },
-        stats,
-        achievements: user.achievements
+        stats: mappedStats,
+        achievements: achievements.map(achievement => this.mapAchievementToValidated(achievement))
       };
     } catch (error) {
-      console.error('Error getting user progress:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error getting user progress:', err);
+      throw new GamificationError('Failed to fetch user progress', 'USER_PROGRESS_ERROR');
     }
   }
 
   async getLeaderboard(
-    timeframe: TimeFrame = 'allTime',
+    timeframe: TimeFrame = TimeFrame.ALL_TIME,
     page = 1,
     pageSize = 10
   ): Promise<LeaderboardResponse> {
     try {
       const skip = (page - 1) * pageSize;
-      const totalUsers = await this.prisma.user.count();
 
-      const users = await this.prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          stats: {
-            select: {
-              points: true,
-              stats: true
-            }
-          }
-        },
-        orderBy: {
-          stats: {
-            points: 'desc'
-          }
-        },
-        skip,
-        take: pageSize
-      });
-
-      const totalPages = Math.ceil(totalUsers / pageSize);
-
-      const entries: LeaderboardEntry[] = users.map((user, index) => {
-        const userStats = user.stats;
-        const points = isUserStats(userStats) ? userStats.points : 0;
-        const stats = isUserStats(userStats) ? userStats.stats as StatsContent : defaultStats;
-
-        return {
-          userId: user.id,
-          username: user.name || 'Anonymous',
-          points,
-          rank: skip + index + 1,
-          level: calculateLevel(points),
-          achievements: 0,
-          measurements: stats.totalMeasurements || 0,
-          lastActive: new Date()
-        };
-      });
-
-      return {
-        entries,
-        currentPage: page,
-        totalPages,
-        totalUsers
-      };
-    } catch (error) {
-      console.error('Error getting leaderboard:', error);
-      throw error;
-    }
-  }
-
-  async getLeaderboardPosition(userId: string): Promise<{ position: number; totalUsers: number }> {
-    try {
-      const users = await this.prisma.user.findMany({
-        select: {
-          id: true,
-          stats: {
-            select: {
-              points: true,
-              stats: true
-            }
-          }
-        },
-        orderBy: {
-          stats: {
-            points: 'desc'
-          }
-        }
-      });
-
-      const position = users.findIndex(user => user.id === userId) + 1;
-      const totalUsers = users.length;
-
-      return {
-        position,
-        totalUsers
-      };
-    } catch (error) {
-      console.error('Error getting leaderboard position:', error);
-      throw new GamificationError('Failed to get leaderboard position');
-    }
-  }
-
-  async processMeasurement(userId: string, measurement: ValidatedMeasurementInput): Promise<MeasurementResult> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          userStats: true,
-          streakHistory: {
-            orderBy: {
-              lastCheckin: 'desc'
-            },
-            take: 1
-          }
-        }
-      });
-
-      if (!user) {
-        throw new UserNotFoundError(`User not found: ${userId}`);
-      }
-
-      const currentStats = user.userStats?.statsData as StatsContent || defaultStats;
-      const points = this.calculateBasePoints(measurement);
-      const bonuses = this.calculateBonuses(measurement);
-      const totalPoints = points + Object.values(bonuses).reduce((a, b) => a + b, 0);
-      const xp = Math.round(totalPoints * 1.5); // XP is 1.5x points
-      const streak = user.streakHistory[0]?.current ?? 0;
-      const updatedStats = this.calculateUpdatedStats(currentStats, measurement, streak);
-
-      const userStats = await this.prisma.userStats.upsert({
-        where: { userId },
-        create: {
-          userId,
-          statsData: updatedStats,
-          points: totalPoints
-        },
-        update: {
-          statsData: updatedStats,
-          points: {
-            increment: totalPoints
-          }
-        }
-      });
-
-      // Create or update leaderboard entry
-      await this.prisma.leaderboardEntry.upsert({
-        where: {
-          userId_timeframe: {
-            userId,
-            timeframe: TimeFrame.ALL_TIME
-          }
-        },
-        create: {
-          userId,
-          timeframe: TimeFrame.ALL_TIME,
-          points: totalPoints,
-          rank: await this.calculateRank(totalPoints),
-          stats: updatedStats
-        },
-        update: {
-          points: {
-            increment: totalPoints
+      const [entries, totalUsers] = await Promise.all([
+        this.prisma.leaderboardEntry.findMany({
+          where: {
+            timeframe
           },
-          stats: updatedStats
-        }
-      });
+          orderBy: {
+            points: 'desc'
+          },
+          skip,
+          take: pageSize
+        }),
+        this.prisma.leaderboardEntry.count({
+          where: {
+            timeframe
+          }
+        })
+      ]);
 
       return {
-        points: {
-          value: totalPoints,
-          xp,
-          bonuses
-        },
-        achievements: [], // Will be populated by achievement processor
-        stats: updatedStats,
-        xp
+        timeframe,
+        entries: entries.map(entry => this.mapPrismaToLeaderboardEntry(entry)),
+        totalUsers
       };
     } catch (error) {
-      console.error('Error processing measurement:', error);
-      throw error;
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error getting leaderboard:', err);
+      throw new GamificationError('Failed to fetch leaderboard', 'LEADERBOARD_ERROR');
     }
   }
 
-  async getLeaderboard(
-    limit: number = 10
-  ): Promise<LeaderboardEntry[]> {
-    return this.leaderboardService.getLeaderboard(TimeFrame.ALL_TIME, 1, limit);
-  }
-
-  async getUserStats(userId: string): Promise<StatsContent> {
-    const cacheKey = `${GamificationService.USER_STATS_CACHE_KEY}_${userId}`;
-    return this.apiCache.wrap(
-      cacheKey,
-      async () => {
-        const userStats = await this.prisma.userStats.findUnique({
-          where: { userId }
-        });
-        
-        return userStats?.statsData as StatsContent || this.getDefaultStats();
-      },
-      { ttl: 300 } // 5 minutes TTL for user stats
-    );
-  }
-
-  async getUserAchievements(userId: string): Promise<Achievement[]> {
-    const cacheKey = `${GamificationService.ACHIEVEMENTS_CACHE_KEY}_${userId}`;
-    return this.apiCache.wrap(
-      cacheKey,
-      async () => {
-        const achievements = await this.prisma.achievement.findMany({
-          where: { userId }
-        });
-        return achievements;
-      },
-      { ttl: 300 } // 5 minutes TTL for achievements
-    );
-  }
-
-  private parseRequirements(achievement: Achievement): ValidatedRequirement[] {
-    try {
-      if (!Array.isArray(achievement.requirements)) {
-        throw new ValidationError('Achievement requirements must be an array');
-      }
-
-      return achievement.requirements.map(req => {
-        const parsed = AchievementRequirementSchema.safeParse(req);
-        if (!parsed.success) {
-          throw new ValidationError(`Invalid requirement format: ${parsed.error.message}`);
+  async getUserRank(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
+    const cacheKey = `userRank:${userId}:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const entry = await this.prisma.leaderboardEntry.findFirst({
+        where: {
+          userId,
+          timeframe
+        },
+        orderBy: {
+          points: 'desc'
         }
-        return parsed.data;
       });
-    } catch (error) {
-      console.error('Error parsing requirements:', error);
-      throw new ValidationError('Failed to parse achievement requirements');
-    }
-  }
 
-  private async validateRequirements(
-    achievement: Achievement,
-    stats: UserStats['stats']
-  ): Promise<boolean> {
-    return achievement.requirements.every(req => validateRequirement(req, stats));
-  }
-
-  private calculateProgress(requirements: ValidatedRequirement[], stats: StatsContent): number {
-    return calculateProgress({ requirements } as Achievement, stats);
-  }
-
-  private validateRequirement(
-    requirement: ValidatedRequirement,
-    stats: StatsContent
-  ): boolean {
-    const statValue = stats[requirement.metric] || 0;
-    
-    switch (requirement.operator) {
-      case RequirementOperator.GREATER_THAN:
-        return statValue > requirement.value;
-      case RequirementOperator.LESS_THAN:
-        return statValue < requirement.value;
-      case RequirementOperator.EQUAL:
-        return statValue === requirement.value;
-      case RequirementOperator.NOT_EQUAL:
-        return statValue !== requirement.value;
-      case RequirementOperator.GREATER_THAN_EQUAL:
-        return statValue >= requirement.value;
-      case RequirementOperator.LESS_THAN_EQUAL:
-        return statValue <= requirement.value;
-      default:
-        throw new ValidationError(`Unknown operator: ${requirement.operator}`);
-    }
-  }
-
-  async validateAchievement(achievement: Achievement, stats: StatsContent): Promise<ValidatedAchievement> {
-    const requirements = this.parseRequirements(achievement);
-    const progress = this.calculateProgress(requirements, stats);
-    const isCompleted = progress === 100;
-
-    return {
-      ...achievement,
-      progress,
-      isCompleted
-    };
-  }
-
-  private calculateTier(requirements: ValidatedRequirement[], stats: StatsContent): AchievementTier {
-    if (requirements.length === 0) return AchievementTier.BRONZE;
-    
-    const progress = this.calculateProgress(requirements, stats);
-    if (progress >= 90) return AchievementTier.PLATINUM;
-    if (progress >= 75) return AchievementTier.GOLD;
-    if (progress >= 50) return AchievementTier.SILVER;
-    return AchievementTier.BRONZE;
-  }
-
-  private calculateUpdatedStats(
-    currentStats: StatsContent,
-    measurement: ValidatedMeasurementInput,
-    streak: number = 0
-  ): StatsContent {
-    const currentAccuracy = currentStats.accuracyRate || 0;
-    const measurementAccuracy = measurement.stats.accuracy || 0;
-    const totalMeasurements = (currentStats.totalMeasurements || 0);
-    
-    return {
-      ...currentStats,
-      totalMeasurements: totalMeasurements + 1,
-      ruralMeasurements: measurement.isRural ? (currentStats.ruralMeasurements || 0) + 1 : (currentStats.ruralMeasurements || 0),
-      uniqueLocations: measurement.stats.isUnique ? (currentStats.uniqueLocations || 0) + 1 : (currentStats.uniqueLocations || 0),
-      totalDistance: (currentStats.totalDistance || 0) + measurement.stats.distance,
-      contributionScore: (currentStats.contributionScore || 0) + measurement.stats.contributionScore,
-      qualityScore: Math.round(((currentStats.qualityScore || 0) * totalMeasurements + measurement.stats.qualityScore) / (totalMeasurements + 1)),
-      accuracyRate: measurement.stats.accuracy ? Math.round((currentAccuracy * totalMeasurements + measurementAccuracy) / (totalMeasurements + 1)) : currentAccuracy,
-      consecutiveDays: streak,
-      verifiedSpots: currentStats.verifiedSpots || 0,
-      helpfulActions: currentStats.helpfulActions || 0
-    };
-  }
-
-  private calculateBasePoints(measurement: ValidatedMeasurementInput): number {
-    let points = 10; // Base points for any measurement
-    
-    // Quality multiplier
-    const qualityMultiplier = measurement.stats.qualityScore / 100;
-    points *= (1 + qualityMultiplier);
-    
-    // Distance bonus
-    if (measurement.stats.distance > 0) {
-      points += Math.min(measurement.stats.distance * 0.1, 50); // Cap at 50 points
-    }
-    
-    // Contribution score bonus
-    points += measurement.stats.contributionScore;
-    
-    return Math.round(points);
-  }
-
-  private calculateBonuses(measurement: ValidatedMeasurementInput): Record<string, number> {
-    const bonuses: Record<string, number> = {};
-    
-    // Streak bonus
-    if (measurement.streak > 0) {
-      bonuses.streak = Math.min(measurement.streak * 2, 20); // Cap at 20 points
-    }
-    
-    // Unique location bonus
-    if (measurement.stats.isUnique) {
-      bonuses.uniqueLocation = 15;
-    }
-    
-    // Rural bonus
-    if (measurement.isRural) {
-      bonuses.rural = 25;
-    }
-    
-    // First in area bonus
-    if (measurement.isFirstInArea) {
-      bonuses.firstInArea = 30;
-    }
-    
-    // Accuracy bonus
-    if (measurement.stats.accuracy && measurement.stats.accuracy > 90) {
-      bonuses.highAccuracy = 10;
-    }
-    
-    return bonuses;
-  }
-
-  async validateRequirements(
-    achievement: Achievement,
-    stats: UserStats['stats']
-  ): Promise<boolean> {
-    return achievement.requirements.every(req => {
-      const statValue = stats[req.metric] || 0;
-      
-      switch (req.operator) {
-        case RequirementOperator.GT:
-          return statValue > req.value;
-        case RequirementOperator.GTE:
-          return statValue >= req.value;
-        case RequirementOperator.LT:
-          return statValue < req.value;
-        case RequirementOperator.LTE:
-          return statValue <= req.value;
-        case RequirementOperator.EQ:
-          return statValue === req.value;
-        default:
-          return false;
-      }
+      return entry?.rank ?? null;
     });
   }
 
-  calculateAchievementProgress(
-    achievement: Achievement,
-    stats: UserStats['stats']
-  ): number {
-    const metRequirements = achievement.requirements.filter(req => {
-      const statValue = stats[req.metric] || 0;
-      
-      switch (req.operator) {
-        case RequirementOperator.GT:
-          return statValue > req.value;
-        case RequirementOperator.GTE:
-          return statValue >= req.value;
-        case RequirementOperator.LT:
-          return statValue < req.value;
-        case RequirementOperator.LTE:
-          return statValue <= req.value;
-        case RequirementOperator.EQ:
-          return statValue === req.value;
-        default:
-          return false;
-      }
-    });
+  async getLeaderboardPosition(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<LeaderboardEntry | null> {
+    const cacheKey = `leaderboardPosition:${userId}:${timeframe}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const entry = await this.prisma.leaderboardEntry.findFirst({
+        where: {
+          userId,
+          timeframe
+        }
+      });
 
-    return Math.round((metRequirements.length / achievement.requirements.length) * 100);
+      return entry ? this.mapPrismaToLeaderboardEntry(entry) : null;
+    });
+  }
+
+  async getUserPoints(userId: string): Promise<number | null> {
+    const cacheKey = `userPoints:${userId}`;
+    return this.apiCache.wrap(cacheKey, async () => {
+      const stats = await this.prisma.userStats.findUnique({
+        where: {
+          userId
+        }
+      });
+
+      return stats?.points ?? null;
+    });
   }
 
   private getDateFilter(timeframe: TimeFrame): { gte: Date } {
@@ -672,95 +375,55 @@ export class GamificationService {
         };
     }
   }
-
-  async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const dateFilter = this.getDateFilter(timeframe);
-    const count = await this.prisma.user.count({
-      where: {
-        stats: {
-          createdAt: dateFilter
-        }
-      }
-    });
-    return count;
-  }
-
-  async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const dateFilter = this.getDateFilter(timeframe);
-    const count = await this.prisma.contribution.count({
-      where: {
-        createdAt: dateFilter
-      }
-    });
-    return count;
-  }
-
-  async getUserRank(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
-    const cacheKey = `userRank:${userId}:${timeframe}`;
-    return this.apiCache.wrap(cacheKey, async () => {
-      const dateFilter = this.getDateFilter(timeframe);
-      const userPoints = await this.getUserPoints(userId);
-
-      if (!userPoints) {
-        return null;
-      }
-
-      const rank = await this.prisma.user.count({
-        where: {
-          stats: {
-            points: { gt: userPoints }
-          },
-          measurements: {
-            some: {
-              createdAt: dateFilter
-            }
-          }
-        }
-      });
-
-      return rank + 1;
-    });
-  }
-
-  async getUserPoints(userId: string): Promise<number | null> {
-    const cacheKey = `userPoints:${userId}`;
-    return this.apiCache.wrap(cacheKey, async () => {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          stats: {
-            select: {
-              points: true
-            }
-          }
-        }
-      });
-
-      return user?.stats?.points ?? null;
-    });
-  }
 }
 
-// Cache-specific functions
-export const getCachedUserProgress = async (userId: string): Promise<UserProgress> => {
-  return gamificationService.apiCache.wrap(
-    `${GamificationService.USER_STATS_CACHE_KEY}_${userId}`,
-    () => gamificationService.getUserProgress(userId),
-    { ttl: 300 } // 5 minutes cache
-  );
-};
-
-export const getCachedLeaderboard = async (
-  timeframe: TimeFrame = 'allTime',
-  page = 1,
-  pageSize = 10
-): Promise<LeaderboardResponse> => {
-  return gamificationService.apiCache.wrap(
-    `${GamificationService.LEADERBOARD_CACHE_KEY}_${timeframe}_${page}_${pageSize}`,
-    () => gamificationService.getLeaderboard(timeframe, page, pageSize),
-    { ttl: 300 } // 5 minutes cache
-  );
-};
-
-// Export singleton instance
 export const gamificationService = new GamificationService();
+
+// Wrapper functions for direct use with React Query
+export const getCachedUserProgress = async (userId: string): Promise<UserProgressData> => {
+  return gamificationService.getUserProgress(userId);
+};
+
+export const getCachedLeaderboard = async (timeframe: TimeFrame): Promise<LeaderboardResponse> => {
+  return gamificationService.getLeaderboard(timeframe);
+};
+
+// Helper types and constants
+const defaultStats: StatsContent = {
+  points: 0,
+  totalMeasurements: 0,
+  ruralMeasurements: 0,
+  uniqueLocations: 0,
+  totalDistance: 0,
+  contributionScore: 0,
+  qualityScore: 0,
+  accuracyRate: 0,
+  verifiedSpots: 0,
+  helpfulActions: 0,
+  consecutiveDays: 0
+};
+
+interface UserProgressData {
+  points: number;
+  level: number;
+  currentXP: number;
+  nextLevelXP: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  stats: StatsContent;
+  achievements?: ValidatedAchievement[];
+}
+
+function isValidRequirement(value: unknown): value is ValidatedRequirement {
+  if (!value || typeof value !== 'object') return false;
+  const req = value as Record<string, unknown>;
+  return (
+    typeof req.type === 'string' &&
+    typeof req.metric === 'string' &&
+    typeof req.value === 'number' &&
+    typeof req.operator === 'string' &&
+    (!req.description || typeof req.description === 'string')
+  );
+}

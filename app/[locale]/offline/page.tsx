@@ -36,13 +36,15 @@ interface SavedLocation {
 
 export default function OfflinePage() {
   const t = useTranslations();
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [currentLocation, setCurrentLocation] = useState<CurrentLocation | null>(null);
   const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<SavedLocation | null>(null);
   const [coveragePoints, setCoveragePoints] = useState<MapPoint[]>([]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', handleOnlineStatus);
     window.addEventListener('offline', handleOnlineStatus);
@@ -60,12 +62,12 @@ export default function OfflinePage() {
     // Convert saved locations to map points
     const points = history.map(loc => ({
       id: loc.timestamp.toString(),
-      type: 'coverage',
+      type: 'coverage' as const,
       name: `Point ${new Date(loc.timestamp).toLocaleString()}`,
       coordinates: [loc.coords.latitude, loc.coords.longitude] as [number, number],
       details: {
-        accuracy: loc.coords.accuracy,
-        timestamp: loc.timestamp
+        provider: 'GPS',
+        strength: `${loc.coords.accuracy}m`
       }
     }));
     setCoveragePoints(points);
@@ -87,16 +89,16 @@ export default function OfflinePage() {
         timestamp: Date.now()
       };
       setSavedLocations(prev => [...prev, newLocation]);
-      
+
       // Add to coverage points
       const newPoint: MapPoint = {
         id: newLocation.timestamp.toString(),
-        type: 'coverage',
+        type: 'coverage' as const,
         name: `Point ${new Date(newLocation.timestamp).toLocaleString()}`,
         coordinates: [newLocation.lat, newLocation.lng],
         details: {
-          accuracy: newLocation.accuracy,
-          timestamp: newLocation.timestamp
+          provider: 'GPS',
+          strength: `${newLocation.accuracy}m`
         }
       };
       setCoveragePoints(prev => [...prev, newPoint]);
@@ -129,7 +131,7 @@ export default function OfflinePage() {
           </div>
           <h1 className="text-4xl font-bold text-gray-900">{t('navigation.offline')}</h1>
           <p className="mt-4 text-xl text-gray-600">{t('location.tracking.gps')}</p>
-          <Badge 
+          <Badge
             variant={isOnline ? 'default' : 'secondary'}
             className="mt-4"
           >
@@ -181,7 +183,7 @@ export default function OfflinePage() {
               <TabsContent value="locations">
                 <Card className="p-4">
                   <div className="space-y-4">
-                    <LocationFinder 
+                    <LocationFinder
                       onLocationFound={handleLocationUpdate}
                     />
                     {savedLocations.length > 0 && (
@@ -191,11 +193,10 @@ export default function OfflinePage() {
                           {savedLocations.map((loc, index) => (
                             <Card
                               key={loc.timestamp}
-                              className={`p-3 cursor-pointer transition-colors ${
-                                selectedLocation?.timestamp === loc.timestamp
-                                  ? 'bg-muted'
-                                  : ''
-                              }`}
+                              className={`p-3 cursor-pointer transition-colors ${selectedLocation?.timestamp === loc.timestamp
+                                ? 'bg-muted'
+                                : ''
+                                }`}
                               onClick={() => setSelectedLocation(loc)}
                             >
                               <p className="font-medium">

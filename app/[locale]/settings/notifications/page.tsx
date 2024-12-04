@@ -10,11 +10,37 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Bell, MapPin, Trophy, Wifi, Signal } from 'lucide-react';
 
+// Define a type for the notification categories
+type NotificationCategory = 'coverage' | 'wifi' | 'achievements' | 'updates' | 'nearby';
+
 export default function NotificationSettings() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const t = useTranslations('settings.notifications');
   const { toast } = useToast();
+
+  // Move useState hooks to the top
+  const [settings, setSettings] = useState<{
+    pushEnabled: boolean;
+    emailEnabled: boolean;
+    notifications: {
+      coverage: boolean;
+      wifi: boolean;
+      achievements: boolean;
+      updates: boolean;
+      nearby: boolean;
+    };
+  }>({
+    pushEnabled: true,
+    emailEnabled: true,
+    notifications: {
+      coverage: true,
+      wifi: true,
+      achievements: true,
+      updates: true,
+      nearby: true,
+    },
+  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -37,25 +63,13 @@ export default function NotificationSettings() {
     );
   }
 
-  const [settings, setSettings] = useState({
-    pushEnabled: true,
-    emailEnabled: true,
-    notifications: {
-      coverage: true,
-      wifi: true,
-      achievements: true,
-      updates: true,
-      nearby: true,
-    },
-  });
-
-  const handleToggle = (key: string, category?: string) => {
+  const handleToggle = (key: string, category?: NotificationCategory) => {
     if (category) {
       setSettings((prev) => ({
         ...prev,
-        [category]: {
-          ...prev[category as keyof typeof prev],
-          [key]: !prev[category as keyof typeof prev][key as keyof typeof prev[typeof category]],
+        notifications: {
+          ...(prev.notifications),
+          [key]: !prev.notifications[key as keyof typeof prev.notifications],
         },
       }));
     } else {
@@ -131,7 +145,7 @@ export default function NotificationSettings() {
               </div>
               <Switch
                 checked={settings.notifications.coverage}
-                onCheckedChange={() => handleToggle('coverage', 'notifications')}
+                onCheckedChange={() => handleToggle('coverage')}
               />
             </div>
 
@@ -145,7 +159,7 @@ export default function NotificationSettings() {
               </div>
               <Switch
                 checked={settings.notifications.wifi}
-                onCheckedChange={() => handleToggle('wifi', 'notifications')}
+                onCheckedChange={() => handleToggle('wifi')}
               />
             </div>
 
@@ -159,7 +173,7 @@ export default function NotificationSettings() {
               </div>
               <Switch
                 checked={settings.notifications.achievements}
-                onCheckedChange={() => handleToggle('achievements', 'notifications')}
+                onCheckedChange={() => handleToggle('achievements')}
               />
             </div>
 
@@ -173,7 +187,7 @@ export default function NotificationSettings() {
               </div>
               <Switch
                 checked={settings.notifications.nearby}
-                onCheckedChange={() => handleToggle('nearby', 'notifications')}
+                onCheckedChange={() => handleToggle('nearby')}
               />
             </div>
           </div>
