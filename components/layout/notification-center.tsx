@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from 'components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
+} from 'components/ui/dropdown-menu';
+import { Badge } from 'components/ui/badge';
+import { formatRelativeTime } from 'lib/utils';
 
 interface Notification {
   id: string;
@@ -71,9 +72,8 @@ export function NotificationCenter() {
             notifications.map(notification => (
               <DropdownMenuItem
                 key={notification.id}
-                className={`px-4 py-3 cursor-pointer ${
-                  !notification.read ? 'bg-accent/50' : ''
-                }`}
+                className={`px-4 py-3 cursor-pointer ${!notification.read ? 'bg-accent/50' : ''
+                  }`}
                 onClick={() => markAsRead(notification.id)}
               >
                 <div>
@@ -82,7 +82,7 @@ export function NotificationCenter() {
                     {notification.message}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {notification.timestamp.toRelativeTime()}
+                    {formatRelativeTime(notification.timestamp)}
                   </div>
                 </div>
               </DropdownMenuItem>

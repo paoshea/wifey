@@ -155,6 +155,13 @@ export interface LeaderboardResponse {
   userRank?: number;
 }
 
+export interface LeaderboardStats {
+  totalUsers: number;
+  totalContributions: number;
+  userRank?: number;
+  userPoints?: number;
+}
+
 // Zod Schemas
 export const RequirementSchema = z.object({
   type: z.nativeEnum(RequirementType),

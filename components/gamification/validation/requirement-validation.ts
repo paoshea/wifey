@@ -5,7 +5,7 @@ import {
   RequirementOperator,
   StatsMetric,
   StatsContent
-} from '@/lib/gamification/types';
+} from 'lib/gamification/types';
 
 export function validateRequirement(
   requirement: Requirement,
@@ -20,8 +20,8 @@ export function validateRequirement(
       };
     }
 
-    // Get stat value, default to 0 if not found
-    const statValue = (stats as Record<string, number>)[requirement.metric] ?? 0;
+    // Get stat value, using type-safe access
+    const statValue = stats[requirement.metric];
 
     // Validate the requirement based on operator
     let isValid = false;
