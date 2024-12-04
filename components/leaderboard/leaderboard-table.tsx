@@ -10,23 +10,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TimeFrame } from '@/lib/gamification/types';
-import { LeaderboardEntry } from '@/lib/gamification/types';
-import { getInitials } from '@/lib/utils';
+} from 'components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from 'components/ui/avatar';
+import { Badge } from 'components/ui/badge';
+import { Button } from 'components/ui/button';
+import { Skeleton } from 'components/ui/skeleton';
+import { Alert, AlertDescription } from 'components/ui/alert';
+import { TimeFrame, LeaderboardEntry } from 'lib/gamification/types';
+import { getInitials } from 'lib/utils';
 
 async function getLeaderboardData(timeframe: TimeFrame, page: number = 1, limit: number = 10) {
   const response = await fetch(`/api/leaderboard?timeframe=${timeframe}&page=${page}&limit=${limit}`);
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch leaderboard data');
   }
-  
+
   return response.json();
 }
 
@@ -62,7 +61,7 @@ export function LeaderboardTable() {
   const timeframe = (searchParams.get('timeframe') as TimeFrame) || TimeFrame.ALL_TIME;
   const page = Number(searchParams.get('page')) || 1;
   const limit = 10;
-  
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['leaderboard', timeframe, page],
     queryFn: () => getLeaderboardData(timeframe, page, limit),
@@ -103,7 +102,7 @@ export function LeaderboardTable() {
             ))
           ) : (
             data?.entries.map((entry: LeaderboardEntry) => (
-              <TableRow key={entry.userId}>
+              <TableRow key={entry.user.id}>
                 <TableCell className="font-medium">
                   {entry.rank <= 3 ? (
                     <span className="text-xl">
@@ -116,7 +115,7 @@ export function LeaderboardTable() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={entry.avatar} alt={entry.username} />
+                      <AvatarImage src={entry.image} alt={entry.username} />
                       <AvatarFallback>{getInitials(entry.username)}</AvatarFallback>
                     </Avatar>
                     <span>{entry.username}</span>
@@ -124,12 +123,12 @@ export function LeaderboardTable() {
                 </TableCell>
                 <TableCell>{entry.points.toLocaleString()}</TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {entry.stats.totalMeasurements.toLocaleString()}
+                  {entry.contributions.toLocaleString()}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   <div className="flex items-center gap-2">
-                    <span>🔥 {entry.streak?.current || 0}</span>
-                    {entry.streak?.current >= 7 && (
+                    <span>🔥 {entry.streak.current}</span>
+                    {entry.streak.current >= 7 && (
                       <Badge variant="secondary">
                         {t('streakMilestone', { days: entry.streak.current })}
                       </Badge>

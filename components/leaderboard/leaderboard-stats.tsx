@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -9,13 +8,16 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TimeFrame } from '@/lib/gamification/types';
-import type { LeaderboardStats } from '@/lib/gamification/types';
+} from 'components/ui/card';
+import { Skeleton } from 'components/ui/skeleton';
+import { Alert, AlertDescription } from 'components/ui/alert';
+import { TimeFrame, type LeaderboardStats as LeaderboardStatsType } from 'lib/gamification/types';
 
-async function getLeaderboardStats(timeframe: TimeFrame): Promise<LeaderboardStats> {
+interface LeaderboardStatsProps {
+  timeframe: TimeFrame;
+}
+
+async function getLeaderboardStats(timeframe: TimeFrame): Promise<LeaderboardStatsType> {
   const response = await fetch(`/api/leaderboard/stats?timeframe=${timeframe}`);
   if (!response.ok) {
     throw new Error('Failed to fetch leaderboard stats');
@@ -23,12 +25,10 @@ async function getLeaderboardStats(timeframe: TimeFrame): Promise<LeaderboardSta
   return response.json();
 }
 
-export function LeaderboardStats() {
+export function LeaderboardStats({ timeframe }: LeaderboardStatsProps) {
   const t = useTranslations('leaderboard.stats');
-  const searchParams = useSearchParams();
-  const timeframe = (searchParams.get('timeframe') as TimeFrame) || TimeFrame.ALL_TIME;
 
-  const { data: stats, isLoading, error } = useQuery<LeaderboardStats>({
+  const { data: stats, isLoading, error } = useQuery<LeaderboardStatsType>({
     queryKey: ['leaderboardStats', timeframe],
     queryFn: () => getLeaderboardStats(timeframe),
   });

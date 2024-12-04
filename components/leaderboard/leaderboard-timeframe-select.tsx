@@ -1,38 +1,36 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TimeFrame } from '@/lib/gamification/types';
+} from 'components/ui/select';
+import { TimeFrame } from 'lib/gamification/types';
 
-export function LeaderboardTimeframeSelect() {
+interface LeaderboardTimeframeSelectProps {
+  value: TimeFrame;
+  onChange: (value: TimeFrame) => void;
+}
+
+export function LeaderboardTimeframeSelect({ value, onChange }: LeaderboardTimeframeSelectProps) {
   const t = useTranslations('leaderboard.timeframe');
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const timeframe = (searchParams.get('timeframe') as TimeFrame) || TimeFrame.ALL_TIME;
 
-  const handleTimeframeChange = (value: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('timeframe', value);
-    params.delete('page'); // Reset to first page when changing timeframe
-    router.push(`?${params.toString()}`);
+  const handleTimeframeChange = (newValue: string) => {
+    onChange(newValue as TimeFrame);
   };
 
   return (
-    <Select value={timeframe} onValueChange={handleTimeframeChange}>
+    <Select value={value} onValueChange={handleTimeframeChange}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder={t('label')} />
       </SelectTrigger>
       <SelectContent>
-        {Object.values(TimeFrame).map((value) => (
-          <SelectItem key={value} value={value}>
-            {t(value)}
+        {Object.values(TimeFrame).map((timeframe) => (
+          <SelectItem key={timeframe} value={timeframe}>
+            {t(timeframe)}
           </SelectItem>
         ))}
       </SelectContent>

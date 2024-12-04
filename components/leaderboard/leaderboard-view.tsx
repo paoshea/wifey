@@ -1,10 +1,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Card } from '@/components/ui/card';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Card } from 'components/ui/card';
 import { LeaderboardTimeframeSelect } from './leaderboard-timeframe-select';
 import { LeaderboardStats } from './leaderboard-stats';
 import { LeaderboardTable } from './leaderboard-table';
+import { TimeFrame } from 'lib/gamification/types';
 
 function StatsSkeletons() {
   return (
@@ -31,14 +33,33 @@ function TableSkeleton() {
 }
 
 export function LeaderboardView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get timeframe from URL or default to WEEKLY
+  const timeframeParam = searchParams.get('timeframe');
+  const timeframe = Object.values(TimeFrame).includes(timeframeParam as TimeFrame)
+    ? (timeframeParam as TimeFrame)
+    : TimeFrame.WEEKLY;
+
+  const handleTimeframeChange = (newTimeframe: TimeFrame) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('timeframe', newTimeframe);
+    params.delete('page'); // Reset to first page when changing timeframe
+    router.push(`?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <LeaderboardTimeframeSelect />
+        <LeaderboardTimeframeSelect
+          value={timeframe}
+          onChange={handleTimeframeChange}
+        />
       </div>
 
       <Suspense fallback={<StatsSkeletons />}>
-        <LeaderboardStats />
+        <LeaderboardStats timeframe={timeframe} />
       </Suspense>
 
       <Card className="p-6">
