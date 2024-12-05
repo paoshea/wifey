@@ -1,4 +1,8 @@
+'use client';
+
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   OfflineManager,
   NavigationUpdate,
@@ -7,6 +11,15 @@ import {
   LocationErrorCode
 } from '@/lib/offline';
 import { useOfflineError } from '@/components/offline/error-handler';
+import {
+  coverageFormSchema,
+  type CoverageFormData
+} from '@/lib/schemas/coverage';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
 interface CoverageFinderProps {
   className?: string;
@@ -18,6 +31,14 @@ export function CoverageFinder({ className = '' }: CoverageFinderProps) {
   const [nearestPoint, setNearestPoint] = useState<CoveragePoint | null>(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
   const { handleError } = useOfflineError();
+
+  const form = useForm<CoverageFormData>({
+    resolver: zodResolver(coverageFormSchema),
+    defaultValues: {
+      networkType: 'cellular',
+      quality: 'good'
+    }
+  });
 
   useEffect(() => {
     const manager = OfflineManager.getInstance();
@@ -75,13 +96,13 @@ export function CoverageFinder({ className = '' }: CoverageFinderProps) {
     }
   };
 
-  const handleStopMeasuring = async () => {
+  const onSubmit = async (data: CoverageFormData) => {
     const manager = OfflineManager.getInstance();
 
     try {
-      const report = await manager.stopAndReportCoverage("Manual coverage report");
+      const report = await manager.stopAndReportCoverage(data.notes);
       setIsMeasuring(false);
-      // Show success message or update UI with report details
+      form.reset();
     } catch (error) {
       if (error instanceof LocationError) {
         handleError(error);
@@ -101,23 +122,24 @@ export function CoverageFinder({ className = '' }: CoverageFinderProps) {
       <div className="rounded-lg bg-card p-6">
         <h2 className="text-xl font-semibold mb-4">Find Coverage</h2>
         <div className="space-y-4">
-          <button
+          <Button
             onClick={handleFindCoverage}
             disabled={isSearching}
-            className="w-full btn btn-primary"
+            className="w-full"
+            variant="default"
           >
             {isSearching ? (
               <span className="flex items-center">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 Searching...
               </span>
             ) : (
               'Find Nearest Coverage'
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -175,29 +197,114 @@ export function CoverageFinder({ className = '' }: CoverageFinderProps) {
       {/* Measurement Controls */}
       <div className="rounded-lg bg-card p-6">
         <h3 className="text-lg font-semibold mb-3">Coverage Measurement</h3>
-        <div className="space-y-4">
-          {!isMeasuring ? (
-            <button
-              onClick={handleStartMeasuring}
-              className="w-full btn btn-secondary"
-            >
-              Start Measuring
-            </button>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-center space-x-2">
-                <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                <span>Recording Coverage...</span>
+        {!isMeasuring ? (
+          <Button
+            onClick={handleStartMeasuring}
+            className="w-full"
+            variant="secondary"
+          >
+            Start Measuring
+          </Button>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="networkType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Network Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select network type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cellular">Cellular</SelectItem>
+                        <SelectItem value="wifi">WiFi</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="carrier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Carrier (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter carrier name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="quality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Signal Quality</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select signal quality" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="excellent">Excellent</SelectItem>
+                        <SelectItem value="good">Good</SelectItem>
+                        <SelectItem value="fair">Fair</SelectItem>
+                        <SelectItem value="poor">Poor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add any additional notes..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex items-center space-x-2">
+                <Button type="submit" className="flex-1">
+                  Save Measurement
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const manager = OfflineManager.getInstance();
+                    manager.stopAll();
+                    setIsMeasuring(false);
+                    form.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
               </div>
-              <button
-                onClick={handleStopMeasuring}
-                className="w-full btn btn-secondary"
-              >
-                Stop & Save
-              </button>
-            </div>
-          )}
-        </div>
+            </form>
+          </Form>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useCallback } from 'react';
 import { OfflineManager, LocationError, LocationErrorCode } from '@/lib/offline';
 import { useToast } from '@/hooks/use-toast';

@@ -1,4 +1,8 @@
+'use client';
+
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
     OfflineManager,
     CoveragePoint,
@@ -7,6 +11,15 @@ import {
     MeasurementData
 } from '@/lib/offline';
 import { useOfflineError } from '@/components/offline/error-handler';
+import {
+    wifiFormSchema,
+    type WiFiFormData
+} from '@/lib/schemas/coverage';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WiFiFinderProps {
     className?: string;
@@ -24,6 +37,13 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
     const [nearbyPoints, setNearbyPoints] = useState<CoveragePoint[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { handleError } = useOfflineError();
+
+    const form = useForm<WiFiFormData>({
+        resolver: zodResolver(wifiFormSchema),
+        defaultValues: {
+            security: 'WPA2'
+        }
+    });
 
     useEffect(() => {
         loadNearbyPoints();
@@ -74,14 +94,15 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
         }
     };
 
-    const handleStopMeasuring = async () => {
+    const onSubmit = async (data: WiFiFormData) => {
         const manager = OfflineManager.getInstance();
 
         try {
-            const report = await manager.stopAndReportCoverage("WiFi measurement");
+            const report = await manager.stopAndReportCoverage(data.notes);
             setIsMeasuring(false);
             setMeasurements([]);
             await loadNearbyPoints(); // Refresh nearby points
+            form.reset();
         } catch (error) {
             if (error instanceof LocationError) {
                 handleError(error);
@@ -133,29 +154,92 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
             {/* Measurement Controls */}
             <div className="rounded-lg bg-card p-6">
                 <h2 className="text-xl font-semibold mb-4">WiFi Scanner</h2>
-                <div className="space-y-4">
-                    {!isMeasuring ? (
-                        <button
-                            onClick={handleStartMeasuring}
-                            className="w-full btn btn-primary"
-                        >
-                            Start WiFi Scan
-                        </button>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-center space-x-2">
-                                <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-                                <span>Scanning WiFi Networks...</span>
+                {!isMeasuring ? (
+                    <Button
+                        onClick={handleStartMeasuring}
+                        className="w-full"
+                        variant="default"
+                    >
+                        Start WiFi Scan
+                    </Button>
+                ) : (
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="ssid"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Network Name (SSID)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Enter network name" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="security"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Security Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select security type" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="WPA2">WPA2</SelectItem>
+                                                <SelectItem value="WPA3">WPA3</SelectItem>
+                                                <SelectItem value="Open">Open</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="notes"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Notes (Optional)</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Add any additional notes..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex items-center space-x-2">
+                                <Button type="submit" className="flex-1">
+                                    Save Measurement
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        const manager = OfflineManager.getInstance();
+                                        manager.stopAll();
+                                        setIsMeasuring(false);
+                                        setMeasurements([]);
+                                        form.reset();
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
                             </div>
-                            <button
-                                onClick={handleStopMeasuring}
-                                className="w-full btn btn-secondary"
-                            >
-                                Stop & Save
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        </form>
+                    </Form>
+                )}
             </div>
 
             {/* Current Measurements */}
@@ -210,8 +294,8 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
             {isLoading && (
                 <div className="flex justify-center items-center p-4">
                     <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                 </div>
             )}
