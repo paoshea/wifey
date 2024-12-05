@@ -1,0 +1,36 @@
+{
+    "bundleIdentifier": "com.wifey.app",
+    "deploymentTarget": "13.0",
+    "deviceFamily": [
+        "iphone",
+        "ipad"
+    ],
+    "buildNumber": "1",
+    "marketingVersion": "1.0.0",
+    "capabilities": {
+        "locationWhenInUse": true,
+        "locationAlways": true,
+        "backgroundModes": [
+            "location",
+            "fetch",
+            "remote-notification"
+        ],
+        "maps": true,
+        "push": true
+    },
+    "permissions": {
+        "locationWhenInUseUsage": "We need your location to find nearby WiFi and cellular coverage points",
+        "locationAlwaysUsage": "Enable background location to track coverage points while on the move",
+        "wifiUsage": "WiFi access is needed to scan for nearby hotspots"
+    },
+    "appearance": {
+        "supportsDarkMode": true,
+        "accentColor": "#007AFF",
+        "tintColor": "#FF9500"
+    },
+    "performance": {
+        "enableBitcode": false,
+        "enableTestability": true,
+        "enableOnDemandResources": true
+    }
+}
