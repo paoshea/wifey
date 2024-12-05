@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import createMiddleware from 'next-intl/middleware';
-import { defaultLocale, locales } from '@/lib/i18n/config';
+import { defaultLocale, locales } from 'lib/i18n/config';
 
 // Paths that don't require authentication
 const publicPaths = [
@@ -32,16 +32,16 @@ const intlMiddleware = createMiddleware({
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublicPath = publicPaths.some(path => 
-    pathname.includes(path) || 
-    pathname === '/' || 
+  const isPublicPath = publicPaths.some(path =>
+    pathname.includes(path) ||
+    pathname === '/' ||
     pathname.match(/^\/[a-z]{2}(?:-[A-Z]{2})?$/)  // matches locale paths like /en or /en-US
   );
 
   // Skip middleware for public API routes and static files
   if (
-    pathname.startsWith('/_next') || 
-    pathname.includes('/api/auth') || 
+    pathname.startsWith('/_next') ||
+    pathname.includes('/api/auth') ||
     pathname.includes('.') ||
     pathname.startsWith('/favicon')
   ) {
@@ -72,7 +72,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Check if email is verified for protected routes
-  if (!token.emailVerified && !pathname.startsWith('/verify')) {
+  // Only check if token exists and we're not already on a verify path
+  if (token && !token.emailVerified && !pathname.startsWith('/verify')) {
     return NextResponse.redirect(
       new URL('/verify-request', request.url)
     );
@@ -90,6 +91,13 @@ export async function middleware(request: NextRequest) {
   // Check role-protected paths
   for (const [protectedPath, allowedRoles] of Object.entries(roleProtectedPaths)) {
     if (pathname.startsWith(protectedPath)) {
+      // Only check roles if token exists
+      if (!token) {
+        return new NextResponse(
+          JSON.stringify({ success: false, message: 'unauthorized' }),
+          { status: 401, headers: { 'content-type': 'application/json' } }
+        );
+      }
       const userRole = token.role as string;
       if (!allowedRoles.includes(userRole)) {
         return new NextResponse(

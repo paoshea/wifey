@@ -1,9 +1,11 @@
 // api/auth/register/route.ts
 
 import { type NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { Prisma, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+
+const prisma = new PrismaClient();
 
 const registerSchema = z.object({
   username: z.string().min(2),
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
         email,
         hashedPassword,
         emailVerified: new Date(), // Set email as verified immediately
-        role: 'user', // Set default role for new registrations
+        role: 'USER', // Use the enum value as a string since it's typed by Prisma
       },
     });
 

@@ -1,13 +1,13 @@
 // lib/services/leaderboard-service.ts
 
-import { PrismaClient, Prisma } from '@prisma/client';
-import { Cache } from 'memory-cache';
-import prisma from '@/lib/prisma';
-import { 
-  TimeFrame, 
-  type LeaderboardEntry, 
+import { PrismaClient } from '@prisma/client';
+import NodeCache from 'node-cache';
+import prisma from 'lib/prisma';
+import {
+  TimeFrame,
+  type LeaderboardEntry,
   type LeaderboardResponse,
-  type StatsContent 
+  type StatsContent
 } from '../gamification/types';
 
 // Type definitions
@@ -20,36 +20,22 @@ interface LeaderboardOptions {
 interface UserWithStats {
   id: string;
   name: string | null;
-  userStats?: {
+  stats: {
     points: number;
-    statsData: StatsContent;
-  };
-  streakHistory?: Array<{
+    stats: StatsContent;
+  } | null;
+  streaks: Array<{
     current: number;
     longest: number;
   }>;
 }
 
-type LeaderboardOrderBy = {
-  userStats?: {
-    points?: Prisma.SortOrder;
-  };
-};
-
-// Type guards
-function isValidStats(stats: any): stats is StatsContent {
-  return stats && 
-    typeof stats.totalMeasurements === 'number' &&
-    typeof stats.contributionScore === 'number' &&
-    typeof stats.qualityScore === 'number';
-}
-
 export class LeaderboardService {
-  private cache: Cache<string, any>;
-  private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private cache: NodeCache;
+  private static readonly CACHE_TTL = 5 * 60; // 5 minutes
 
   constructor(prismaClient: PrismaClient = prisma) {
-    this.cache = new Cache();
+    this.cache = new NodeCache({ stdTTL: LeaderboardService.CACHE_TTL });
     this.prisma = prismaClient;
   }
 
@@ -63,7 +49,7 @@ export class LeaderboardService {
     } = options;
 
     const cacheKey = `leaderboard:${timeframe}:${page}:${pageSize}`;
-    const cached = this.cache.get(cacheKey);
+    const cached = this.cache.get<LeaderboardResponse>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -73,18 +59,23 @@ export class LeaderboardService {
 
     const [users, totalCount] = await Promise.all([
       this.prisma.user.findMany({
-        where: {
-          stats: {
-            createdAt: dateFilter
-          }
-        },
-        select: {
-          id: true,
-          name: true,
-          stats: {
+        skip,
+        take: pageSize,
+        include: {
+          stats: true,
+          streaks: true,
+          achievements: {
+            where: {
+              unlockedAt: { not: null }
+            },
+            orderBy: {
+              unlockedAt: 'desc'
+            },
+            take: 3,
             select: {
-              points: true,
-              stats: true
+              id: true,
+              title: true,
+              icon: true
             }
           }
         },
@@ -92,101 +83,96 @@ export class LeaderboardService {
           stats: {
             points: 'desc'
           }
-        },
-        skip,
-        take: pageSize
-      }),
-      this.prisma.user.count({
-        where: {
-          stats: {
-            createdAt: dateFilter
-          }
         }
-      })
+      }),
+      this.prisma.user.count()
     ]);
 
     const entries: LeaderboardEntry[] = users.map((user, index) => ({
-      position: skip + index + 1,
       id: user.id,
-      name: user.name || 'Anonymous',
-      points: user.stats?.[0]?.points || 0,
-      stats: user.stats?.[0]?.stats || {}
+      timeframe,
+      points: user.stats?.points || 0,
+      rank: skip + index + 1,
+      username: user.name || 'Anonymous',
+      image: user.image || undefined,
+      level: Math.floor(Math.sqrt((user.stats?.points || 0) / 100)) + 1,
+      contributions: user.stats?.stats ? (user.stats.stats as any).totalMeasurements || 0 : 0,
+      badges: user.achievements.length,
+      streak: {
+        current: user.streaks[0]?.current || 0,
+        longest: user.streaks[0]?.longest || 0
+      },
+      recentAchievements: user.achievements.map(achievement => ({
+        id: achievement.id,
+        title: achievement.title,
+        icon: achievement.icon
+      })),
+      user: {
+        id: user.id,
+        name: user.name || 'Anonymous',
+        rank: skip + index + 1,
+        measurements: user.stats?.stats ? (user.stats.stats as any).totalMeasurements || 0 : 0,
+        lastActive: user.stats?.updatedAt || new Date()
+      }
     }));
 
     const response: LeaderboardResponse = {
+      timeframe,
       entries,
-      totalUsers: totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / pageSize)
+      totalUsers: totalCount
     };
 
-    this.cache.put(cacheKey, response, LeaderboardService.CACHE_TTL);
+    this.cache.set(cacheKey, response);
     return response;
   }
 
   async getUserPosition(userId: string, timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number | null> {
-    const dateFilter = this.getDateFilter(timeframe);
-
-    const userWithRank = await this.prisma.user.findFirst({
-      where: {
-        id: userId,
-        userStats: {
-          some: {
-            createdAt: dateFilter
-          }
-        }
-      },
-      select: {
-        userStats: {
-          where: dateFilter,
-          select: {
-            points: true
-          }
-        }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        stats: true
       }
     });
 
-    if (!userWithRank?.userStats?.[0]) {
+    if (!user?.stats) {
       return null;
     }
 
-    const position = await this.prisma.userStats.count({
+    const higherRanked = await this.prisma.userStats.count({
       where: {
         points: {
-          gt: userWithRank.userStats[0].points
-        },
-        createdAt: dateFilter
+          gt: user.stats.points
+        }
       }
     });
 
-    return position + 1;
+    return higherRanked + 1;
   }
 
   async getTotalUsers(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const dateFilter = this.getDateFilter(timeframe);
     return this.prisma.user.count({
       where: {
-        userStats: {
-          some: {
-            createdAt: dateFilter
-          }
+        stats: {
+          isNot: null
         }
       }
     });
   }
 
   async getTotalContributions(timeframe: TimeFrame = TimeFrame.ALL_TIME): Promise<number> {
-    const dateFilter = this.getDateFilter(timeframe);
-    const result = await this.prisma.userStats.aggregate({
-      where: dateFilter,
-      _sum: {
-        totalMeasurements: true
+    const stats = await this.prisma.userStats.findMany({
+      select: {
+        stats: true
       }
     });
-    return result._sum.totalMeasurements || 0;
+
+    return stats.reduce((total, stat) => {
+      const statsContent = stat.stats as any;
+      return total + (statsContent.totalMeasurements || 0);
+    }, 0);
   }
 
-  private getDateFilter(timeframe: TimeFrame): Prisma.UserStatsWhereInput {
+  private getDateFilter(timeframe: TimeFrame) {
     const now = new Date();
     switch (timeframe) {
       case TimeFrame.DAILY:
@@ -195,7 +181,7 @@ export class LeaderboardService {
             gte: new Date(now.setHours(0, 0, 0, 0))
           }
         };
-      case TimeFrame.WEEKLY:
+      case TimeFrame.WEEKLY: {
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - now.getDay());
         weekStart.setHours(0, 0, 0, 0);
@@ -204,13 +190,15 @@ export class LeaderboardService {
             gte: weekStart
           }
         };
-      case TimeFrame.MONTHLY:
+      }
+      case TimeFrame.MONTHLY: {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         return {
           createdAt: {
             gte: monthStart
           }
         };
+      }
       case TimeFrame.ALL_TIME:
       default:
         return {};

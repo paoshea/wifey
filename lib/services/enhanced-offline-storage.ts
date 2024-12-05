@@ -1,6 +1,6 @@
 import { openDB, IDBPDatabase, deleteDB } from 'idb';
-import { trackError } from '@/lib/monitoring/sentry';
-import type { CarrierCoverage, StorageMetadata } from '@/lib/types';
+import { trackError } from 'lib/monitoring/sentry';
+import type { CarrierCoverage, StorageMetadata } from 'lib/types/index';
 
 interface CacheEntry {
   points: CarrierCoverage[];
@@ -49,7 +49,7 @@ class EnhancedOfflineStorage {
     quotaUsage: 0
   };
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): EnhancedOfflineStorage {
     if (!EnhancedOfflineStorage.instance) {
@@ -90,18 +90,17 @@ class EnhancedOfflineStorage {
     }
   }
 
-  // Public methods for enhanced offline storage
   async storePendingPoint(
     data: Omit<CarrierCoverage, 'id'>,
     priority: number = 1
   ): Promise<string> {
     await this.initialize();
-    
+
     try {
       if (!this.db) return '';
       const id = crypto.randomUUID();
       const compressedData = await this.compressData(data);
-      
+
       await this.db.add('pendingPoints', {
         id,
         data: compressedData,
@@ -186,7 +185,7 @@ class EnhancedOfflineStorage {
     try {
       if (!this.db) return;
       const compressedData = await this.compressData(points);
-      
+
       await this.db.put('coverageCache', {
         data: compressedData,
         bounds,
@@ -335,7 +334,6 @@ class EnhancedOfflineStorage {
     return;
   }
 
-  // Utility method to check if storage is available
   async isStorageAvailable(): Promise<boolean> {
     try {
       await this.initialize();

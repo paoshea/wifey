@@ -10,7 +10,7 @@ interface StreakUpdateResult {
 }
 
 export class StreakService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   /**
    * Get or create a user's streak
@@ -84,11 +84,17 @@ export class StreakService {
       }
     });
 
-    // Update user's total points
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        points: { increment: pointsEarned }
+    // Update user's total points in UserStats
+    await this.prisma.userStats.upsert({
+      where: { userId },
+      create: {
+        userId,
+        points: pointsEarned
+      },
+      update: {
+        points: {
+          increment: pointsEarned
+        }
       }
     });
 
@@ -107,7 +113,7 @@ export class StreakService {
     const thresholds = Object.keys(STREAK_BONUSES.MULTIPLIERS)
       .map(Number)
       .sort((a, b) => b - a);
-    
+
     for (const threshold of thresholds) {
       if (streakLength >= threshold) {
         return STREAK_BONUSES.MULTIPLIERS[threshold as keyof typeof STREAK_BONUSES.MULTIPLIERS];
@@ -143,17 +149,31 @@ export class StreakService {
             description: achievement.description,
             points: achievement.points,
             type: 'streak',
-            threshold: achievement.threshold,
             icon: achievement.icon,
+            requirements: JSON.stringify([{
+              type: 'streak',
+              metric: 'length',
+              value: achievement.threshold,
+              operator: 'gte',
+              description: `Maintain a streak of ${achievement.threshold} days`
+            }]),
+            progress: streakLength,
+            isCompleted: true,
             unlockedAt: new Date()
           }
         });
 
-        // Add achievement points to user
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: {
-            points: { increment: achievement.points }
+        // Add achievement points to UserStats
+        await this.prisma.userStats.upsert({
+          where: { userId },
+          create: {
+            userId,
+            points: achievement.points
+          },
+          update: {
+            points: {
+              increment: achievement.points
+            }
           }
         });
 
@@ -169,7 +189,7 @@ export class StreakService {
    */
   async resetStreak(userId: string): Promise<UserStreak> {
     const streak = await this.getOrCreateStreak(userId);
-    
+
     return this.prisma.userStreak.update({
       where: { id: streak.id },
       data: {

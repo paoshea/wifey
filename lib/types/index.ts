@@ -1,4 +1,5 @@
+export type { CarrierCoverage, SignalMeasurement, SignalMonitorErrorType } from './monitoring';
+export { SignalMonitorError } from './monitoring';
 export * from './auth';
 export * from './user';
-export * from './monitoring';
-export * from './storage';
+export type { StorageMetadata } from './storage';

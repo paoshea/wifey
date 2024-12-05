@@ -15,6 +15,7 @@ export interface AchievementTemplate {
   description: string;
   points: number;
   icon: string;
+  type: string;
   requirements: AchievementRequirement[];
 }
 
@@ -25,6 +26,7 @@ const achievementTemplates: AchievementTemplate[] = [
     description: 'Begin your journey by making your first measurement',
     points: 100,
     icon: '🎯',
+    type: 'measurement',
     requirements: [
       {
         type: 'achievement',
@@ -41,6 +43,7 @@ const achievementTemplates: AchievementTemplate[] = [
     description: 'Maintain a 7-day measurement streak',
     points: 500,
     icon: '🔥',
+    type: 'streak',
     requirements: [
       {
         type: 'achievement',
@@ -57,6 +60,7 @@ const achievementTemplates: AchievementTemplate[] = [
     description: 'Achieve a high quality score across your measurements',
     points: 300,
     icon: '⭐',
+    type: 'quality',
     requirements: [
       {
         type: 'achievement',
@@ -73,6 +77,7 @@ const achievementTemplates: AchievementTemplate[] = [
     description: 'Map connectivity in rural areas',
     points: 400,
     icon: '🌾',
+    type: 'measurement',
     requirements: [
       {
         type: 'achievement',
@@ -89,6 +94,7 @@ const achievementTemplates: AchievementTemplate[] = [
     description: 'Cover significant distance while mapping',
     points: 300,
     icon: '🏃',
+    type: 'distance',
     requirements: [
       {
         type: 'achievement',
@@ -107,28 +113,15 @@ export async function seedAchievements(prisma: PrismaClient, userId: string) {
   for (const template of achievementTemplates) {
     const achievement = await prisma.achievement.create({
       data: {
-        id: template.id,
         title: template.title,
         description: template.description,
         points: template.points,
         icon: template.icon,
-        user: {
-          connect: {
-            id: userId
-          }
-        },
-        requirements: {
-          create: template.requirements.map(req => ({
-            type: req.type,
-            metric: req.metric,
-            operator: req.operator,
-            value: req.value,
-            description: req.description
-          }))
-        }
-      },
-      include: {
-        requirements: true
+        type: template.type,
+        userId: userId,
+        requirements: JSON.stringify(template.requirements, null, 2),
+        progress: 0,
+        isCompleted: false
       }
     });
 

@@ -7,6 +7,12 @@ datasource db {
   url      = env("MONGODB_URI")
 }
 
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
 model User {
   id               String           @id @default(auto()) @map("_id") @db.ObjectId
   name             String?
@@ -14,7 +20,7 @@ model User {
   emailVerified    DateTime?
   image            String?
   hashedPassword   String?
-  role             String
+  role             UserRole         @default(USER)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   stats            UserStats?       @relation("UserStats")
@@ -23,6 +29,42 @@ model User {
   streaks          UserStreak[]     @relation("UserStreaks")
   leaderboard      LeaderboardEntry[] @relation("UserLeaderboard")
   coverageReports  CoverageReport[] @relation("UserCoverageReports")
+  notifications    Notification[]   @relation("UserNotifications")
+}
+
+enum NotificationType {
+  STREAK_REMINDER
+  ACHIEVEMENT
+  STREAK_MILESTONE
+  SOCIAL
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Notification {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String              @db.ObjectId
+  user         User                @relation("UserNotifications", fields: [userId], references: [id])
+  type         NotificationType
+  title        String
+  message      String
+  isRead       Boolean             @default(false)
+  priority     NotificationPriority
+  style        Json?
+  metadata     Json?
+  scheduledFor DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }
 
 model VerificationToken {
