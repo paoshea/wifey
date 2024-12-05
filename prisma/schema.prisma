@@ -58,6 +58,7 @@ model User {
   sessions        Session[]
   coverageReports CoverageReport[]
   measurements    Measurement[]
+  achievements    Achievement[]
   stats          UserStats?
 }
 
@@ -124,4 +125,21 @@ model Measurement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("measurement")
+}
+
+model Achievement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  type        String
+  name        String
+  description String
+  progress    Int      @default(0)
+  target      Int
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("achievement")
 }
