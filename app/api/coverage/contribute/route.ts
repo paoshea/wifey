@@ -53,10 +53,14 @@ export async function POST(request: NextRequest) {
     // Create coverage report
     const coverageReport = await prisma.coverageReport.create({
       data: {
-        userId: session.user.id,
+        user: {
+          connect: {
+            id: session.user.id
+          }
+        },
         latitude: data.latitude,
         longitude: data.longitude,
-        signal: BigInt(data.signal),
+        signal: data.signal,
         speed: data.speed,
         operator: data.operator,
         networkType: data.networkType,
@@ -64,9 +68,9 @@ export async function POST(request: NextRequest) {
         connectionType: data.connectionType,
         createdAt: now,
         updatedAt: now,
-        points: BigInt(0),
+        points: 0,
         verified: false
-      } as Prisma.CoverageReportUncheckedCreateInput,
+      },
     });
 
     // Get current stats or initialize new ones
@@ -107,10 +111,14 @@ export async function POST(request: NextRequest) {
       // If no stats exist, create new record
       await prisma.userStats.create({
         data: {
-          userId: session.user.id,
+          user: {
+            connect: {
+              id: session.user.id
+            }
+          },
           points: 1,
           stats: {}
-        } as Prisma.UserStatsUncheckedCreateInput
+        }
       });
     } else {
       // If stats exist, update them
@@ -118,7 +126,7 @@ export async function POST(request: NextRequest) {
         where: { userId: session.user.id },
         data: {
           points: { increment: 1 }
-        } as Prisma.UserStatsUncheckedUpdateInput
+        }
       });
     }
 

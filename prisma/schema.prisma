@@ -54,8 +54,10 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts      Account[]
+  sessions      Session[]
+  coverageReports CoverageReport[]
+  stats         UserStats?
 }
 
 model VerificationToken {
@@ -68,14 +70,35 @@ model VerificationToken {
 }
 
 model CoverageReport {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  latitude       Float
+  longitude      Float
+  signal         Int
+  speed          Float?
+  operator       String?
+  networkType    String
+  deviceModel    String
+  connectionType String
+  points         Int      @default(0)
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coverage_report")
+}
+
+model UserStats {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  latitude  Float
-  longitude Float
-  signal    Int
-  speed     Float?
-  operator  String?
+  userId    String   @unique @db.ObjectId
+  points    Int      @default(0)
+  stats     Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("coverage_report")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_stats")
 }
