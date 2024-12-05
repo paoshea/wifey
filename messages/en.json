@@ -32,6 +32,95 @@
     "leaderboard": "Leaderboard",
     "offline": "Offline Mode"
   },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "description": "See how you rank among other contributors",
+    "timeframe": {
+      "label": "Time Period",
+      "daily": "Today",
+      "weekly": "This Week",
+      "monthly": "This Month",
+      "allTime": "All Time"
+    },
+    "stats": {
+      "title": "Your Stats",
+      "points": "Points",
+      "rank": "Rank",
+      "contributions": "Contributions",
+      "streak": "Current Streak",
+      "totalUsers": "Total Users",
+      "totalContributions": "Total Contributions"
+    },
+    "rank": "Rank",
+    "user": "User",
+    "points": "Points",
+    "contributions": "Contributions",
+    "streak": "Streak",
+    "noData": "No data available for this time period",
+    "loading": "Loading leaderboard data..."
+  },
+  "common": {
+    "getStarted": "Get Started",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "new": "New",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "update": "Update",
+    "view": "View",
+    "close": "Close",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "more": "More",
+    "less": "Less",
+    "all": "All",
+    "none": "None",
+    "or": "or",
+    "and": "and",
+    "yes": "Yes",
+    "no": "No",
+    "on": "On",
+    "off": "Off",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "required": "Required",
+    "optional": "Optional",
+    "default": "Default",
+    "custom": "Custom",
+    "automatic": "Automatic",
+    "manual": "Manual",
+    "other": "Other",
+    "menu": "Menu",
+    "actions": "Actions",
+    "details": "Details",
+    "summary": "Summary",
+    "description": "Description",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "country": "Country",
+    "language": "Language",
+    "timezone": "Timezone",
+    "date": "Date",
+    "time": "Time",
+    "datetime": "Date & Time"
+  },
   "Dashboard": {
     "welcome": "Welcome, {name}",
     "user": "User",
@@ -152,146 +241,33 @@
       }
     }
   },
-  "coverage": {
-    "title": "Network Coverage Map",
-    "subtitle": "View and track WiFi and cellular coverage in your area",
-    "findMyLocation": "Find My Location",
-    "locationFound": "Location Found",
-    "locationError": "Location Error",
-    "locationErrorDesc": "Could not get your location. Please check your permissions.",
-    "browserLocationError": "Your browser does not support geolocation",
-    "filters": "Filters",
-    "showWifi": "Show WiFi",
-    "showCellular": "Show Cellular",
-    "provider": "Provider",
-    "selectProvider": "Select Provider",
-    "allProviders": "All Providers",
-    "publicWifi": "Public WiFi",
-    "wifiDetails": "WiFi Details",
-    "coverageDetails": "Coverage Details",
-    "name": "Name",
-    "strength": "Signal Strength",
-    "speed": "Speed",
-    "type": "Type",
-    "pointDetails": "Point Details",
-    "coordinates": "Coordinates",
-    "lastUpdated": "Last Updated",
-    "quality": "Quality"
-  },
-  "Map": {
-    "title": "Interactive Map",
-    "layers": "Layers",
-    "showOnMap": "Show on Map",
-    "allPoints": "All Points",
-    "wifiOnly": "WiFi Points Only",
-    "coverageOnly": "Coverage Points Only",
-    "searchPlaceholder": "Search locations...",
-    "legend": "Legend",
-    "mapLegend": "Map Legend",
-    "wifiPoint": "WiFi Point",
-    "coveragePoint": "Coverage Point",
-    "getDirections": "Get Directions",
-    "centerOnMe": "Center on my location",
-    "mapImplementation": "Map implementation coming soon..."
-  },
-  "onboarding": {
-    "navigation": {
-      "signIn": "Sign In",
-      "getStarted": "Get Started"
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your account settings and preferences.",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how Wifey looks on your device.",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "selectTheme": "Select theme"
     },
-    "welcome": {
-      "title": "Welcome to Wifey",
-      "description": "Your community-driven network coverage companion"
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configure how you want to be notified about updates.",
+      "enable": "Enable notifications"
     },
-    "coverage": {
-      "intro": {
-        "title": "Track Network Coverage",
-        "description": "Help others stay connected by mapping cellular coverage and WiFi hotspots",
-        "step1": {
-          "title": "Find Your Location",
-          "description": "Use your device's GPS to pinpoint your exact location"
-        },
-        "step2": {
-          "title": "Check Signal",
-          "description": "Measure cellular signal strength and WiFi availability"
-        },
-        "step3": {
-          "title": "Share with Community",
-          "description": "Submit your findings to help others find coverage"
-        },
-        "tryItOut": "Try It Out"
-      },
-      "demo": {
-        "title": "Let's Try It Out",
-        "description": "Click anywhere on the map to mark a coverage point",
-        "clickMapPrompt": "Click on the map to continue"
-      }
+    "account": {
+      "title": "Account",
+      "description": "Manage your account settings and preferences.",
+      "email": "Email address"
     },
-    "features": {
-      "title": "Powerful Features",
-      "description": "Everything you need to stay connected on the go",
-      "wifi": {
-        "title": "WiFi Hotspots",
-        "description": "Find and share free WiFi hotspots",
-        "benefits": {
-          "speed": "Check connection speeds",
-          "reliability": "Verify reliability scores",
-          "security": "See security ratings",
-          "updates": "Get real-time updates"
-        }
-      },
-      "coverage": {
-        "title": "Cellular Towers",
-        "description": "Track and map cellular towers",
-        "benefits": {
-          "realtime": "Real-time signal strength",
-          "accuracy": "High accuracy mapping",
-          "predictions": "Coverage predictions",
-          "alerts": "Dead zone alerts"
-        }
-      },
-      "navigation": {
-        "title": "Smart Navigation",
-        "description": "Get to the best connection points",
-        "benefits": {
-          "routing": "Optimal route planning",
-          "offline": "Offline map support",
-          "alternatives": "Alternative routes",
-          "eta": "Accurate arrival times"
-        }
-      },
-      "continue": "Continue"
-    },
-    "registration": {
-      "title": "Create an Account",
-      "description": "Join our community of power users",
-      "usernameLabel": "Username",
-      "usernamePlaceholder": "Choose a username",
-      "emailLabel": "Email",
-      "passwordLabel": "Password",
-      "confirmPasswordLabel": "Confirm Password",
-      "submit": "Create Account",
-      "success": "Account created successfully!",
-      "errors": {
-        "requiredFields": "Please fill in all required fields",
-        "passwordMismatch": "Passwords do not match",
-        "generic": "Something went wrong. Please try again."
-      }
-    }
-  },
-  "testimonials": {
-    "title": "What Our Users Say",
-    "subtitle": "Real stories from real users"
-  },
-  "contact": {
-    "title": "Get in Touch",
-    "description": "Have questions? We're here to help!",
-    "email": "Email Us",
-    "phone": "Call Support",
-    "emailAddress": "support@wifey.app",
-    "phoneNumber": "+1 (555) 123-4567",
-    "hours": "Available 24/7",
-    "response": "We typically respond within 1 hour"
+    "saveChanges": "Save changes",
+    "success": "Success",
+    "settingsSaved": "Your settings have been saved successfully.",
+    "error": "Error",
+    "settingsError": "Failed to save settings. Please try again."
   },
   "auth": {
     "common": {
@@ -307,8 +283,6 @@
     "email": "Email",
     "password": "Password",
     "or": "or continue with",
-    "error": "Error",
-    "success": "Success",
     "signInError": "Something went wrong. Please try again.",
     "signInSuccess": "Successfully signed in! Redirecting...",
     "invalidCredentials": "Invalid email or password",
@@ -331,18 +305,6 @@
       "signIn": "Sign in",
       "orContinueWith": "Or continue with"
     },
-    "error": {
-      "passwordMismatch": "Passwords don't match",
-      "passwordMismatchDesc": "Please make sure your passwords match",
-      "signupFailed": "Registration failed",
-      "unknownError": "An unexpected error occurred",
-      "oauthFailed": "OAuth sign in failed",
-      "tryAgain": "Please try again"
-    },
-    "success": {
-      "signupTitle": "Registration successful",
-      "welcome": "Welcome to Wifey! You're now signed in."
-    },
     "verifyEmail": {
       "title": "Verify Your Email",
       "description": "We've sent you a verification link. Please check your email.",
@@ -354,438 +316,6 @@
       "tryAgain": "Try again",
       "noEmail": "Didn't receive the email?",
       "signUp": "Sign up with a different email"
-    }
-  },
-  "Auth": {
-    "welcomeBack": "Welcome back",
-    "chooseSignInMethod": "Choose your preferred sign in method",
-    "continueWithGoogle": "Continue with Google",
-    "continueWithGithub": "Continue with GitHub",
-    "orContinueWith": "Or continue with",
-    "email": "Email",
-    "password": "Password",
-    "signIn": "Sign in",
-    "noAccount": "Don't have an account?",
-    "signUp": "Sign up",
-    "error": "Error",
-    "genericError": "Something went wrong. Please try again."
-  },
-  "common": {
-    "getStarted": "Get Started",
-    "back": "Back",
-    "next": "Next",
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success",
-    "new": "New"
-  },
-  "SentryExample": {
-    "Page Title": "Sentry Example Page",
-    "Frontend Error Button": "Throw Frontend Error",
-    "API Error Button": "Throw API Error",
-    "Log Message Button": "Log Test Message",
-    "Counter": "Count",
-    "Frontend Error Message": "Sentry Frontend Test Error",
-    "API Error Message": "API Error",
-    "Test Message": "Test message from Sentry example page",
-    "Message Sent": "Message sent to Sentry!",
-    "Error Fallback": "Error occurred! Check Sentry for details."
-  },
-  "WifiFinder": {
-    "title": "WiFi Hotspots",
-    "listView": "List View",
-    "mapView": "Map View",
-    "searchPlaceholder": "Search by name or location...",
-    "filter": "Filter",
-    "allTypes": "All Types",
-    "freeOnly": "Free Only",
-    "paidOnly": "Paid Only",
-    "free": "Free",
-    "paid": "Paid",
-    "restricted": "Restricted",
-    "getDirections": "Get Directions",
-    "mapComingSoon": "Map view coming soon..."
-  },
-  "Welcome": {
-    "title": "Welcome to Wifey! 👋",
-    "description": "Thank you for joining our community. Let's get you started on your journey to better connectivity.",
-    "nextSteps": "Here's what you can do next:",
-    "step1": "Complete your profile to personalize your experience",
-    "step2": "Start exploring WiFi and cellular coverage points in your area",
-    "step3": "Contribute by adding new coverage points and helping others",
-    "startExploring": "Start Exploring",
-    "setupProfile": "Setup Profile"
-  },
-  "Profile": {
-    "title": "Profile Settings",
-    "nameLabel": "Full Name",
-    "namePlaceholder": "Enter your full name",
-    "emailLabel": "Email",
-    "emailPlaceholder": "Enter your email",
-    "phoneLabel": "Phone Number",
-    "phonePlaceholder": "Enter your phone number",
-    "locationLabel": "Default Location",
-    "locationPlaceholder": "Enter your default location",
-    "notificationsLabel": "Notifications",
-    "notificationsDescription": "Receive notifications about new coverage points and updates",
-    "cancel": "Cancel",
-    "save": "Save Changes"
-  },
-  "Dashboard": {
-    "title": "Dashboard",
-    "welcome": "Welcome back, {name}",
-    "user": "User",
-    "settings": "Settings",
-    "quickActions": "Quick Actions",
-    "newReport": "New Report",
-    "viewMap": "View Map",
-    "cellularTitle": "Cellular Towers",
-    "cellularDescription": "View and contribute to cellular tower data in your area.",
-    "wifiTitle": "WiFi Hotspots",
-    "wifiDescription": "Find and share public WiFi hotspots near you.",
-    "nearbyTitle": "Nearby Networks",
-    "nearbyDescription": "Discover networks in your vicinity and their performance.",
-    "viewCoverage": "View Coverage Map",
-    "findWifi": "Find WiFi",
-    "exploreNearby": "Explore Nearby",
-    "stats": {
-      "wifiSpots": "{count} WiFi spots nearby",
-      "coverageAreas": "{count} coverage areas"
-    },
-    "notifications": {
-      "title": "Notifications",
-      "newCoverage": "New Coverage Point",
-      "newCoverageDesc": "Your coverage point was added successfully!",
-      "wifiSpot": "WiFi Hotspot Added",
-      "wifiSpotDesc": "Thanks for adding a new WiFi hotspot!",
-      "achievement": "Achievement Unlocked",
-      "achievementDesc": "You've earned the '7-Day Streak' badge!"
-    },
-    "achievements": {
-      "firstContribution": "First Contribution",
-      "firstContributionDesc": "Made your first contribution to the network map",
-      "weeklyStreak": "Weekly Warrior",
-      "weeklyStreakDesc": "Maintained a 7-day contribution streak",
-      "hundredPoints": "Century Marker",
-      "hundredPointsDesc": "Earn 100 contribution points"
-    }
-  },
-  "wifi": {
-    "title": "WiFi Coverage",
-    "subtitle": "Find and track WiFi hotspots in your area",
-    "search": {
-      "placeholder": "Search for WiFi hotspots...",
-      "button": "Search"
-    },
-    "filters": {
-      "title": "Filter WiFi",
-      "type": {
-        "title": "WiFi Type",
-        "all": "All Types",
-        "public": "Public",
-        "private": "Private",
-        "free": "Free",
-        "paid": "Paid"
-      },
-      "range": {
-        "title": "Signal Strength",
-        "all": "All Strengths",
-        "excellent": "Excellent",
-        "good": "Good",
-        "fair": "Fair",
-        "poor": "Poor"
-      }
-    },
-    "map": {
-      "title": "WiFi Map",
-      "loading": "Loading WiFi map..."
-    },
-    "stats": {
-      "title": "WiFi Statistics",
-      "total": "Total Hotspots",
-      "today": "Added Today",
-      "free": "Free Hotspots",
-      "points": "WiFi Points",
-      "contributors": "Contributors"
-    }
-  },
-  "explore": {
-    "title": "Explore Coverage",
-    "description": "Find WiFi and cellular coverage points near you",
-    "allPoints": "All Points",
-    "coveragePoints": "Coverage Points",
-    "wifiPoints": "WiFi Points",
-    "search": {
-      "placeholder": "Search locations...",
-      "button": "Search"
-    },
-    "filters": {
-      "title": "Filter Coverage",
-      "all": "All Coverage Types",
-      "cellular": "Cellular Towers",
-      "wifi": "WiFi Hotspots",
-      "landmarks": "Landmarks",
-      "range": {
-        "title": "Search Range",
-        "all": "Any Distance",
-        "nearby": "Nearby (1km)",
-        "local": "Local (5km)",
-        "city": "City (10km)",
-        "region": "Region (50km)"
-      }
-    },
-    "map": {
-      "title": "Coverage Map",
-      "loading": "Loading coverage map..."
-    },
-    "contribute": {
-      "title": "Add New Points",
-      "description": "Help others stay connected by adding new coverage points",
-      "button": "Add Coverage Point"
-    },
-    "stats": {
-      "title": "Coverage Statistics",
-      "total": "Total Points",
-      "today": "Added Today",
-      "coverage": "Area Coverage",
-      "contributors": "Contributors"
-    },
-    "searchRadius": "Search within {radius} km radius"
-  },
-  "nav": {
-    "home": "Home",
-    "coverage": "Network Coverage",
-    "wifi": "WiFi Hotspots",
-    "explore": "Explore",
-    "reportCoverage": "Quick Report"
-  },
-  "report": {
-    "title": "Quick Report Coverage",
-    "description": "Report WiFi or cellular coverage at your current location",
-    "selectLocation": "Select Location",
-    "coverageType": "Coverage Type",
-    "wifi": "WiFi",
-    "cellular": "Cellular",
-    "locationName": "Location Name",
-    "locationNamePlaceholder": "e.g., Coffee Shop, Library, Park",
-    "speed": "Speed (Mbps)",
-    "speedPlaceholder": "Enter speed in Mbps",
-    "notes": "Additional Notes",
-    "notesPlaceholder": "Any additional information...",
-    "submit": "Submit Report",
-    "submitting": "Submitting...",
-    "success": {
-      "title": "Report Submitted",
-      "description": "Your coverage report has been saved successfully.",
-      "thanksTitle": "Thanks for Contributing! 🎉",
-      "thanksDescription": "Your report helps make our coverage map more accurate for everyone.",
-      "joinTitle": "Join Our Community",
-      "joinDescription": "Sign up as a Power User to get on the Leaderboard and unlock exclusive features!",
-      "signUp": "Sign Up Now",
-      "viewMap": "View on Map"
-    },
-    "error": {
-      "title": "Error",
-      "description": "Failed to submit report. Please try again."
-    },
-    "currentLocation": "Current Location",
-    "form": {
-      "location": "Search Location",
-      "currentLocation": "Use Current Location"
-    }
-  },
-  "community": {
-    "title": "Join Our Community",
-    "subtitle": "Become part of a growing network of coverage mappers and WiFi explorers",
-    "features": {
-      "leaderboard": {
-        "title": "Leaderboard & Achievements",
-        "description": "Compete with other mappers, earn points, and unlock special badges for your contributions"
-      },
-      "notifications": {
-        "title": "Push Notifications",
-        "description": "Stay updated with real-time alerts about coverage changes and community activities in your area"
-      },
-      "dashboard": {
-        "title": "User Dashboard",
-        "description": "Track your contributions, view your impact, and manage your mapping preferences"
-      },
-      "analytics": {
-        "title": "Analysis Metrics",
-        "description": "Access detailed insights about coverage patterns and WiFi availability in your mapped areas"
-      }
-    },
-    "benefits": {
-      "title": "Community Benefits",
-      "items": [
-        "Earn points and climb the leaderboard",
-        "Get early access to new features",
-        "Connect with fellow mappers",
-        "Contribute to better connectivity"
-      ]
-    },
-    "cta": {
-      "join": "Join Now",
-      "explore": "Explore Features"
-    }
-  },
-  "settings": {
-    "title": "Settings",
-    "description": "Manage your account settings and preferences.",
-    "appearance": {
-      "title": "Appearance",
-      "description": "Customize how Wifey looks on your device.",
-      "theme": "Theme",
-      "light": "Light",
-      "dark": "Dark",
-      "system": "System"
-    },
-    "notifications": {
-      "title": "Notifications",
-      "description": "Configure how you want to be notified about updates.",
-      "enable": "Enable notifications"
-    },
-    "account": {
-      "title": "Account",
-      "description": "Manage your account settings and preferences.",
-      "email": "Email address"
-    },
-    "saveChanges": "Save changes",
-    "success": "Success",
-    "settingsSaved": "Your settings have been saved successfully.",
-    "error": "Error",
-    "settingsError": "Failed to save settings. Please try again."
-  },
-  "points": {
-    "addNew": "Add New Point",
-    "addCoveragePoint": "Add Coverage Point",
-    "addWifiPoint": "Add WiFi Point",
-    "helpOthers": "Help others stay connected by adding new coverage points",
-    "locationName": "Location Name",
-    "locationNamePlaceholder": "e.g., Central Park",
-    "provider": "Provider",
-    "providerPlaceholder": "e.g., Movistar, Kolbi",
-    "signalStrength": "Signal Strength",
-    "selectStrength": "Select signal strength",
-    "excellent": "Excellent",
-    "good": "Good",
-    "fair": "Fair",
-    "poor": "Poor",
-    "speed": "Speed (Mbps)",
-    "speedPlaceholder": "e.g., 50",
-    "wifiType": "WiFi Type",
-    "selectType": "Select WiFi type",
-    "free": "Free",
-    "paid": "Paid",
-    "restricted": "Restricted",
-    "notes": "Additional Notes",
-    "notesPlaceholder": "Any additional information...",
-    "submit": "Submit Point"
-  },
-  "map": {
-    "search": {
-      "placeholder": "Search for a location...",
-      "button": "Search",
-      "error": "Error finding location",
-      "success": "Location found: {location}",
-      "locationError": "Unable to get your location. Please check your browser permissions."
-    },
-    "layers": {
-      "all": "All Points",
-      "coverage": "Coverage Points",
-      "wifi": "WiFi Points"
-    }
-  },
-  "profile": {
-    "title": "Complete Your Profile",
-    "description": "Please provide your details to complete your registration",
-    "fields": {
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "phoneNumber": "Phone Number",
-      "location": "Location"
-    },
-    "submit": "Complete Registration",
-    "submitting": "Completing...",
-    "success": {
-      "message": "Profile Completed!",
-      "description": "Your profile has been successfully updated. Redirecting to dashboard..."
-    },
-    "error": {
-      "message": "Registration Failed",
-      "description": "There was an error completing your profile. Please try again."
-    }
-  },
-  "header": {
-    "dashboard": "Dashboard",
-    "map": "Map",
-    "leaderboard": "Leaderboard",
-    "settings": "Settings",
-    "signIn": "Sign In",
-    "signOut": "Sign Out",
-    "quickReport": "Quick Report Coverage",
-    "profile": "Profile",
-    "language": "Language"
-  },
-  "leaderboard": {
-    "title": "Leaderboard",
-    "description": "See how you rank among other contributors",
-    "timeframe": {
-      "label": "Time Period",
-      "daily": "Today",
-      "weekly": "This Week",
-      "monthly": "This Month",
-      "allTime": "All Time"
-    },
-    "stats": {
-      "title": "Your Stats",
-      "points": "Points",
-      "rank": "Rank",
-      "contributions": "Contributions",
-      "streak": "Current Streak",
-      "totalUsers": "Total Users",
-      "totalContributions": "Total Contributions"
-    },
-    "rank": "Rank",
-    "user": "User",
-    "points": "Points",
-    "contributions": "Contributions",
-    "streak": "Streak"
-  },
-  "gamification": {
-    "stats": {
-      "title": "Your Stats",
-      "points": "Total Points",
-      "rank": "Global Rank",
-      "contributions": "Contributions",
-      "level": "Current Level",
-      "levelLabel": "Level"
-    },
-    "streak": {
-      "title": "Daily Streak",
-      "current": "Current Streak",
-      "longest": "Longest Streak",
-      "days": "days",
-      "nextMilestone": "Next Milestone",
-      "progress": "Progress"
-    },
-    "achievements": {
-      "title": "Achievements",
-      "unlocked": "Unlocked",
-      "locked": "Locked",
-      "progress": "Progress",
-      "description": {
-        "firstReport": "Submit your first coverage report",
-        "tenReports": "Submit 10 coverage reports",
-        "fiftyReports": "Submit 50 coverage reports",
-        "hundredReports": "Submit 100 coverage reports",
-        "threeStreak": "Maintain a 3-day streak",
-        "sevenStreak": "Maintain a 7-day streak",
-        "thirtyStreak": "Maintain a 30-day streak",
-        "firstWifi": "Report your first WiFi hotspot",
-        "firstCellular": "Report your first cellular coverage point",
-        "communityHelper": "Help 10 users find coverage"
-      }
     }
   },
   "location": {
@@ -863,40 +393,6 @@
       "error": "Error saving location"
     }
   },
-  "gpsTracking": "GPS Tracking",
-  "online": "Online",
-  "offline": "Offline",
-  "startTracking": "Start Tracking",
-  "stopTracking": "Stop Tracking",
-  "findMe": "Find Me",
-  "cursorPosition": "Cursor Position",
-  "distanceToPoint": "Distance to Point",
-  "distance": "Distance",
-  "accuracy": {
-    "high": "High Accuracy",
-    "medium": "Medium Accuracy",
-    "low": "Low Accuracy",
-    "label": "Accuracy"
-  },
-  "coordinates": {
-    "latitude": "Latitude",
-    "longitude": "Longitude"
-  },
-  "heading": "Heading",
-  "speed": "Speed",
-  "status": {
-    "waiting": "Waiting for GPS signal...",
-    "tracking": "Tracking location...",
-    "stopped": "Tracking stopped",
-    "error": "Error getting location",
-    "unavailable": "Location services unavailable",
-    "permission": "Location permission required"
-  },
-  "permissions": {
-    "required": "Location permission is required",
-    "denied": "Location permission was denied",
-    "prompt": "Please enable location services to use this feature"
-  },
   "cellular": {
     "title": "Cellular Coverage",
     "subtitle": "Find and track cellular towers and coverage points in your area",
@@ -920,6 +416,418 @@
       "found": "Location Found",
       "error": "Could not get location",
       "searching": "Searching for towers..."
+    }
+  },
+  "coverage": {
+    "title": "Coverage Finder",
+    "description": "Monitor and track cellular signal strength in your area",
+    "signalStrength": "Signal Strength Monitor",
+    "startMonitoring": "Start Monitoring",
+    "stopMonitoring": "Stop Monitoring",
+    "latestMeasurements": "Latest Measurements",
+    "errors": {
+      "unsupportedBrowser": "Your browser does not support signal monitoring",
+      "locationDenied": "Location access is required for signal monitoring. Please enable location access in your browser settings.",
+      "locationUnavailable": "Unable to determine your location",
+      "locationTimeout": "Location request timed out",
+      "locationError": "Error getting location",
+      "permissionError": "Cannot request location permissions"
+    },
+    "tabs": {
+      "coverageRoute": "Find Coverage Route",
+      "freeWifi": "Free WiFi Points"
+    },
+    "findRoute": {
+      "title": "Find Route to Coverage",
+      "button": "Find Route to Coverage",
+      "loading": "Finding Coverage...",
+      "gettingLocation": "Getting your location...",
+      "noLocation": "Location access required to find coverage",
+      "error": "Error finding coverage. Please try again."
+    },
+    "wifi": {
+      "title": "Nearby Free WiFi Points",
+      "refreshButton": "Refresh Nearby Points",
+      "loading": "Finding WiFi points...",
+      "noHotspots": "No nearby WiFi points found",
+      "details": {
+        "provider": "Provider",
+        "speed": "Speed",
+        "distance": "Distance",
+        "reliability": "Reliability"
+      }
+    },
+    "subtitle": "Monitor and find cellular coverage",
+    "search": {
+      "placeholder": "Search coverage...",
+      "button": "Search",
+      "noResults": "No coverage found",
+      "error": "Error searching coverage"
+    },
+    "monitor": {
+      "title": "Signal Monitor",
+      "start": "Start Monitoring",
+      "stop": "Stop Monitoring",
+      "strength": "Signal Strength",
+      "quality": "Signal Quality",
+      "provider": "Provider",
+      "type": "Network Type"
+    },
+    "report": {
+      "title": "Report Coverage",
+      "description": "Report WiFi or cellular coverage at your current location",
+      "selectLocation": "Select Location",
+      "coverageType": "Coverage Type",
+      "wifi": "WiFi",
+      "cellular": "Cellular",
+      "locationName": "Location Name",
+      "locationNamePlaceholder": "e.g., Coffee Shop, Library, Park",
+      "speed": "Speed (Mbps)",
+      "speedPlaceholder": "Enter speed in Mbps",
+      "notes": "Additional Notes",
+      "notesPlaceholder": "Any additional information...",
+      "submit": "Submit Report",
+      "submitting": "Submitting...",
+      "success": {
+        "title": "Report Submitted",
+        "description": "Your coverage report has been successfully saved.",
+        "thanksTitle": "Thanks for Contributing!",
+        "thanksDescription": "Your report helps make our coverage map more accurate for everyone.",
+        "joinTitle": "Join Our Community",
+        "joinDescription": "Sign up as a Power User to appear on the Leaderboard and unlock exclusive features!",
+        "signUp": "Sign Up Now",
+        "viewMap": "View on Map"
+      },
+      "error": {
+        "title": "Error",
+        "description": "Error submitting report. Please try again."
+      }
+    },
+    "filters": {
+      "title": "Filters",
+      "provider": "Provider",
+      "strength": "Signal Strength",
+      "type": "Network Type",
+      "apply": "Apply Filters",
+      "clear": "Clear Filters"
+    }
+  },
+  "Map": {
+    "title": "Interactive Map",
+    "layers": "Layers",
+    "showOnMap": "Show on Map",
+    "allPoints": "All Points",
+    "wifiOnly": "WiFi Points Only",
+    "coverageOnly": "Coverage Points Only",
+    "searchPlaceholder": "Search locations...",
+    "legend": "Legend",
+    "mapLegend": "Map Legend",
+    "wifiPoint": "WiFi Point",
+    "coveragePoint": "Coverage Point",
+    "getDirections": "Get Directions",
+    "centerOnMe": "Center on my location",
+    "mapImplementation": "Map implementation coming soon..."
+  },
+  "map": {
+    "search": {
+      "placeholder": "Search for a location...",
+      "button": "Search",
+      "error": "Error finding location",
+      "emptyQuery": "Please enter a location to search",
+      "noResults": "No locations found for your search",
+      "failed": "Failed to search location. Please try again.",
+      "success": "Location Found",
+      "locationFound": "Found: {location}"
+    },
+    "location": {
+      "find": "Find my location",
+      "found": "Location found!",
+      "centered": "Map centered on your current location",
+      "error": "Could not find your location. Please check browser permissions."
+    },
+    "layers": {
+      "all": "All Points",
+      "coverage": "Coverage Points",
+      "wifi": "WiFi Points"
+    }
+  },
+  "onboarding": {
+    "navigation": {
+      "signIn": "Sign In",
+      "getStarted": "Get Started"
+    },
+    "welcome": {
+      "title": "Welcome to Wifey",
+      "description": "Join our community and help map network coverage worldwide.",
+      "getStarted": "Get Started"
+    },
+    "coverage": {
+      "intro": {
+        "title": "Map Network Coverage",
+        "description": "Help others find reliable connections by mapping coverage in your area.",
+        "step1": {
+          "title": "Share Location",
+          "description": "Mark places with good network coverage"
+        },
+        "step2": {
+          "title": "Rate Signal",
+          "description": "Rate the signal strength and connection quality"
+        },
+        "step3": {
+          "title": "Help Others",
+          "description": "Your contributions help others find reliable connections"
+        },
+        "tryItOut": "Try It Out"
+      },
+      "demo": {
+        "title": "Try Our Coverage Mapper",
+        "description": "See how easy it is to contribute to our coverage map.",
+        "signalStrength": "Signal Strength",
+        "carrier": "Network Carrier",
+        "selectCarrier": "Select your carrier",
+        "submit": "Submit Coverage Point"
+      }
+    },
+    "features": {
+      "title": "Powerful Features",
+      "description": "Everything you need to find and share reliable connections.",
+      "wifi": {
+        "title": "WiFi Points",
+        "description": "Find and share public WiFi locations",
+        "benefits": {
+          "speed": "Real-time speed tests",
+          "reliability": "Reliability ratings",
+          "security": "Security information",
+          "updates": "Regular updates"
+        }
+      },
+      "coverage": {
+        "title": "Network Coverage",
+        "description": "Track cellular coverage and signal strength",
+        "benefits": {
+          "realtime": "Real-time coverage data",
+          "accuracy": "Accurate signal mapping",
+          "predictions": "Coverage predictions",
+          "alerts": "Low signal alerts"
+        }
+      },
+      "navigation": {
+        "title": "Smart Navigation",
+        "description": "Find the best route with reliable connectivity",
+        "benefits": {
+          "routing": "Coverage-aware routing",
+          "offline": "Offline maps",
+          "alternatives": "Alternative routes",
+          "eta": "Accurate ETAs"
+        }
+      },
+      "continue": "Continue"
+    },
+    "registration": {
+      "title": "Complete Your Profile",
+      "description": "Tell us a bit about yourself to get started.",
+      "nameLabel": "Your Name",
+      "emailLabel": "Email",
+      "interests": "What interests you most?",
+      "interestOptions": {
+        "wifi": "Finding WiFi Points",
+        "coverage": "Tracking Network Coverage",
+        "navigation": "Coverage Navigation"
+      },
+      "submit": "Complete Registration"
+    }
+  },
+  "testimonials": {
+    "title": "What Our Users Say",
+    "subtitle": "Real stories from real users"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "description": "Have questions? We're here to help!",
+    "email": "Send us an Email",
+    "phone": "Call Support",
+    "emailAddress": "support@wifey.app",
+    "phoneNumber": "+1 (555) 123-4567",
+    "hours": "Available 24/7",
+    "response": "Typically respond within 1 hour"
+  },
+  "gamification": {
+    "points": "Points",
+    "level": "Level",
+    "badges": "Badges",
+    "achievements": "Achievements",
+    "leaderboard": "Leaderboard",
+    "progress": "Progress",
+    "nextLevel": "Next Level",
+    "pointsToNext": "Points to next level",
+    "recentActivity": "Recent Activity",
+    "contributions": "Contributions",
+    "rewards": "Rewards",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "streak": {
+      "title": "Daily Streak",
+      "current": "Current Streak",
+      "longest": "Longest Streak",
+      "days": "days",
+      "nextMilestone": "Next Milestone",
+      "progress": "Progress"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "unlocked": "Unlocked",
+      "locked": "Locked",
+      "progress": "Progress",
+      "description": {
+        "firstReport": "Submit your first coverage report",
+        "tenReports": "Submit 10 coverage reports",
+        "fiftyReports": "Submit 50 coverage reports",
+        "hundredReports": "Submit 100 coverage reports",
+        "threeStreak": "Maintain a 3-day streak",
+        "sevenStreak": "Maintain a 7-day streak",
+        "thirtyStreak": "Maintain a 30-day streak",
+        "firstWifi": "Report your first WiFi point",
+        "firstCellular": "Report your first cellular coverage point",
+        "communityHelper": "Help 10 users find coverage"
+      }
+    },
+    "stats": {
+      "title": "Your Stats",
+      "points": "Total Points",
+      "rank": "Global Rank",
+      "contributions": "Contributions",
+      "level": "Current Level",
+      "levelLabel": "Level"
+    }
+  },
+  "wifi": {
+    "title": "WiFi Points",
+    "subtitle": "Find and share WiFi points",
+    "search": {
+      "placeholder": "Search WiFi points...",
+      "button": "Search",
+      "noResults": "No results found",
+      "error": "Error searching WiFi points"
+    },
+    "filters": {
+      "title": "Filters",
+      "speed": "Speed",
+      "reliability": "Reliability",
+      "distance": "Distance",
+      "security": "Security",
+      "apply": "Apply Filters",
+      "clear": "Clear Filters"
+    },
+    "details": {
+      "speed": "Speed",
+      "reliability": "Reliability",
+      "security": "Security",
+      "lastVerified": "Last Verified",
+      "reportedBy": "Reported by",
+      "verifiedBy": "Verified by",
+      "getDirections": "Get Directions"
+    },
+    "add": {
+      "title": "Add WiFi Point",
+      "location": "Location",
+      "name": "Name",
+      "description": "Description",
+      "speed": "Speed",
+      "security": "Security",
+      "submit": "Add Point",
+      "success": "WiFi point added successfully!",
+      "error": "Error adding WiFi point"
+    }
+  },
+  "explore": {
+    "title": "Explore Coverage",
+    "description": "Find WiFi points and cellular coverage near you",
+    "allPoints": "All Points",
+    "coveragePoints": "Coverage Points",
+    "wifiPoints": "WiFi Points",
+    "searchRadius": "Search within {radius} km radius"
+  },
+  "points": {
+    "addNew": "Add New Point",
+    "addCoveragePoint": "Add Coverage Point",
+    "addWifiPoint": "Add WiFi Point",
+    "helpOthers": "Help others stay connected by adding new coverage points",
+    "locationName": "Location Name",
+    "locationNamePlaceholder": "e.g., Central Park",
+    "provider": "Provider",
+    "providerPlaceholder": "e.g., Verizon, AT&T",
+    "signalStrength": "Signal Strength",
+    "selectStrength": "Select strength",
+    "excellent": "Excellent",
+    "good": "Good",
+    "fair": "Fair",
+    "poor": "Poor",
+    "speed": "Speed (Mbps)",
+    "speedPlaceholder": "e.g., 50",
+    "wifiType": "WiFi Type",
+    "selectType": "Select type",
+    "free": "Free",
+    "paid": "Paid",
+    "restricted": "Restricted",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any additional information...",
+    "submit": "Submit Point"
+  },
+  "header": {
+    "dashboard": "Dashboard",
+    "map": "Map",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "quickReport": "Report Coverage",
+    "profile": "Profile",
+    "language": "Language"
+  },
+  "profile": {
+    "title": "Complete your Profile",
+    "description": "Please provide your details to complete your registration",
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "phoneNumber": "Phone Number",
+      "location": "Location"
+    },
+    "submit": "Complete Registration",
+    "submitting": "Completing...",
+    "success": {
+      "message": "Profile Completed!",
+      "description": "Your profile has been successfully updated. Redirecting to dashboard..."
+    },
+    "error": {
+      "message": "Registration Error",
+      "description": "There was an error completing your profile. Please try again."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}",
+    "user": "User",
+    "settings": "Settings",
+    "quickActions": "Quick Actions",
+    "newReport": "New Report",
+    "viewMap": "View Map",
+    "notifications": {
+      "title": "Notifications",
+      "newCoverage": "New Coverage Point",
+      "newCoverageDesc": "Your coverage point was added successfully!",
+      "wifiSpot": "WiFi Point Added",
+      "wifiSpotDesc": "Thanks for adding a new WiFi point!",
+      "achievement": "Achievement Unlocked",
+      "achievementDesc": "You've earned the '7-day Streak' badge!"
+    },
+    "achievements": {
+      "firstContribution": "First Contribution",
+      "firstContributionDesc": "Made your first contribution to the network map",
+      "weeklyStreak": "Weekly Warrior",
+      "weeklyStreakDesc": "Maintained a 7-day contribution streak",
+      "hundredPoints": "Centurion",
+      "hundredPointsDesc": "Earned 100 contribution points"
     }
   }
 }

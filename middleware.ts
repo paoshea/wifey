@@ -10,16 +10,16 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed'
 });
 
-// Regex for matching API routes
+// Regex patterns
 const API_PATTERN = /^\/api\//;
-// Regex for Next.js internal routes and static files
+const RSC_PATTERN = /^\/_next\/static\/chunks\/app/;
 const INTERNAL_PATTERN = /^(?:\/(_next|static|favicon\.ico|manifest\.json|robots\.txt|.*\.(?:jpg|png|gif|ico|svg|css|js|json)))(?:\/|$)/;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for Next.js internal routes and static files
-  if (INTERNAL_PATTERN.test(pathname)) {
+  // Skip middleware for Next.js internal routes, static files, and RSC payloads
+  if (INTERNAL_PATTERN.test(pathname) || RSC_PATTERN.test(pathname)) {
     return NextResponse.next();
   }
 
@@ -57,5 +57,6 @@ export const config = {
     // Match all API routes
     '/api/:path*',
     // Match all other routes except Next.js internal paths and static files
-    '/((?!_next|static|favicon\.ico|manifest\.json|robots\.txt|.*\\..*).*)']
+    '/((?!_next|static|favicon\.ico|manifest\.json|robots\.txt|.*\\..*).*)'
+  ]
 };

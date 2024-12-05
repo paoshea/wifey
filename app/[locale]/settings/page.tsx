@@ -2,15 +2,15 @@
 
 import { useTranslations } from 'next-intl';
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Icons } from '@/components/ui/icons';
-import { useToast } from '@/components/ui/use-toast';
+import { Button } from 'components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 'components/ui/card';
+import { Label } from 'components/ui/label';
+import { Switch } from 'components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
+import { Icons } from 'components/ui/icons';
+import { useToast } from 'components/ui/use-toast';
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
@@ -19,6 +19,12 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSaveSettings = async () => {
     setIsLoading(true);
@@ -38,6 +44,11 @@ export default function SettingsPage() {
       setIsLoading(false);
     }
   };
+
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="container py-10">
@@ -60,9 +71,10 @@ export default function SettingsPage() {
               <Select
                 value={theme}
                 onValueChange={(value) => setTheme(value)}
+                defaultValue="system"
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder={t('appearance.selectTheme')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="light">{t('appearance.light')}</SelectItem>
