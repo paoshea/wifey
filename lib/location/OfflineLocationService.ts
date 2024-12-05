@@ -1,3 +1,5 @@
+'use client';
+
 interface LocationData {
   coords: {
     latitude: number;
@@ -23,10 +25,10 @@ export class OfflineLocationService {
   private readonly STORAGE_KEY = 'wifey_location_history';
   private readonly MAX_HISTORY_SIZE = 1000; // Limit stored locations
   private listeners: Set<(location: LocationData) => void> = new Set();
+  private isInitialized = false;
 
   private constructor() {
-    this.loadFromStorage();
-    window.addEventListener('online', this.handleOnline.bind(this));
+    // Constructor is empty - initialization happens in init()
   }
 
   static getInstance(): OfflineLocationService {
@@ -36,7 +38,19 @@ export class OfflineLocationService {
     return OfflineLocationService.instance;
   }
 
+  async init(): Promise<void> {
+    if (this.isInitialized || typeof window === 'undefined') return;
+
+    this.loadFromStorage();
+    window.addEventListener('online', this.handleOnline.bind(this));
+    this.isInitialized = true;
+  }
+
   startTracking(): Promise<void> {
+    if (typeof window === 'undefined') {
+      return Promise.reject(new Error('Cannot track location in server environment'));
+    }
+
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation not supported'));
@@ -63,6 +77,8 @@ export class OfflineLocationService {
   }
 
   private startContinuousTracking(): void {
+    if (typeof window === 'undefined') return;
+
     this.watchId = navigator.geolocation.watchPosition(
       this.handleNewPosition.bind(this),
       this.handleError.bind(this),
@@ -75,6 +91,8 @@ export class OfflineLocationService {
   }
 
   stopTracking(): void {
+    if (typeof window === 'undefined') return;
+
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
@@ -136,7 +154,7 @@ export class OfflineLocationService {
     };
 
     this.locationHistory.push(locationData);
-    
+
     // Limit history size
     if (this.locationHistory.length > this.MAX_HISTORY_SIZE) {
       this.locationHistory = this.locationHistory.slice(-this.MAX_HISTORY_SIZE);
@@ -171,11 +189,11 @@ export class OfflineLocationService {
     const Δφ = this.toRadians(lat2 - lat1);
     const Δλ = this.toRadians(lon2 - lon1);
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
@@ -184,6 +202,8 @@ export class OfflineLocationService {
   }
 
   private saveToStorage(): void {
+    if (typeof window === 'undefined') return;
+
     try {
       const data: StoredLocationHistory = {
         locations: this.locationHistory,
@@ -196,6 +216,8 @@ export class OfflineLocationService {
   }
 
   private loadFromStorage(): void {
+    if (typeof window === 'undefined') return;
+
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {

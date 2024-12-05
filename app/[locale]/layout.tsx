@@ -1,12 +1,11 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
-import { locales, type SupportedLocale } from '@/lib/i18n/config';
+import { locales, type SupportedLocale } from 'lib/i18n/config';
 import { headers } from 'next/headers';
 import { Inter } from 'next/font/google';
 import LocaleClientLayout from './locale-client-layout';
 import '../globals.css';
-import 'leaflet/dist/leaflet.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,17 +45,12 @@ export default async function LocaleLayout({
   const pathname = headersList.get('x-pathname') || '/';
 
   return (
-    <html lang={locale} className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body>
-        <LocaleClientLayout messages={messages} locale={locale as SupportedLocale} pathname={pathname}>
-          {children}
-        </LocaleClientLayout>
-      </body>
-    </html>
+    <LocaleClientLayout
+      messages={messages}
+      locale={locale as SupportedLocale}
+      pathname={pathname}
+    >
+      {children}
+    </LocaleClientLayout>
   );
 }

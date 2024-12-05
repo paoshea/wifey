@@ -1,15 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { Button } from '../ui/button';
 import { useTranslations } from 'next-intl';
 import { MapPin } from 'lucide-react';
-
-interface LocationData {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-}
+import { useOfflineLocation } from '../../hooks/useOfflineLocation';
 
 interface LocationFinderProps {
   onLocationFound?: (location: { lat: number; lng: number; accuracy: number }) => void;
@@ -18,84 +13,72 @@ interface LocationFinderProps {
 
 export function LocationFinder({ onLocationFound, className = '' }: LocationFinderProps) {
   const t = useTranslations();
-  const [coords, setCoords] = useState<LocationData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const {
+    isInitialized,
+    isTracking,
+    error: locationError,
+    startTracking,
+    stopTracking,
+    getLastLocation
+  } = useOfflineLocation();
 
-  const getLocation = () => {
-    setLoading(true);
-    setError(null);
-
-    if (!navigator.geolocation) {
-      setError(t('location.errors.notSupported'));
-      setLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const locationData = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
-        };
-        setCoords(locationData);
-        setLoading(false);
-        
-        if (onLocationFound) {
-          onLocationFound({
-            lat: locationData.latitude,
-            lng: locationData.longitude,
-            accuracy: locationData.accuracy
-          });
-        }
-      },
-      (error) => {
-        setLoading(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setError(t('location.errors.permissionDenied'));
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setError(t('location.errors.unavailable'));
-            break;
-          case error.TIMEOUT:
-            setError(t('location.errors.timeout'));
-            break;
-          default:
-            setError(t('location.errors.unknown'));
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+  useEffect(() => {
+    if (isInitialized && isTracking) {
+      const lastLocation = getLastLocation();
+      if (lastLocation && onLocationFound) {
+        onLocationFound({
+          lat: lastLocation.coords.latitude,
+          lng: lastLocation.coords.longitude,
+          accuracy: lastLocation.coords.accuracy
+        });
       }
-    );
+    }
+  }, [isInitialized, isTracking, onLocationFound]);
+
+  const handleGetLocation = async () => {
+    setLoading(true);
+    try {
+      await startTracking();
+      const lastLocation = getLastLocation();
+      if (lastLocation && onLocationFound) {
+        onLocationFound({
+          lat: lastLocation.coords.latitude,
+          lng: lastLocation.coords.longitude,
+          accuracy: lastLocation.coords.accuracy
+        });
+      }
+    } catch (err) {
+      console.error('Failed to get location:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const lastLocation = getLastLocation();
 
   return (
     <div className={`space-y-3 ${className}`}>
       <Button
-        onClick={getLocation}
-        disabled={loading}
+        onClick={handleGetLocation}
+        disabled={loading || !isInitialized}
         variant="outline"
         className="w-full"
       >
         <MapPin className="mr-2 h-4 w-4" />
         {loading ? t('location.loading') : t('location.getLocation')}
       </Button>
-      
-      {coords && (
+
+      {lastLocation && (
         <div className="text-sm space-y-1 bg-muted p-3 rounded-md">
-          <p>{t('location.coordinates.latitude')}: {coords.latitude.toFixed(6)}</p>
-          <p>{t('location.coordinates.longitude')}: {coords.longitude.toFixed(6)}</p>
-          <p>{t('location.accuracy.high')}: ±{Math.round(coords.accuracy)} {t('location.metrics.meters')}</p>
+          <p>{t('location.coordinates.latitude')}: {lastLocation.coords.latitude.toFixed(6)}</p>
+          <p>{t('location.coordinates.longitude')}: {lastLocation.coords.longitude.toFixed(6)}</p>
+          <p>{t('location.accuracy.high')}: ±{Math.round(lastLocation.coords.accuracy)} {t('location.metrics.meters')}</p>
         </div>
       )}
-      
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
+
+      {locationError && (
+        <p className="text-sm text-destructive">{locationError.message}</p>
       )}
     </div>
   );
