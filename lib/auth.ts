@@ -3,7 +3,7 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import prisma from './prisma';
+import { prisma } from './prisma';
 import { Session } from 'next-auth';
 import { UserRole } from './types/user';
 import { z } from 'zod';

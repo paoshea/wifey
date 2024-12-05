@@ -34,7 +34,7 @@ export function LocationFinder({ onLocationFound, className = '' }: LocationFind
         });
       }
     }
-  }, [isInitialized, isTracking, onLocationFound]);
+  }, [isInitialized, isTracking, onLocationFound, getLastLocation]);
 
   const handleGetLocation = async () => {
     setLoading(true);

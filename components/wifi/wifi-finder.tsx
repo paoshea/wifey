@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -9,17 +9,17 @@ import {
     LocationError,
     LocationErrorCode,
     MeasurementData
-} from '@/lib/offline';
-import { useOfflineError } from '@/components/offline/error-handler';
+} from 'lib/offline';
+import { useOfflineError } from 'components/offline/error-handler';
 import {
     wifiFormSchema,
     type WiFiFormData
-} from '@/lib/schemas/coverage';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
+} from 'lib/schemas/coverage';
+import { Input } from 'components/ui/input';
+import { Button } from 'components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 'components/ui/form';
+import { Textarea } from 'components/ui/textarea';
 
 interface WiFiFinderProps {
     className?: string;
@@ -45,11 +45,7 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
         }
     });
 
-    useEffect(() => {
-        loadNearbyPoints();
-    }, []);
-
-    const loadNearbyPoints = async () => {
+    const loadNearbyPoints = useCallback(async () => {
         const manager = OfflineManager.getInstance();
         setIsLoading(true);
 
@@ -71,7 +67,11 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [handleError]);
+
+    useEffect(() => {
+        loadNearbyPoints();
+    }, [loadNearbyPoints]);
 
     const handleStartMeasuring = async () => {
         const manager = OfflineManager.getInstance();
