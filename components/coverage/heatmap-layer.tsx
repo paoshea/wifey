@@ -4,9 +4,18 @@ import { useEffect } from 'react';
 import L from 'leaflet';
 import { useMap } from 'react-leaflet';
 
+interface HeatMapOptions {
+  minOpacity?: number;
+  maxZoom?: number;
+  max?: number;
+  radius?: number;
+  blur?: number;
+  gradient?: { [key: string]: string };
+}
+
 interface HeatmapLayerProps {
   points: Array<[number, number, number]>;
-  options?: L.HeatMapOptions;
+  options?: HeatMapOptions;
 }
 
 export default function HeatmapLayer({ points, options = {} }: HeatmapLayerProps) {
