@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -8,28 +8,95 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Signal, MapPin, Crosshair } from 'lucide-react';
-import type { LatLngTuple } from 'leaflet';
+import type { LatLngTuple, LeafletMouseEvent } from 'leaflet';
 import type { Map as LeafletMap } from 'leaflet';
+import type {
+  MapContainerProps,
+  TileLayerProps,
+  MarkerProps,
+  PopupProps,
+  CircleProps
+} from 'react-leaflet';
 
 // Dynamically import Leaflet components to avoid SSR issues
-const MapContainer = dynamic(
+const MapContainer = dynamic<MapContainerProps>(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
   { ssr: false }
 );
-const TileLayer = dynamic(
+const TileLayer = dynamic<TileLayerProps>(
   () => import('react-leaflet').then((mod) => mod.TileLayer),
   { ssr: false }
 );
-const Marker = dynamic(
+const Marker = dynamic<MarkerProps>(
   () => import('react-leaflet').then((mod) => mod.Marker),
   { ssr: false }
 );
-const Popup = dynamic(
+const Popup = dynamic<PopupProps>(
   () => import('react-leaflet').then((mod) => mod.Popup),
   { ssr: false }
 );
-const Circle = dynamic(
+const Circle = dynamic<CircleProps>(
   () => import('react-leaflet').then((mod) => mod.Circle),
+  { ssr: false }
+);
+
+// Custom map control component
+const LocationControl = dynamic(
+  () => import('react-leaflet').then((mod) => {
+    const { useMap } = mod;
+    return function LocationControlComponent() {
+      const map = useMap();
+      const { toast } = useToast();
+
+      const getUserLocation = useCallback(() => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const location: LatLngTuple = [position.coords.latitude, position.coords.longitude];
+              map.setView(location, 16);
+            },
+            (error) => {
+              console.error('Error getting location:', error);
+              toast({
+                title: "Location Error",
+                description: "Unable to get your location. Please enable location services.",
+                variant: "destructive",
+              });
+            }
+          );
+        }
+      }, [map, toast]);
+
+      return (
+        <div className="leaflet-top leaflet-right">
+          <div className="leaflet-control leaflet-bar">
+            <Button
+              size="icon"
+              variant="outline"
+              className="bg-white hover:bg-gray-100 rounded-sm"
+              onClick={getUserLocation}
+            >
+              <Crosshair className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      );
+    };
+  }),
+  { ssr: false }
+);
+
+// Map events handler component
+const MapEvents = dynamic(
+  () => import('react-leaflet').then((mod) => {
+    const { useMapEvents } = mod;
+    return function MapEventsComponent({ onClick }: { onClick: (e: LeafletMouseEvent) => void }) {
+      useMapEvents({
+        click: onClick,
+      });
+      return null;
+    };
+  }),
   { ssr: false }
 );
 
@@ -44,7 +111,6 @@ interface CoveragePoint {
 }
 
 export default function RangeCoverage() {
-  const mapRef = useRef<LeafletMap | null>(null);
   const [userLocation, setUserLocation] = useState<LatLngTuple | null>(null);
   const [searchRadius, setSearchRadius] = useState(1); // in kilometers
   const [isLoading, setIsLoading] = useState(false);
@@ -61,11 +127,6 @@ export default function RangeCoverage() {
           const location: LatLngTuple = [position.coords.latitude, position.coords.longitude];
           setUserLocation(location);
           setMapKey(prev => prev + 1);
-
-          // Center and zoom the map to user location
-          if (mapRef.current) {
-            mapRef.current.setView(location, 16);
-          }
         },
         (error) => {
           console.error('Error getting location:', error);
@@ -83,7 +144,7 @@ export default function RangeCoverage() {
     getUserLocation();
   }, [getUserLocation]);
 
-  const handleMapClick = (e: any) => {
+  const handleMapClick = (e: LeafletMouseEvent) => {
     if (isAddingPoint) {
       const { lat, lng } = e.latlng;
       setNewPoint([lat, lng]);
@@ -155,7 +216,7 @@ export default function RangeCoverage() {
           max={5}
           step={0.1}
           value={[searchRadius]}
-          onValueChange={(value) => setSearchRadius(value[0])}
+          onValueChange={(value: number[]) => setSearchRadius(value[0])}
         />
         <div className="grid grid-cols-2 gap-4">
           <Button
@@ -192,8 +253,8 @@ export default function RangeCoverage() {
             zoom={14}
             style={{ height: '100%', width: '100%' }}
             className="z-0"
-            ref={mapRef}
           >
+            <MapEvents onClick={handleMapClick} />
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -253,19 +314,7 @@ export default function RangeCoverage() {
               </Marker>
             ))}
 
-            {/* Location control */}
-            <div className="leaflet-top leaflet-right">
-              <div className="leaflet-control leaflet-bar">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="bg-white hover:bg-gray-100 rounded-sm"
-                  onClick={getUserLocation}
-                >
-                  <Crosshair className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <LocationControl />
           </MapContainer>
         )}
       </div>
