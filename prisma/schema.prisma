@@ -1,203 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mongodb"
-  url      = env("MONGODB_URI")
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
+  USER
   ADMIN
   MODERATOR
-  USER
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id               String           @id @default(auto()) @map("_id") @db.ObjectId
-  name             String?
-  email            String?          @unique
-  emailVerified    DateTime?
-  image            String?
-  hashedPassword   String?
-  role             UserRole         @default(USER)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  stats            UserStats?       @relation("UserStats")
-  achievements     Achievement[]    @relation("UserAchievements")
-  measurements     Measurement[]    @relation("UserMeasurements")
-  streaks          UserStreak[]     @relation("UserStreaks")
-  leaderboard      LeaderboardEntry[] @relation("UserLeaderboard")
-  coverageReports  CoverageReport[] @relation("UserCoverageReports")
-  notifications    Notification[]   @relation("UserNotifications")
-}
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  hashedPassword String?
+  role           UserRole  @default(USER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-enum NotificationType {
-  STREAK_REMINDER
-  ACHIEVEMENT
-  STREAK_MILESTONE
-  SOCIAL
-  SYSTEM
-}
-
-enum NotificationPriority {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-model Notification {
-  id           String              @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String              @db.ObjectId
-  user         User                @relation("UserNotifications", fields: [userId], references: [id])
-  type         NotificationType
-  title        String
-  message      String
-  isRead       Boolean             @default(false)
-  priority     NotificationPriority
-  style        Json?
-  metadata     Json?
-  scheduledFor DateTime?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-  @@map("notifications")
+  accounts Account[]
+  sessions Session[]
 }
 
 model VerificationToken {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  token       String   @unique
-  identifier  String
-  expires     DateTime
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model CoverageReport {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  user           User     @relation("UserCoverageReports", fields: [userId], references: [id])
-  latitude       Float
-  longitude      Float
-  signal         BigInt
-  speed          Float?
-  operator       String
-  networkType    String
-  deviceModel    String
-  connectionType String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  points         BigInt   @default(0)
-  verified       Boolean  @default(false)
-
-  @@index([latitude, longitude])
-  @@index([userId])
-  @@map("coverage_reports")
-}
-
-model UserStats {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String   @db.ObjectId @unique
-  user              User     @relation("UserStats", fields: [userId], references: [id])
-  points            Int      @default(0)
-  stats             Json     @default("{}")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@map("user_stats")
-}
-
-model Achievement {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @db.ObjectId
-  user          User     @relation("UserAchievements", fields: [userId], references: [id])
-  title         String
-  description   String
-  points        Int
-  icon          String
-  type          String
-  tier          String   @default("COMMON")
-  requirements  Json     @default("[]")
-  progress      Int      @default(0)
-  isCompleted   Boolean  @default(false)
-  unlockedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([userId])
-  @@map("achievements")
-}
-
-model UserStreak {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  user        User     @relation("UserStreaks", fields: [userId], references: [id])
-  current     Int      @default(0)
-  longest     Int      @default(0)
-  lastCheckin DateTime @default(now())
-
-  @@index([userId])
-  @@map("user_streaks")
-}
-
-model Measurement {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  user           User     @relation("UserMeasurements", fields: [userId], references: [id])
-  timestamp      DateTime @default(now())
-  latitude       Float
-  longitude      Float
-  signalStrength Int
-  provider       String?  @default("unknown")
-  connectionType String?  @default("unknown")
-  networkType    String?  @default("unknown")
-  isRural        Boolean  @default(false)
-  accuracy       Float?
-  altitude       Float?
-  speed          Float?
-
-  @@index([userId])
-  @@index([timestamp])
-  @@map("measurements")
-}
-
-model LeaderboardEntry {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String   @db.ObjectId
-  user         User     @relation("UserLeaderboard", fields: [userId], references: [id])
-  points       Int      @default(0)
-  rank         Int      @default(0)
-  timeframe    String   @default("allTime")
-  username     String
-  measurements Int      @default(0)
-  lastActive   DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId])
-  @@index([points])
-  @@index([timeframe])
-  @@index([rank])
-  @@map("leaderboard_entries")
-}
-
-// Enums
-enum TimeframeType {
-  daily
-  weekly
-  monthly
-  allTime
-}
-
-// Custom Types
-type AchievementRequirement {
-  type        String
-  metric      String
-  value       Int
-  operator    String
-  description String?
 }

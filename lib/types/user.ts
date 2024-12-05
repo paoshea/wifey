@@ -1,21 +1,22 @@
-import { AdapterUser } from 'next-auth/adapters';
-
 export enum UserRole {
     USER = 'USER',
     ADMIN = 'ADMIN',
     MODERATOR = 'MODERATOR'
 }
 
-export interface User extends AdapterUser {
-    role: UserRole;
+export interface UserType {
+    id: string;
+    name: string | null;
+    email: string | null;
     emailVerified: Date | null;
+    image: string | null;
+    hashedPassword: string | null;
+    role: UserRole;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export interface UserProfile extends Omit<User, 'emailVerified' | 'createdAt' | 'updatedAt'> {
-    points?: number;
-    level?: number;
-    achievements?: number;
-    streak?: number;
-}
+export type SafeUser = Omit<
+    UserType,
+    'hashedPassword' | 'createdAt' | 'updatedAt'
+>;

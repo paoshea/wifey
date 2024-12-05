@@ -3,12 +3,12 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Badge as BadgeUI } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card } from 'components/ui/card';
+import { Badge as BadgeUI } from 'components/ui/badge';
+import { Progress } from 'components/ui/progress';
 import { Trophy, Star, Flame, Medal, Award } from 'lucide-react';
-import { Badge, BADGES } from '@/lib/types/gamification';
-import { useGamificationStore } from '@/lib/store/gamification-store';
+import { Badge, BADGES } from 'lib/types/gamification';
+import { useGamificationStore } from 'lib/store/gamification-store';
 
 interface BadgePopupProps {
   badge: Badge;
@@ -131,8 +131,9 @@ export default function AchievementDisplay() {
               Badges ({achievements.badges.length})
             </h4>
             <div className="grid grid-cols-4 gap-4">
-              {achievements.badges.map(badgeId => {
-                const badge = BADGES.find(b => b.id === badgeId)!;
+              {achievements.badges.map((badgeId: string) => {
+                const badge = BADGES.find(b => b.id === badgeId);
+                if (!badge) return null;
                 return (
                   <motion.div
                     key={badge.id}

@@ -1,13 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/auth.config';
-import prisma from '@/lib/prisma';
-import { streakService } from '@/lib/services/streak-service';
+import { authOptions } from '../auth.config';
+import { prisma } from 'lib/prisma';
+import { streakService } from 'lib/services/streak-service';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await streakService.updateStreak(session.user.id);
-    
+
     // Get all streak achievements for the user
     const allAchievements = await prisma.achievement.findMany({
       where: {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },

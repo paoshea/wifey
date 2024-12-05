@@ -1,5 +1,5 @@
 import { type NextRequest } from 'next/server';
-import prisma from 'lib/prisma';
+import { prisma } from 'lib/prisma';
 import { NextResponse } from 'next/server';
 
 // Mark route as dynamic

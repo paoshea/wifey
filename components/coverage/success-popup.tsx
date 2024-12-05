@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Signal, Trophy, ThumbsUp, Award, Star } from 'lucide-react';
-import { useGamificationStore } from '@/lib/store/gamification-store';
+import { useGamificationStore } from 'lib/store/gamification-store';
+import type { Badge } from 'lib/types/gamification';
 
 // Import canvas-confetti using require
 const confetti = require('canvas-confetti');
@@ -25,7 +26,7 @@ interface SuccessPopupProps {
 }
 
 export default function SuccessPopup({ show, onClose, location }: SuccessPopupProps) {
-  const { 
+  const {
     achievements,
     newBadges,
     getPointsDisplay,
@@ -134,7 +135,7 @@ export default function SuccessPopup({ show, onClose, location }: SuccessPopupPr
                       🎉 New Badge{newBadges.length > 1 ? 's' : ''} Unlocked!
                     </h3>
                     <div className="flex flex-wrap gap-2 justify-center">
-                      {newBadges.map(badge => (
+                      {newBadges.map((badge: Badge) => (
                         <div
                           key={badge.id}
                           className="flex items-center bg-white p-2 rounded-lg shadow-sm"

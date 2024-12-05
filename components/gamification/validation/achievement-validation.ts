@@ -8,7 +8,7 @@ import {
   RequirementOperator,
   StatsMetric,
   StatsContent
-} from '@/lib/gamification/types';
+} from 'lib/gamification/types';
 import { validateRequirement } from './requirement-validation';
 
 const requirementSchema = z.object({
@@ -39,12 +39,12 @@ export function validateAchievementRequirements(
 ) {
   try {
     // First validate the requirements schema
-    const validatedRequirements = requirements.map(req => {
+    const validatedRequirements = requirements.map((req: Requirement) => {
       // Ensure description is present
       if (!req.description) {
         throw new Error('Requirement description is required');
       }
-      
+
       const result = requirementSchema.safeParse(req);
       if (!result.success) {
         throw new Error(`Invalid requirement: ${result.error}`);
@@ -53,7 +53,7 @@ export function validateAchievementRequirements(
     });
 
     // Then validate each requirement against stats
-    const validatedResults = validatedRequirements.map(req => {
+    const validatedResults = validatedRequirements.map((req: z.infer<typeof requirementSchema>) => {
       const result = validateRequirement(req, stats);
       if (!result.success) {
         throw new Error(`Requirement validation failed: ${result.error}`);

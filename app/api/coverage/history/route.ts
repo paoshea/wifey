@@ -1,9 +1,7 @@
-// api/coverage/history/route.ts
-
 import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/auth.config';
+import { authOptions } from '../../auth.config';
 
 const prisma = new PrismaClient();
 

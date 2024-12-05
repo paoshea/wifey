@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
-import prisma from 'lib/prisma';
+import { prisma } from 'lib/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/auth.config';
+import { authOptions } from '../../auth.config';
 import { Prisma } from '@prisma/client';
 import { StatsContent } from 'lib/gamification/types';
 

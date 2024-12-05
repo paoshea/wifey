@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { OfflineManager, LocationError, LocationErrorCode } from '@/lib/offline';
-import { useToast } from '@/hooks/use-toast';
 
 export function OfflineErrorHandler() {
-    const { toast } = useToast();
-
     const handleError = useCallback((error: LocationError) => {
         let title = 'Error';
         let description = error.message;
@@ -42,11 +40,9 @@ export function OfflineErrorHandler() {
                 break;
         }
 
-        toast({
-            title,
+        toast.error(title, {
             description,
             duration,
-            variant: 'destructive'
         });
 
         // Log error for debugging
@@ -55,7 +51,7 @@ export function OfflineErrorHandler() {
             message: error.message,
             originalError: error.originalError
         });
-    }, [toast]);
+    }, []);
 
     useEffect(() => {
         const manager = OfflineManager.getInstance();
@@ -65,16 +61,14 @@ export function OfflineErrorHandler() {
 
         // Handle offline/online transitions
         const handleOffline = () => {
-            toast({
-                title: 'Offline Mode',
-                description: 'You are now offline. Changes will be synced when connection is restored.',
+            toast('Working Offline', {
+                description: 'Changes will be synced when connection is restored',
                 duration: 5000
             });
         };
 
         const handleOnline = () => {
-            toast({
-                title: 'Back Online',
+            toast.success('Back Online', {
                 description: 'Connection restored. Syncing changes...',
                 duration: 3000
             });
@@ -89,30 +83,27 @@ export function OfflineErrorHandler() {
             window.removeEventListener('offline', handleOffline);
             window.removeEventListener('online', handleOnline);
         };
-    }, [handleError, toast]);
+    }, [handleError]);
 
     // This component doesn't render anything
     return null;
 }
 
-// Optional: Export a hook for components that need to handle errors manually
+// Export a hook for components that need to handle errors manually
 export function useOfflineError() {
-    const { toast } = useToast();
-
     const handleError = useCallback((error: LocationError) => {
-        toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive'
+        toast.error(error.message, {
+            description: error.originalError?.message,
+            duration: 5000
         });
-    }, [toast]);
+    }, []);
 
     return {
         handleError
     };
 }
 
-// Optional: Export a component for displaying specific error states
+// Export a component for displaying specific error states
 export function OfflineErrorDisplay({
     error,
     onRetry

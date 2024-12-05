@@ -20,7 +20,7 @@ import {
   ValidationError,
   UserNotFoundError
 } from '../gamification/errors';
-import prisma from '../prisma';
+import { prisma } from '../prisma';
 import * as memoryCache from 'memory-cache';
 
 interface CacheOptions {

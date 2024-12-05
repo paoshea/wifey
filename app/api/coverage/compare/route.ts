@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { getDistance, getBoundingBox } from 'lib/utils/geo';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/auth.config';
-import prisma from 'lib/prisma';
+import { authOptions } from '../../auth.config';
+import { prisma } from 'lib/prisma';
 
 // Mark route as dynamic since it uses request.url and headers
 export const dynamic = 'force-dynamic';

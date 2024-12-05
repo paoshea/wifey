@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card';
+import { Alert, AlertDescription } from 'components/ui/alert';
+import { Button } from 'components/ui/button';
 import { Signal, History, TrendingUp, Wifi } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -76,12 +76,11 @@ export default function CoverageComparison({ location }: { location: { lat: numb
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {coverageData.map((provider) => (
-          <Card 
+        {coverageData.map((provider: CoverageData) => (
+          <Card
             key={provider.provider}
-            className={`cursor-pointer transition-all duration-200 ${
-              selectedProvider === provider.provider ? 'ring-2 ring-primary' : ''
-            }`}
+            className={`cursor-pointer transition-all duration-200 ${selectedProvider === provider.provider ? 'ring-2 ring-primary' : ''
+              }`}
             onClick={() => setSelectedProvider(
               selectedProvider === provider.provider ? null : provider.provider
             )}
@@ -89,10 +88,9 @@ export default function CoverageComparison({ location }: { location: { lat: numb
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>{provider.provider}</span>
-                <Signal 
-                  className={`w-6 h-6 ${
-                    getSignalStrengthColor(provider.averageSignalStrength)
-                  }`}
+                <Signal
+                  className={`w-6 h-6 ${getSignalStrengthColor(provider.averageSignalStrength)
+                    }`}
                 />
               </CardTitle>
             </CardHeader>
@@ -115,20 +113,20 @@ export default function CoverageComparison({ location }: { location: { lat: numb
                 <div className="mt-4">
                   <div className="text-sm font-medium mb-2">Signal Distribution</div>
                   <div className="flex h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-green-500" 
+                    <div
+                      className="bg-green-500"
                       style={{ width: `${(provider.strengthDistribution.excellent / provider.totalPoints) * 100}%` }}
                     />
-                    <div 
-                      className="bg-blue-500" 
+                    <div
+                      className="bg-blue-500"
                       style={{ width: `${(provider.strengthDistribution.good / provider.totalPoints) * 100}%` }}
                     />
-                    <div 
-                      className="bg-yellow-500" 
+                    <div
+                      className="bg-yellow-500"
                       style={{ width: `${(provider.strengthDistribution.fair / provider.totalPoints) * 100}%` }}
                     />
-                    <div 
-                      className="bg-red-500" 
+                    <div
+                      className="bg-red-500"
                       style={{ width: `${(provider.strengthDistribution.poor / provider.totalPoints) * 100}%` }}
                     />
                   </div>
@@ -152,8 +150,8 @@ export default function CoverageComparison({ location }: { location: { lat: numb
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={historicalData
-                    .filter(d => d.providers.some(p => p.provider === selectedProvider))
-                    .map(d => ({
+                    .filter((d: HistoricalData) => d.providers.some(p => p.provider === selectedProvider))
+                    .map((d: HistoricalData) => ({
                       timestamp: new Date(d.timestamp).toLocaleDateString(),
                       signalStrength: d.providers.find(p => p.provider === selectedProvider)?.signalStrength
                     }))}
