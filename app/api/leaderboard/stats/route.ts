@@ -5,6 +5,9 @@ import { gamificationService } from '@/lib/services/gamification-service';
 import { TimeFrame } from '@/lib/gamification/types/TimeFrame';
 import { z } from 'zod';
 
+// Mark route as dynamic since it uses headers and request.url
+export const dynamic = 'force-dynamic';
+
 const StatsQuerySchema = z.object({
   timeframe: z.nativeEnum(TimeFrame).optional().default(TimeFrame.ALL_TIME)
 });
@@ -17,7 +20,7 @@ export async function GET(request: NextRequest) {
       timeframe: searchParams.get('timeframe')
     });
 
-    const [totalUsers, totalContributions] = await Promise.all([
+    const [usersCount, contributionsCount] = await Promise.all([
       gamificationService.getTotalUsers(query.timeframe),
       gamificationService.getTotalContributions(query.timeframe)
     ]);
@@ -28,8 +31,8 @@ export async function GET(request: NextRequest) {
       userRank: number | null | undefined;
       userPoints: number | null | undefined;
     } = {
-      totalUsers,
-      totalContributions,
+      totalUsers: usersCount,
+      totalContributions: contributionsCount,
       userRank: undefined,
       userPoints: undefined
     };
