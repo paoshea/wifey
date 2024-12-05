@@ -5,31 +5,42 @@ import { gamificationService } from '@/lib/services/gamification-service';
 import { TimeFrame } from '@/lib/gamification/types';
 import { z } from 'zod';
 
+// Mark route as dynamic since it uses request.url and headers
+export const dynamic = 'force-dynamic';
+
+// Define stats interface
+interface LeaderboardStats {
+  totalUsers: number;
+  totalContributions: number;
+  userRank: number | null;
+  userPoints: number | null;
+}
+
 const StatsQuerySchema = z.object({
   timeframe: z.nativeEnum(TimeFrame).nullable().transform(val => val ?? TimeFrame.ALL_TIME)
 });
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Parse query parameters first
     const { searchParams } = new URL(request.url);
     const query = StatsQuerySchema.parse({
       timeframe: searchParams.get('timeframe')
     });
 
-    const [totalUsers, totalContributions] = await Promise.all([
+    // Get session
+    const session = await getServerSession(authOptions);
+
+    // Fetch base stats
+    const [totalUsersCount, totalContributionsCount] = await Promise.all([
       gamificationService.getTotalUsers(query.timeframe),
       gamificationService.getTotalContributions(query.timeframe)
     ]);
 
-    const stats: {
-      totalUsers: number;
-      totalContributions: number;
-      userRank: number | null;
-      userPoints: number | null;
-    } = {
-      totalUsers,
-      totalContributions,
+    // Initialize stats object
+    const stats: LeaderboardStats = {
+      totalUsers: totalUsersCount,
+      totalContributions: totalContributionsCount,
       userRank: null,
       userPoints: null
     };

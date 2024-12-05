@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb/client';
+import clientPromise from 'lib/mongodb/client';
+
+// Mark route as dynamic
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Parse area coordinates from query parameters
     const minLat = parseFloat(searchParams.get('minLat') || '0');
     const maxLat = parseFloat(searchParams.get('maxLat') || '0');

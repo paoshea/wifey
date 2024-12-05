@@ -2,27 +2,39 @@
 
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Medal, Star, Signal, MapPin, History } from 'lucide-react';
-import AchievementDisplay from '@/components/coverage/achievement-display';
-import { useGamificationStore } from '@/lib/store/gamification-store';
-import { Leaderboard } from '@/components/leaderboard/leaderboard';
+import AchievementDisplay from "@/components/coverage/achievement-display";
+import { useGamificationStore } from "@/lib/store/gamification-store";
+import { Leaderboard } from "@/components/leaderboard/leaderboard";
+import { Suspense } from 'react';
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
+// Prevent static generation
+export const dynamic = 'force-dynamic';
+
+// Loading component
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500" />
+    </div>
+  );
+}
+
+// Main dashboard content
+function DashboardContent() {
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
   const { achievements, calculateLevel } = useGamificationStore();
 
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500" />
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated') {
-    redirect('/auth/signin');
+    return <LoadingSpinner />;
   }
 
   return (
@@ -116,7 +128,9 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="achievements">
-          <AchievementDisplay />
+          <Suspense fallback={<LoadingSpinner />}>
+            <AchievementDisplay />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="contributions">
@@ -148,9 +162,20 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="leaderboard">
-          <Leaderboard />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Leaderboard />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Export wrapped component
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

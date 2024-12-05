@@ -83,61 +83,9 @@ async function main() {
     })
   );
 
-  // Create achievements for each user
-  const achievementTemplates = [
-    {
-      title: 'First Steps',
-      description: 'Submit your first measurement',
-      points: 100,
-      icon: '🎯',
-      type: 'measurement',
-      requirements: JSON.stringify({
-        type: OperatorType.EQUALS,
-        field: 'totalMeasurements',
-        value: 1,
-        description: 'Submit your first measurement'
-      }, null, 2)
-    },
-    {
-      title: 'Consistency is Key',
-      description: 'Maintain a 7-day measurement streak',
-      points: 500,
-      icon: '🔥',
-      type: 'streak',
-      requirements: JSON.stringify({
-        type: OperatorType.EQUALS,
-        field: 'consecutiveDays',
-        value: 7,
-        description: 'Maintain a streak of 7 days'
-      }, null, 2)
-    },
-    {
-      title: 'Rural Explorer',
-      description: 'Submit 10 measurements in rural areas',
-      points: 300,
-      icon: '🌾',
-      type: 'measurement',
-      requirements: JSON.stringify({
-        type: OperatorType.EQUALS,
-        field: 'ruralMeasurements',
-        value: 10,
-        description: 'Submit 10 measurements in rural areas'
-      }, null, 2)
-    }
-  ];
-
-  // Create achievements for each user
+  // Create achievements for each user using the new achievement seeding logic
   const achievements = await Promise.all(
-    createdUsers.flatMap(user =>
-      achievementTemplates.map(template =>
-        prisma.achievement.create({
-          data: {
-            ...template,
-            userId: user.id
-          }
-        })
-      )
-    )
+    createdUsers.map(user => createDefaultAchievements(prisma, user.id))
   );
 
   console.log('Database seeded successfully');

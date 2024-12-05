@@ -29,6 +29,9 @@ describe('Leaderboard Performance Tests', () => {
       timeframe: 'daily',
       points: Math.floor(Math.random() * 10000),
       rank: 0, // Initial rank, will be updated
+      username: user.name, // Add required username field
+      measurements: 0, // Add required measurements field
+      lastActive: new Date() // Add required lastActive field
     }));
 
     await prisma.leaderboardEntry.createMany({ data: entries });
@@ -59,20 +62,20 @@ describe('Leaderboard Performance Tests', () => {
     });
 
     bench('get top 10 users', async () => {
-      await leaderboardService.getLeaderboard('daily', 10);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 10 });
+    });
 
     bench('get top 100 users', async () => {
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
 
     bench('get user rank', async () => {
-      await leaderboardService.getLeaderboard('daily', 1, 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getUserPosition(testUserId);
+    });
 
     bench('get leaderboard', async () => {
-      await leaderboardService.getLeaderboard('daily', 1, 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ page: 1, pageSize: 100 });
+    });
   });
 
   describe('Leaderboard Updates', () => {
@@ -84,24 +87,30 @@ describe('Leaderboard Performance Tests', () => {
     });
 
     bench('single user score update', async () => {
-      await prisma.leaderboardEntry.update({
-        where: { userId_timeframe: { userId: testUserId, timeframe: 'daily' } },
+      await prisma.leaderboardEntry.updateMany({
+        where: {
+          userId: testUserId,
+          timeframe: 'daily'
+        },
         data: { points: Math.floor(Math.random() * 10000) },
       });
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+    });
 
     bench('batch update 10 user scores', async () => {
-      const updates = Array.from({ length: 10 }, (_, i) => ({
+      const batchUpdates = Array.from({ length: 10 }, (_, i) => ({
         userId: `user${i}`,
         timeframe: 'daily' as const,
         points: Math.floor(Math.random() * 10000),
-        rank: i + 1
+        rank: i + 1,
+        username: `Test User ${i}`,
+        measurements: 0,
+        lastActive: new Date()
       }));
 
       await prisma.leaderboardEntry.createMany({
-        data: updates,
+        data: batchUpdates,
       });
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+    });
   });
 
   describe('Cache Performance', () => {
@@ -111,20 +120,23 @@ describe('Leaderboard Performance Tests', () => {
       await cleanup();
       testUserId = await setupTestData(1000);
       // Warm up cache
-      await leaderboardService.getLeaderboard('daily', 100);
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
     });
 
     bench('retrieve from cache', async () => {
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
 
     bench('invalidate and refresh cache', async () => {
-      await prisma.leaderboardEntry.update({
-        where: { userId_timeframe: { userId: testUserId, timeframe: 'daily' } },
+      await prisma.leaderboardEntry.updateMany({
+        where: {
+          userId: testUserId,
+          timeframe: 'daily'
+        },
         data: { points: Math.floor(Math.random() * 10000) },
       });
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
   });
 
   describe('Concurrent Operations', () => {
@@ -145,44 +157,50 @@ describe('Leaderboard Performance Tests', () => {
 
     bench('sequential updates', async () => {
       for (const userId of testUserIds) {
-        await prisma.leaderboardEntry.update({
-          where: { userId_timeframe: { userId, timeframe: 'daily' } },
+        await prisma.leaderboardEntry.updateMany({
+          where: {
+            userId,
+            timeframe: 'daily'
+          },
           data: { points: Math.floor(Math.random() * 10000) },
         });
       }
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+    });
 
     bench('concurrent updates', async () => {
-      const updates = testUserIds.map(async (userId, index) =>
-        prisma.leaderboardEntry.update({
-          where: { userId_timeframe: { userId, timeframe: 'daily' } },
+      const concurrentUpdates = testUserIds.map((userId, index) =>
+        prisma.leaderboardEntry.updateMany({
+          where: {
+            userId,
+            timeframe: 'daily'
+          },
           data: {
             points: Math.floor(Math.random() * 10000),
             rank: index + 1
           }
         })
       );
-      await Promise.all(updates);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await Promise.all(concurrentUpdates);
+    });
   });
 
   describe('Scale Testing', () => {
     bench('small dataset (100 users)', async () => {
       await cleanup();
       await setupTestData(100);
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
 
     bench('medium dataset (1000 users)', async () => {
       await cleanup();
       await setupTestData(1000);
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
 
     bench('large dataset (10000 users)', async () => {
       await cleanup();
       await setupTestData(10000);
-      await leaderboardService.getLeaderboard('daily', 100);
-    }, { iterations: BENCH_ITERATIONS, time: BENCH_TIME });
+      await leaderboardService.getLeaderboard({ pageSize: 100 });
+    });
   });
 });

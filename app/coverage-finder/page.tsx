@@ -1,21 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Signal, Map as MapIcon, Navigation, History, TrendingUp } from 'lucide-react';
-import EnhancedCoverageMap from '@/components/coverage/enhanced-coverage-map';
-import CoverageComparison from '@/components/coverage/coverage-comparison';
-import CoverageMonitor from '@/components/coverage/coverage-monitor';
-import CoverageNotifications from '@/components/coverage/coverage-notifications';
+import { Signal, Map as MapIcon, History, TrendingUp } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useCoverageStore } from '@/lib/store/coverage-store';
 import { useCoverageData } from '@/lib/hooks/use-coverage-data';
+
+// Loading component
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500" />
+    </div>
+  );
+}
+
+// Dynamically import components that use window/navigator
+const EnhancedCoverageMap = dynamic(
+  () => import('@/components/coverage/enhanced-coverage-map'),
+  { loading: () => <LoadingSpinner />, ssr: false }
+);
+
+const CoverageComparison = dynamic(
+  () => import('@/components/coverage/coverage-comparison'),
+  { loading: () => <LoadingSpinner />, ssr: false }
+);
+
+const CoverageMonitor = dynamic(
+  () => import('@/components/coverage/coverage-monitor'),
+  { loading: () => <LoadingSpinner />, ssr: false }
+);
+
+const CoverageNotifications = dynamic(
+  () => import('@/components/coverage/coverage-notifications'),
+  { loading: () => <LoadingSpinner />, ssr: false }
+);
 
 export default function CoverageFinder() {
   const { selectedLocation, setSelectedLocation } = useCoverageStore();
   const [activeTab, setActiveTab] = useState<'map' | 'comparison'>('map');
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Default bounds for Costa Rica
   const bounds = {
@@ -40,33 +68,47 @@ export default function CoverageFinder() {
     updatePoint({ id, data });
   };
 
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Check if geolocation is available and permitted
   useEffect(() => {
+    if (!isMounted) return;
+
     if ('geolocation' in navigator) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         setIsLocationEnabled(result.state === 'granted');
-        
+
         result.addEventListener('change', () => {
           setIsLocationEnabled(result.state === 'granted');
         });
       });
     }
-  }, []);
+  }, [isMounted]);
 
   // Sync pending updates when coming back online
   useEffect(() => {
+    if (!isMounted) return;
+
     const handleOnline = () => {
       syncPendingUpdates();
     };
 
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
-  }, [syncPendingUpdates]);
+  }, [syncPendingUpdates, isMounted]);
 
   const handleLocationSelect = (location: { lat: number; lng: number }) => {
     setSelectedLocation(location);
     setActiveTab('comparison');
   };
+
+  // Don't render anything until mounted
+  if (!isMounted) {
+    return <LoadingSpinner />;
+  }
 
   if (error) {
     return (
@@ -170,14 +212,14 @@ export default function CoverageFinder() {
             {activeTab === 'map' ? 'Interactive Coverage Map' : 'Provider Comparison'}
           </CardTitle>
           <CardDescription>
-            {activeTab === 'map' 
+            {activeTab === 'map'
               ? 'Click on any location to view detailed coverage information and provider comparison.'
               : 'Compare coverage quality and reliability between different providers in the selected area.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {activeTab === 'map' ? (
-            <EnhancedCoverageMap 
+            <EnhancedCoverageMap
               onLocationSelect={handleLocationSelect}
               coveragePoints={coveragePoints ?? []}
               isLoading={isLoading}

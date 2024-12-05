@@ -7,6 +7,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
 import prisma from 'lib/prisma';
 
+// Mark route as dynamic since it uses request.url and headers
+export const dynamic = 'force-dynamic';
+
 // Input validation schema
 const querySchema = z.object({
   lat: z.number(),

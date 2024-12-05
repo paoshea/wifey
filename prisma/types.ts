@@ -8,13 +8,14 @@ import type {
   Measurement,
   LeaderboardEntry
 } from '@prisma/client';
-import { UserRole } from 'scripts/update-roles';
+
+// Define UserRole to match schema
+export type UserRole = 'ADMIN' | 'MODERATOR' | 'USER';
 
 // Export Prisma types for reuse
 export type {
   Prisma,
   PrismaClient,
-  UserRole,
   User,
   UserStats,
   Achievement,

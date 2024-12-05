@@ -33,10 +33,18 @@ interface UserWithStats {
 export class LeaderboardService {
   private cache: NodeCache;
   private static readonly CACHE_TTL = 5 * 60; // 5 minutes
+  private static instance: LeaderboardService;
 
-  constructor(prismaClient: PrismaClient = prisma) {
+  private constructor(prismaClient: PrismaClient = prisma) {
     this.cache = new NodeCache({ stdTTL: LeaderboardService.CACHE_TTL });
     this.prisma = prismaClient;
+  }
+
+  public static getInstance(prismaClient: PrismaClient = prisma): LeaderboardService {
+    if (!LeaderboardService.instance) {
+      LeaderboardService.instance = new LeaderboardService(prismaClient);
+    }
+    return LeaderboardService.instance;
   }
 
   private readonly prisma: PrismaClient;
@@ -207,4 +215,4 @@ export class LeaderboardService {
 }
 
 // Export singleton instance
-export const leaderboardService = new LeaderboardService();
+export const leaderboardService = LeaderboardService.getInstance();

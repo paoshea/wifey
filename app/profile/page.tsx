@@ -1,25 +1,35 @@
-// app/profile/page.tsx
-
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, Suspense } from 'react';
+import { useSession, signIn } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AchievementShowcase } from 'components/gamification/achievement-showcase';
-import { Leaderboard } from 'components/gamification/leaderboard';
-import { ProgressVisualization } from 'components/gamification/progress-visualization';
-import { cn } from 'lib/utils';
-import { getCachedUserProgress, getCachedLeaderboard } from 'lib/services/gamification-service';
+import { AchievementShowcase } from '@/components/gamification/achievement-showcase';
+import { Leaderboard } from '@/components/gamification/leaderboard';
+import { ProgressVisualization } from '@/components/gamification/progress-visualization';
+import { cn } from '@/lib/utils';
+import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { Trophy, Medal, Star } from 'lucide-react';
-import { Button } from 'components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 'components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
-import { Progress } from 'components/ui/progress';
-import { TIER_COLORS } from 'lib/gamification/constants';
-import { TimeFrame, type ValidatedAchievement, AchievementTier, RequirementType } from 'lib/gamification/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { TIER_COLORS } from '@/lib/gamification/constants';
+import { TimeFrame, type ValidatedAchievement, AchievementTier, RequirementType } from '@/lib/gamification/types';
 import { Achievement, UserStats } from '@prisma/client';
+
+// Prevent static generation
+export const dynamic = 'force-dynamic';
+
+// Loading component
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin text-2xl">🔄</div>
+    </div>
+  );
+}
 
 // Helper function to map ValidatedAchievement to display format
 function mapAchievementForDisplay(achievement: ValidatedAchievement) {
@@ -43,8 +53,15 @@ const tabs = [
   { id: 'leaderboard', label: 'Leaderboard', icon: '👥' }
 ] as const;
 
-export default function ProfilePage() {
-  const { data: session } = useSession();
+// Main profile content
+function ProfileContent() {
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      signIn();
+    },
+  });
+
   const [activeTab, setActiveTab] = useState<typeof tabs[number]['id']>('progress');
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeFrame>(TimeFrame.WEEKLY);
 
@@ -60,22 +77,8 @@ export default function ProfilePage() {
     enabled: activeTab === 'leaderboard',
   });
 
-  if (!session) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center space-y-4">
-          <div className="text-2xl">👋</div>
-          <h1 className="text-xl font-bold">Welcome to Wifey</h1>
-          <p className="text-gray-600">Please sign in to view your profile</p>
-          <button
-            onClick={() => {/* TODO: Implement sign in */ }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
+  if (status === 'loading') {
+    return <LoadingSpinner />;
   }
 
   return (
@@ -157,11 +160,11 @@ export default function ProfilePage() {
             {activeTab === 'progress' && (
               <div className="space-y-6">
                 {isLoadingProgress ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin text-2xl">🔄</div>
-                  </div>
+                  <LoadingSpinner />
                 ) : progress ? (
-                  <ProgressVisualization progress={progress} />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ProgressVisualization progress={progress} />
+                  </Suspense>
                 ) : (
                   <div className="text-center text-gray-500">No progress data available</div>
                 )}
@@ -170,41 +173,38 @@ export default function ProfilePage() {
 
             {activeTab === 'achievements' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress?.achievements?.map((achievement) => {
-                  const displayAchievement = mapAchievementForDisplay(achievement);
-                  return (
-                    <Card key={achievement.id} className="p-4">
-                      <CardHeader>
-                        <div className="flex items-center space-x-2">
-                          {achievement.tier === AchievementTier.LEGENDARY ? (
-                            <Trophy className="h-5 w-5 text-yellow-500" />
-                          ) : achievement.tier === AchievementTier.EPIC ? (
-                            <Medal className="h-5 w-5 text-purple-500" />
-                          ) : achievement.tier === AchievementTier.RARE ? (
-                            <Medal className="h-5 w-5 text-blue-500" />
-                          ) : (
-                            <Medal className="h-5 w-5 text-gray-500" />
-                          )}
-                          <CardTitle className="text-lg">{achievement.title}</CardTitle>
-                        </div>
-                        <CardDescription>{achievement.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <Progress value={getAchievementProgress(achievement)} className="mb-2" />
-                        <p className="text-sm text-gray-500">
-                          Progress: {Math.round(getAchievementProgress(achievement))}%
-                        </p>
-                      </CardContent>
-                      <CardFooter>
-                        <p className="text-sm text-gray-500">
-                          {displayAchievement.completed
-                            ? `Unlocked on ${new Date(achievement.unlockedAt!).toLocaleDateString()}`
-                            : 'Not yet unlocked'}
-                        </p>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
+                {progress?.achievements?.map((achievement) => (
+                  <Card key={achievement.id} className="p-4">
+                    <CardHeader>
+                      <div className="flex items-center space-x-2">
+                        {achievement.tier === AchievementTier.LEGENDARY ? (
+                          <Trophy className="h-5 w-5 text-yellow-500" />
+                        ) : achievement.tier === AchievementTier.EPIC ? (
+                          <Medal className="h-5 w-5 text-purple-500" />
+                        ) : achievement.tier === AchievementTier.RARE ? (
+                          <Medal className="h-5 w-5 text-blue-500" />
+                        ) : (
+                          <Medal className="h-5 w-5 text-gray-500" />
+                        )}
+                        <CardTitle className="text-lg">{achievement.title}</CardTitle>
+                      </div>
+                      <CardDescription>{achievement.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Progress value={getAchievementProgress(achievement)} className="mb-2" />
+                      <p className="text-sm text-gray-500">
+                        Progress: {Math.round(getAchievementProgress(achievement))}%
+                      </p>
+                    </CardContent>
+                    <CardFooter>
+                      <p className="text-sm text-gray-500">
+                        {achievement.isCompleted
+                          ? `Unlocked on ${new Date(achievement.unlockedAt!).toLocaleDateString()}`
+                          : 'Not yet unlocked'}
+                      </p>
+                    </CardFooter>
+                  </Card>
+                ))}
               </div>
             )}
 
@@ -212,11 +212,11 @@ export default function ProfilePage() {
               <div className="space-y-8">
                 <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
                 {isLoadingLeaderboard ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin text-2xl">🔄</div>
-                  </div>
+                  <LoadingSpinner />
                 ) : leaderboard ? (
-                  <Leaderboard refreshInterval={30000} />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Leaderboard refreshInterval={30000} />
+                  </Suspense>
                 ) : (
                   <div className="text-center text-gray-500">No leaderboard data available</div>
                 )}
@@ -226,5 +226,14 @@ export default function ProfilePage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+// Export wrapped component
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ProfileContent />
+    </Suspense>
   );
 }

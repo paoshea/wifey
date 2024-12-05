@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../lib/auth';
-import { gamificationService } from '../../../lib/services/gamification-service';
-import { TimeFrame } from '../../../lib/gamification/types/TimeFrame';
+import { authOptions } from '@/lib/auth';
+import { gamificationService } from '@/lib/services/gamification-service';
+import { TimeFrame } from '@/lib/gamification/types/TimeFrame';
 import { z } from 'zod';
+
+// Mark route as dynamic since it uses request.url and headers
+export const dynamic = 'force-dynamic';
 
 const LeaderboardQuerySchema = z.object({
   timeframe: z.nativeEnum(TimeFrame).optional().default(TimeFrame.ALL_TIME),
@@ -13,7 +16,10 @@ const LeaderboardQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    // Get session first
     const session = await getServerSession(authOptions);
+
+    // Parse query parameters
     const { searchParams } = new URL(request.url);
     const query = LeaderboardQuerySchema.parse({
       timeframe: searchParams.get('timeframe'),
@@ -21,6 +27,7 @@ export async function GET(request: NextRequest) {
       page: searchParams.get('page')
     });
 
+    // Get leaderboard data
     const response = await gamificationService.getLeaderboard(
       query.timeframe,
       query.page,
