@@ -1,56 +1,59 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { getMessages } from 'next-intl/server';
-import { locales, type SupportedLocale } from 'lib/i18n/config';
-import { headers } from 'next/headers';
-import { Inter } from 'next/font/google';
-import LocaleClientLayout from './locale-client-layout';
-import '../globals.css';
+import { Providers } from './providers';
+import { OfflineStatusBar } from '@/components/offline/status-bar';
+import { OfflineErrorHandler } from '@/components/offline/error-handler';
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-  preload: true,
-  adjustFontFallback: true,
-});
-
-export const metadata: Metadata = {
-  title: 'Wifey - Find Coverage & WiFi',
-  description: 'Find cellular coverage points and free WiFi hotspots near you',
-};
-
-async function getLocaleMessages(locale: string) {
-  try {
-    return await getMessages({ locale });
-  } catch (error) {
-    notFound();
-  }
+interface RootLayoutProps {
+  children: React.ReactNode;
+  params: {
+    locale: string;
+  };
 }
 
-export default async function LocaleLayout({
+export default function RootLayout({
   children,
-  params: { locale },
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as SupportedLocale)) {
-    notFound();
-  }
-
-  const messages = await getLocaleMessages(locale);
-  const headersList = headers();
-  const pathname = headersList.get('x-pathname') || '/';
-
+  params: { locale }
+}: RootLayoutProps) {
   return (
-    <LocaleClientLayout
-      messages={messages}
-      locale={locale as SupportedLocale}
-      pathname={pathname}
-    >
-      {children}
-    </LocaleClientLayout>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body>
+        <Providers>
+          {/* Error Handler */}
+          <OfflineErrorHandler />
+
+          {/* Main Content */}
+          <main className="min-h-screen pb-16">
+            {children}
+          </main>
+
+          {/* Status Bar */}
+          <OfflineStatusBar />
+        </Providers>
+
+        {/* PWA Support */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/service-worker.js').then(
+                    function(registration) {
+                      console.log('ServiceWorker registration successful');
+                    },
+                    function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    }
+                  );
+                });
+              }
+            `
+          }}
+        />
+      </body>
+    </html>
   );
 }

@@ -1,27 +1,94 @@
 {
-  "name": "Wifey",
+  "name": "Wifey - Network Coverage & WiFi Measurement",
   "short_name": "Wifey",
-  "description": "Find WiFi and cellular coverage anywhere",
+  "description": "Find and measure network coverage and WiFi hotspots",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563EB",
+  "theme_color": "#007AFF",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
       "src": "/maskable-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Find Coverage",
+      "short_name": "Coverage",
+      "description": "Find nearest network coverage",
+      "url": "/coverage-finder",
+      "icons": [
+        {
+          "src": "/icons/coverage.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "WiFi Points",
+      "short_name": "WiFi",
+      "description": "Find WiFi hotspots",
+      "url": "/wifi-finder",
+      "icons": [
+        {
+          "src": "/icons/wifi.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/coverage-map.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Coverage Map View"
+    },
+    {
+      "src": "/screenshots/wifi-finder.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "WiFi Finder View"
+    }
+  ],
+  "features": [
+    "Cross Platform",
+    "Offline Support",
+    "Location Based",
+    "Real-time Updates"
+  ],
+  "dir": "ltr",
+  "lang": "en",
+  "permissions": [
+    "geolocation",
+    "notifications"
+  ],
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/",
+    "use_cache": true
+  }
 }

@@ -1,23 +1,23 @@
 const CACHE_NAME = 'wifey-cache-v1';
 const OFFLINE_URL = '/offline';
-const ASSETS_TO_CACHE = [
+
+// Resources to pre-cache
+const PRECACHE_RESOURCES = [
   '/',
   '/offline',
   '/manifest.json',
+  '/app-icon.svg',
   '/favicon.ico',
-  '/logo.svg',
-  '/logo-dark.svg',
-  // Add other static assets here
+  '/styles.css'
 ];
 
-// Install event - cache static assets
+// Install event - pre-cache critical resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_RESOURCES))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
@@ -25,162 +25,131 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, then network
+// Fetch event - handle offline functionality
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   // Handle API requests
   if (event.request.url.includes('/api/')) {
     return handleApiRequest(event);
   }
 
-  // Handle static assets and pages
+  // Handle map tile requests
+  if (event.request.url.includes('/tiles/')) {
+    return handleMapTileRequest(event);
+  }
+
+  // Handle navigation requests
+  if (event.request.mode === 'navigate') {
+    return handleNavigationRequest(event);
+  }
+
+  // Default fetch strategy - Cache First, Network Fallback
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).then((fetchResponse) => {
-        // Cache successful responses
-        if (fetchResponse && fetchResponse.status === 200) {
-          const responseToCache = fetchResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request)
+          .then((response) => {
+            // Cache successful responses
+            if (response.ok && response.type === 'basic') {
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
+            return response;
           });
-        }
-        return fetchResponse;
-      }).catch(() => {
-        // Return offline page for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match(OFFLINE_URL);
-        }
-        return null;
-      });
-    })
+      })
   );
 });
 
-// Handle API requests with offline support
-async function handleApiRequest(event) {
-  // Try network first
-  try {
-    const response = await fetch(event.request);
-    // Clone the response to store in cache
-    const responseToCache = response.clone();
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(event.request, responseToCache);
-    return response;
-  } catch (error) {
-    // If offline, try to return cached response
-    const cachedResponse = await caches.match(event.request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    // If no cached response, return offline data
-    return new Response(
-      JSON.stringify({
-        error: 'You are offline',
-        offline: true,
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  }
+// Handle API requests - Network First, Cache Fallback
+function handleApiRequest(event) {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful GET responses
+        if (response.ok && event.request.method === 'GET') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
+  );
 }
 
-// Push notification event
+// Handle map tile requests - Cache First, Network Update
+function handleMapTileRequest(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, networkResponse.clone());
+              });
+            return networkResponse;
+          });
+        return response || fetchPromise;
+      })
+  );
+}
+
+// Handle navigation requests
+function handleNavigationRequest(event) {
+  event.respondWith(
+    fetch(event.request)
+      .catch(() => {
+        return caches.match(OFFLINE_URL);
+      })
+  );
+}
+
+// Background sync for offline data
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-coverage-reports') {
+    event.waitUntil(syncCoverageReports());
+  }
+});
+
+// Push notifications for important updates
 self.addEventListener('push', (event) => {
-  const data = event.data.json();
   const options = {
-    body: data.body,
-    icon: '/logo.svg',
-    badge: '/logo.svg',
+    body: event.data.text(),
+    icon: '/app-icon.svg',
+    badge: '/favicon.ico',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: '1',
-      url: data.url || '/',
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'View Details',
-      },
-      {
-        action: 'close',
-        title: 'Close',
-      },
-    ],
+      primaryKey: 1
+    }
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification('Wifey Update', options)
   );
 });
-
-// Notification click event
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow(event.notification.data.url)
-    );
-  }
-});
-
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-coverage-marks') {
-    event.waitUntil(syncCoverageMarks());
-  }
-});
-
-// Sync coverage marks when back online
-async function syncCoverageMarks() {
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const requests = await cache.keys();
-    const pendingMarks = requests.filter(request => 
-      request.url.includes('/api/coverage/contribute')
-    );
-
-    await Promise.all(pendingMarks.map(async (request) => {
-      try {
-        const response = await fetch(request);
-        if (response.ok) {
-          await cache.delete(request);
-        }
-      } catch (error) {
-        console.error('Failed to sync coverage mark:', error);
-      }
-    }));
-  } catch (error) {
-    console.error('Failed to sync coverage marks:', error);
-  }
-}
-
-// Periodic background sync for coverage updates
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'update-coverage') {
-    event.waitUntil(updateCoverage());
-  }
-});
-
-// Update coverage data periodically
-async function updateCoverage() {
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const coverageResponse = await fetch('/api/coverage/cellular/area');
-    if (coverageResponse.ok) {
-      await cache.put('/api/coverage/cellular/area', coverageResponse);
-    }
-  } catch (error) {
-    console.error('Failed to update coverage:', error);
-  }
-}

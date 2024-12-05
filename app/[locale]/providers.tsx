@@ -1,62 +1,57 @@
-'use client';
+import { useEffect } from 'react';
+import { OfflineManager } from '@/lib/offline';
 
-import { SessionProvider } from 'next-auth/react';
-import { ThemeProvider } from 'next-themes';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NextIntlClientProvider } from 'next-intl';
-import { NotificationCenter } from '@/components/notifications/notification-center';
-import { Toaster } from '@/components/ui/toaster';
-import { type SupportedLocale } from '@/lib/i18n/config';
-import { Toaster as SonnerToaster } from 'sonner';
+export function OfflineProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const initializeOffline = async () => {
+      const manager = OfflineManager.getInstance();
+      await manager.initialize({
+        location: {
+          trackingInterval: 5000,    // Update location every 5 seconds
+          minDistance: 10,           // Minimum 10 meters movement to update
+          maxAge: 30000,            // Location data valid for 30 seconds
+          timeout: 15000,           // Location request timeout after 15 seconds
+          enableHighAccuracy: true   // Use high accuracy GPS
+        },
+        sync: {
+          autoSyncInterval: 60000,   // Try to sync every minute
+          maxRetries: 3,             // Retry failed syncs 3 times
+          retryDelay: 5000          // Wait 5 seconds between retries
+        },
+        map: {
+          maxZoom: 18,              // Maximum zoom level for offline maps
+          minZoom: 10,              // Minimum zoom level for offline maps
+          tileExpiration: 7 * 24 * 60 * 60 * 1000, // Tiles expire after 7 days
+          preloadRadius: 5          // Pre-download maps within 5km
+        },
+        storage: {
+          mapTiles: 1000,           // Maximum number of map tiles to store
+          locationHistory: 1000,     // Maximum number of location entries
+          coveragePoints: 500,       // Maximum number of coverage points
+          pendingReports: 100       // Maximum number of pending reports
+        }
+      });
+    };
 
-// Configure React Query client with optimal settings for our use case
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      refetchOnWindowFocus: false,
-      retry: 2, // Retry failed requests twice
-      refetchOnReconnect: 'always', // Always refetch on reconnect for real-time data
-    },
-    mutations: {
-      retry: 1, // Retry failed mutations once
-    },
-  },
-});
+    initializeOffline().catch(error => {
+      console.error('Failed to initialize offline system:', error);
+    });
 
-interface ProvidersProps {
-  locale: SupportedLocale;
-  messages: Record<string, any>; // Type for translations dictionary
-  children: React.ReactNode;
-  timeZone: string;
+    // Cleanup when component unmounts
+    return () => {
+      const manager = OfflineManager.getInstance();
+      manager.stopAll();
+    };
+  }, []);
+
+  return <>{children}</>;
 }
 
-export function Providers({ locale, messages, children, timeZone }: ProvidersProps) {
+// Combine all providers
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
-            <div className="relative min-h-screen flex flex-col">
-              {children}
-              <NotificationCenter />
-              <Toaster />
-              <SonnerToaster 
-                position="top-center" 
-                richColors 
-                closeButton
-                expand
-                duration={4000}
-              />
-            </div>
-          </NextIntlClientProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SessionProvider>
+    <OfflineProvider>
+      {children}
+    </OfflineProvider>
   );
 }
