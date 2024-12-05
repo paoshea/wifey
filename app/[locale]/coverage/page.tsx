@@ -1,6 +1,6 @@
-import { CoverageFinder } from '@/components/coverage/coverage-finder';
-import { WiFiFinder } from '@/components/wifi/wifi-finder';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CoverageFinder } from 'components/coverage/coverage-finder';
+import { WiFiFinder } from 'components/wifi/wifi-finder';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
 
 export default function CoveragePage() {
   return (
@@ -62,7 +62,7 @@ export default function CoveragePage() {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Use cellular coverage finder when you're in a low signal area
+              Use cellular coverage finder when you&apos;re in a low signal area
             </li>
             <li className="flex items-center">
               <svg
@@ -74,7 +74,7 @@ export default function CoveragePage() {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
               </svg>
-              WiFi scanner works best when you're stationary
+              WiFi scanner works best when you&apos;re stationary
             </li>
             <li className="flex items-center">
               <svg
