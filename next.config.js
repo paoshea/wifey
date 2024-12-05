@@ -1,64 +1,63 @@
-const createNextIntlPlugin = require('next-intl/plugin');
-const webpack = require('webpack');
-
-// Create next-intl configuration
-const withNextIntl = createNextIntlPlugin();
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  trailingSlash: true,
-
-  output: 'standalone',
-
   images: {
-    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: true,
+    domains: ['localhost', '0.0.0.0'],
   },
-
-  webpack: (config, { isServer }) => {
-    // Add SVG handling
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
-    // Add fallbacks for OpenTelemetry
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        path: false,
-        perf_hooks: false,
-        'utf-8-validate': false,
-        bufferutil: false,
-      };
-
-      // Enable verbose logging in non-server environment
-      config.stats = process.env.NEXT_PUBLIC_VERBOSE === 'true' ? 'errors-warnings' : 'errors-only';
-    }
-
-    // Ignore OpenTelemetry warnings
-    config.ignoreWarnings = [
-      {
-        module: /node_modules\/@opentelemetry/,
-        message: /the request of a dependency is an expression/,
-      },
-      ...(config.ignoreWarnings || []),
-    ];
-
+  webpack: (config) => {
+    config.resolve.fallback = { fs: false, net: false, tls: false };
     return config;
   },
+  server: {
+    host: '0.0.0.0',  // Allow external access
+    port: 3000
+  },
+  // Enable PWA features
+  pwa: {
+    dest: 'public',
+    register: true,
+    skipWaiting: true,
+  },
+  // Configure i18n
+  i18n: {
+    locales: ['en', 'es'],
+    defaultLocale: 'en',
+  },
+  // Configure headers for PWA
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/'
+          }
+        ]
+      }
+    ];
+  },
+  // Configure redirects
+  async redirects() {
+    return [
+      {
+        source: '/coverage',
+        destination: '/coverage-finder',
+        permanent: true,
+      }
+    ];
+  },
+  // Configure environment variables
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://0.0.0.0:3000',
+  },
+  // Optimize performance
+  experimental: {
+    optimizeCss: true,
+    scrollRestoration: true,
+    legacyBrowsers: false,
+  }
 };
 
-module.exports = withNextIntl(nextConfig);
+module.exports = nextConfig;
