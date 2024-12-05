@@ -113,6 +113,10 @@ model Measurement {
   provider       String?  @default("unknown")
   connectionType String?  @default("unknown")
   networkType    String?  @default("unknown")
+  isRural        Boolean  @default(false)
+  accuracy       Float?
+  altitude       Float?
+  speed          Float?
 
   @@index([userId])
   @@index([timestamp])

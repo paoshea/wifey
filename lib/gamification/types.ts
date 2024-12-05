@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
+// Keep all existing enums and interfaces until AchievementProgress
 export enum MeasurementType {
   WIFI = 'WIFI',
   COVERAGE = 'COVERAGE'
@@ -20,6 +21,14 @@ export enum AchievementTier {
   COMMON = 'COMMON'
 }
 
+// Achievement Tier Colors
+export const TierColors = {
+  [AchievementTier.COMMON]: 'gray',
+  [AchievementTier.RARE]: 'blue',
+  [AchievementTier.EPIC]: 'purple',
+  [AchievementTier.LEGENDARY]: 'orange'
+} as const;
+
 export enum RequirementType {
   STAT = 'STAT',
   STREAK = 'STREAK',
@@ -36,19 +45,19 @@ export enum RequirementOperator {
 }
 
 export enum StatsMetric {
-  totalMeasurements = 'totalMeasurements',
-  ruralMeasurements = 'ruralMeasurements',
-  uniqueLocations = 'uniqueLocations',
-  totalDistance = 'totalDistance',
-  contributionScore = 'contributionScore',
-  qualityScore = 'qualityScore',
-  accuracyRate = 'accuracyRate',
-  verifiedSpots = 'verifiedSpots',
-  helpfulActions = 'helpfulActions',
-  consecutiveDays = 'consecutiveDays',
-  points = 'points'
+  TOTAL_MEASUREMENTS = 'totalMeasurements',
+  RURAL_MEASUREMENTS = 'ruralMeasurements',
+  VERIFIED_SPOTS = 'verifiedSpots',
+  HELPFUL_ACTIONS = 'helpfulActions',
+  CONSECUTIVE_DAYS = 'consecutiveDays',
+  QUALITY_SCORE = 'qualityScore',
+  ACCURACY_RATE = 'accuracyRate',
+  UNIQUE_LOCATIONS = 'uniqueLocations',
+  TOTAL_DISTANCE = 'totalDistance',
+  CONTRIBUTION_SCORE = 'contributionScore'
 }
 
+// Base interfaces
 export interface StatsData {
   totalMeasurements: number;
   ruralMeasurements: number;
@@ -66,6 +75,40 @@ export interface StatsContent extends StatsData {
   points: number;
 }
 
+// User Progress Types
+export interface UserProgress {
+  id: string;
+  userId: string;
+  level: number;
+  totalPoints: number;
+  streak: number;
+  unlockedAchievements: number;
+  achievements: AchievementProgress[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Updated AchievementProgress interface with all required properties
+export interface AchievementProgress {
+  id: string;
+  progress: number;
+  completed: boolean;
+  target: number;
+  unlockedAt: Date | null;
+  createdAt: Date;
+  achievement?: Achievement;
+  isCompleted?: boolean;  // For filterAchievements function
+}
+
+export interface ValidatedUserStats {
+  id: string;
+  userProgressId: string;
+  stats: StatsContent;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Achievement Types
 export interface Requirement {
   type: RequirementType;
   metric: StatsMetric;
@@ -118,6 +161,7 @@ export interface ValidatedAchievement extends Achievement {
   requirements: ValidatedRequirement[];
 }
 
+// Leaderboard Types
 export interface LeaderboardUser {
   id: string;
   name: string;
@@ -162,6 +206,74 @@ export interface LeaderboardStats {
   userPoints?: number;
 }
 
+// Achievement Filter Types
+export interface AchievementFilter {
+  completed?: boolean;
+  tier?: AchievementTier;
+}
+
+export type SortOption = 'tier' | 'progress' | 'date';
+
+// Activity Data Types
+export interface ActivityData {
+  date: Date | string;
+  measurements: number;
+  rural: number;
+}
+
+export interface FormattedActivityData {
+  date: string;
+  value: number;
+  ruralValue: number;
+}
+
+// Measurement Types
+export interface MeasurementResult {
+  id: string;
+  userId: string;
+  type: MeasurementType;
+  value: number;
+  timestamp: Date;
+  location: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  };
+}
+
+// Type Guards
+export function isValidAchievement(achievement: any): achievement is ValidatedAchievement {
+  return (
+    achievement &&
+    typeof achievement.id === 'string' &&
+    typeof achievement.title === 'string' &&
+    typeof achievement.description === 'string' &&
+    typeof achievement.points === 'number' &&
+    Array.isArray(achievement.requirements)
+  );
+}
+
+export function isValidUserProgress(progress: any): progress is UserProgress {
+  return (
+    progress &&
+    typeof progress.id === 'string' &&
+    typeof progress.userId === 'string' &&
+    typeof progress.level === 'number' &&
+    typeof progress.totalPoints === 'number' &&
+    Array.isArray(progress.achievements)
+  );
+}
+
+export function isValidUserStats(stats: any): stats is ValidatedUserStats {
+  return (
+    stats &&
+    typeof stats.id === 'string' &&
+    typeof stats.userProgressId === 'string' &&
+    stats.stats &&
+    typeof stats.stats === 'object'
+  );
+}
+
 // Zod Schemas
 export const RequirementSchema = z.object({
   type: z.nativeEnum(RequirementType),
@@ -170,20 +282,6 @@ export const RequirementSchema = z.object({
   operator: z.nativeEnum(RequirementOperator),
   description: z.string().optional(),
   currentValue: z.number().optional()
-});
-
-export const StatsContentSchema = z.object({
-  points: z.number(),
-  totalMeasurements: z.number(),
-  ruralMeasurements: z.number(),
-  uniqueLocations: z.number(),
-  totalDistance: z.number(),
-  contributionScore: z.number(),
-  qualityScore: z.number(),
-  accuracyRate: z.number(),
-  verifiedSpots: z.number(),
-  helpfulActions: z.number(),
-  consecutiveDays: z.number()
 });
 
 export const AchievementSchema = z.object({
@@ -204,48 +302,57 @@ export const AchievementSchema = z.object({
   updatedAt: z.date()
 });
 
-export const UserStatsSchema = z.object({
+export const StatsContentSchema = z.object({
+  points: z.number(),
+  totalMeasurements: z.number(),
+  ruralMeasurements: z.number(),
+  uniqueLocations: z.number(),
+  totalDistance: z.number(),
+  contributionScore: z.number(),
+  qualityScore: z.number(),
+  accuracyRate: z.number(),
+  verifiedSpots: z.number(),
+  helpfulActions: z.number(),
+  consecutiveDays: z.number()
+});
+
+export const UserProgressSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  points: z.number(),
+  level: z.number(),
+  totalPoints: z.number(),
+  streak: z.number(),
+  unlockedAchievements: z.number(),
+  achievements: z.array(z.object({
+    id: z.string(),
+    progress: z.number(),
+    completed: z.boolean(),
+    unlockedAt: z.date().nullable()
+  })),
+  createdAt: z.date(),
+  updatedAt: z.date()
+});
+
+export const UserStatsSchema = z.object({
+  id: z.string(),
+  userProgressId: z.string(),
   stats: StatsContentSchema,
   createdAt: z.date(),
   updatedAt: z.date()
 });
 
-export const UserProgressSchema = z.object({
-  points: z.number(),
-  level: z.number(),
-  currentXP: z.number(),
-  nextLevelXP: z.number(),
-  streak: z.object({
-    current: z.number(),
-    longest: z.number()
-  }),
-  stats: StatsContentSchema,
-  achievements: z.array(AchievementSchema).optional()
-});
-
 export const MeasurementInputSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-  signalStrength: z.number(),
-  accuracy: z.number().optional(),
-  altitude: z.number().optional(),
-  speed: z.number().optional(),
-  provider: z.string().optional(),
-  connectionType: z.string().optional(),
-  networkType: z.string().optional()
+  type: z.nativeEnum(MeasurementType),
+  value: z.number(),
+  location: z.object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    accuracy: z.number().optional()
+  }),
+  timestamp: z.date().default(() => new Date())
 });
 
-export const AchievementRequirementSchema = Prisma.validator<Prisma.JsonObject>()({
-  type: true,
-  metric: true,
-  value: true,
-  operator: true,
-  description: true
-});
-
+// Helper Functions
 export function jsonToStats(json: Prisma.JsonValue): StatsContent {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) {
     throw new Error('Invalid JSON for stats');
@@ -271,4 +378,3 @@ export function jsonToStats(json: Prisma.JsonValue): StatsContent {
 // Types derived from schemas
 export type ValidatedMeasurementInput = z.infer<typeof MeasurementInputSchema>;
 export type ValidatedUserProgress = z.infer<typeof UserProgressSchema>;
-export type ValidatedUserStats = z.infer<typeof UserStatsSchema>;

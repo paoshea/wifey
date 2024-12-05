@@ -4,9 +4,9 @@ import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Wifi, Upload, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Button } from 'components/ui/button';
+import { Input } from 'components/ui/input';
+import { Card } from 'components/ui/card';
 import {
   Form,
   FormControl,
@@ -14,18 +14,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from 'components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
-import { wifiSubmissionSchema } from '@/lib/validations/wifi';
-import { useGamification } from '@/lib/hooks/use-gamification';
+} from 'components/ui/select';
+import { Textarea } from 'components/ui/textarea';
+import { useToast } from 'components/ui/use-toast';
+import { wifiSubmissionSchema } from 'lib/validations/wifi';
+import { useGamification, GamificationAction } from 'lib/hooks/use-gamification';
 
 interface LocationData {
   latitude: number;
@@ -115,7 +115,7 @@ export function WifiSubmissionForm() {
       }
 
       // Add points for contribution
-      await addPoints('wifiSubmission', 50);
+      await addPoints(GamificationAction.WIFI_SUBMISSION);
 
       toast({
         title: 'Success',

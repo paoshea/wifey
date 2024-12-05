@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
+import { type IconName } from 'components/ui/icon';
 
-interface MapLayer {
+export interface MapLayer {
   id: string;
   name: string;
   visible: boolean;
-  icon: string;
+  icon: IconName;
 }
 
 interface MapLayersHook {
@@ -31,7 +32,7 @@ export function useMapLayers(): MapLayersHook {
       id: 'heatmap',
       name: 'Signal Heatmap',
       visible: true,
-      icon: 'activity',
+      icon: 'layers',
     },
   ]);
 

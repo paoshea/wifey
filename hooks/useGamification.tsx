@@ -1,38 +1,36 @@
-// hooks/useGamification.tsx
+'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from 'components/ui/use-toast';
 import { useSession } from 'next-auth/react';
-import { GamificationService } from '@/lib/services/gamification-service';
+import { GamificationService } from 'lib/services/gamification-service';
 import {
   type UserProgress,
   type LeaderboardEntry,
   type TimeFrame,
-  type AchievementProgress,
   type ValidatedAchievement,
   type MeasurementResult,
   type StatsContent,
-  type ValidatedMeasurementInput
-} from '@/lib/gamification/types';
-import { PrismaClient, Achievement, UserAchievement, UserStats } from '@prisma/client';
-import {
+  type ValidatedMeasurementInput,
+  type ValidatedUserStats,
   isValidAchievement,
   isValidUserProgress,
   isValidUserStats,
   StatsContentSchema,
   StatsMetric,
   AchievementTier
-} from '@/lib/gamification/types';
+} from 'lib/gamification/types';
+import { PrismaClient, Achievement, type UserStats } from '@prisma/client';
 
 interface UseGamificationReturn {
   achievements: ValidatedAchievement[];
-  progress: UserAchievement[];
+  progress: Achievement[];
   userStats: ValidatedUserStats | null;
   loading: boolean;
   error: Error | null;
   checkAchievements: () => Promise<void>;
   reloadAchievements: () => Promise<void>;
-  getProgressForAchievement: (achievementId: string) => UserAchievement | undefined;
+  getProgressForAchievement: (achievementId: string) => Achievement | undefined;
 }
 
 // Initialize GamificationService with PrismaClient
@@ -40,24 +38,25 @@ const prisma = new PrismaClient();
 const gamificationService = new GamificationService(prisma);
 
 // Default stats
-const defaultStats: Record<StatsMetric, number> = {
-  [StatsMetric.TOTAL_MEASUREMENTS]: 0,
-  [StatsMetric.RURAL_MEASUREMENTS]: 0,
-  [StatsMetric.VERIFIED_SPOTS]: 0,
-  [StatsMetric.HELPFUL_ACTIONS]: 0,
-  [StatsMetric.CONSECUTIVE_DAYS]: 0,
-  [StatsMetric.QUALITY_SCORE]: 0,
-  [StatsMetric.ACCURACY_RATE]: 0,
-  [StatsMetric.UNIQUE_LOCATIONS]: 0,
-  [StatsMetric.TOTAL_DISTANCE]: 0,
-  [StatsMetric.CONTRIBUTION_SCORE]: 0
+const defaultStats: StatsContent = {
+  points: 0,
+  totalMeasurements: 0,
+  ruralMeasurements: 0,
+  uniqueLocations: 0,
+  totalDistance: 0,
+  contributionScore: 0,
+  qualityScore: 0,
+  accuracyRate: 0,
+  verifiedSpots: 0,
+  helpfulActions: 0,
+  consecutiveDays: 0
 };
 
 export function useGamification(): UseGamificationReturn {
   const { data: session } = useSession();
   const { toast } = useToast();
   const [achievements, setAchievements] = useState<ValidatedAchievement[]>([]);
-  const [progress, setProgress] = useState<UserAchievement[]>([]);
+  const [progress, setProgress] = useState<Achievement[]>([]);
   const [userStats, setUserStats] = useState<ValidatedUserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -76,44 +75,49 @@ export function useGamification(): UseGamificationReturn {
       setAchievements(validatedAchievements);
 
       // Get user progress with achievements and stats
-      const userProgressData = await gamificationService.getCachedUserProgress(userId);
+      const userProgressData = await gamificationService.getUserProgress(userId);
       if (isValidUserProgress(userProgressData)) {
-        // Map achievements to UserAchievement format
-        const userAchievements = validatedAchievements.map(achievement => {
-          const progressData = userProgressData.achievements.find(
+        // Map achievements to Achievement format
+        const userAchievements = validatedAchievements.map(achievement => ({
+          id: achievement.id,
+          userId: achievement.userId,
+          title: achievement.title,
+          description: achievement.description,
+          points: achievement.points,
+          icon: achievement.icon,
+          type: achievement.type,
+          tier: achievement.tier,
+          requirements: JSON.stringify(achievement.requirements),
+          progress: userProgressData.achievements?.find(
             pa => pa.id === achievement.id
-          );
-
-          return {
-            id: achievement.id,
-            userProgressId: userProgressData.id,
-            achievementId: achievement.id,
-            progress: progressData?.progress ?? 0,
-            target: achievement.target ?? null,
-            completed: progressData?.completed ?? false,
-            unlockedAt: progressData?.unlockedAt ?? null,
-            notifiedAt: null,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-        });
+          )?.progress ?? 0,
+          isCompleted: userProgressData.achievements?.find(
+            pa => pa.id === achievement.id
+          )?.isCompleted ?? false,
+          unlockedAt: userProgressData.achievements?.find(
+            pa => pa.id === achievement.id
+          )?.unlockedAt ?? null,
+          createdAt: achievement.createdAt,
+          updatedAt: achievement.updatedAt
+        }));
         setProgress(userAchievements);
 
         // Create stats from available user progress data
         const statsContent: StatsContent = {
           ...defaultStats,
-          [StatsMetric.CONSECUTIVE_DAYS]: userProgressData.streak,
-          [StatsMetric.TOTAL_MEASUREMENTS]: userProgressData.unlockedAchievements,
-          [StatsMetric.CONTRIBUTION_SCORE]: userProgressData.totalPoints
+          points: userProgressData.points,
+          consecutiveDays: userProgressData.streak.current,
+          totalMeasurements: userProgressData.achievements?.length ?? 0,
+          contributionScore: userProgressData.points
         };
 
         // Create ValidatedUserStats object
         const newUserStats: ValidatedUserStats = {
-          id: userProgressData.id,
-          userProgressId: userProgressData.id,
+          id: userProgressData.level.toString(),
+          userProgressId: userId,
           stats: statsContent,
-          createdAt: userProgressData.createdAt,
-          updatedAt: userProgressData.updatedAt
+          createdAt: new Date(),
+          updatedAt: new Date()
         };
 
         setUserStats(newUserStats);
@@ -136,11 +140,10 @@ export function useGamification(): UseGamificationReturn {
     if (!userId || !userStats) return;
 
     try {
-      // Extract just the stats content for the update
-      const userProgress = await gamificationService.updateUserStats(userId, userStats.stats as StatsContent);
+      // Get latest achievements
       const unlockedAchievements = await gamificationService.getAchievements(userId);
       const newAchievements = unlockedAchievements.filter(achievement =>
-        !progress.find(p => p.achievementId === achievement.id)
+        !progress.find(p => p.id === achievement.id)
       );
 
       if (newAchievements.length > 0) {
@@ -183,8 +186,8 @@ export function useGamification(): UseGamificationReturn {
     }
   }, [userId, userStats, progress, toast, loadAchievements]);
 
-  const getProgressForAchievement = useCallback((achievementId: string): UserAchievement | undefined => {
-    return progress.find(p => p.achievementId === achievementId);
+  const getProgressForAchievement = useCallback((achievementId: string): Achievement | undefined => {
+    return progress.find(p => p.id === achievementId);
   }, [progress]);
 
   // Initial load

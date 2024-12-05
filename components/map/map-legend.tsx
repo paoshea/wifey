@@ -1,13 +1,7 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { Icon } from '@/components/ui/icon';
-
-interface MapLayer {
-  id: string;
-  name: string;
-  visible: boolean;
-  icon: string;
-}
+import { Icon } from 'components/ui/icon';
+import { type MapLayer } from 'hooks/use-map-layers';
 
 interface MapLegendProps {
   layers: MapLayer[];

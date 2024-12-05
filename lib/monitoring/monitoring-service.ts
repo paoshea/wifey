@@ -1,16 +1,35 @@
-// lib/monitoring/monitoring-service.ts
-
-import { PrismaClient, Prisma } from '@prisma/client';
-import { captureException } from '@sentry/nextjs';
+import { Prisma, PrismaClient } from '@prisma/client';
 import * as Sentry from '@sentry/nextjs';
-import {
-  validateErrorLog,
-  validatePerformanceLog,
-  type ValidErrorLog,
-  type ValidPerformanceLog,
-  type Severity,
-  getStartDateForTimeframe
-} from '../services/db/validation';
+
+export type Severity = 'debug' | 'info' | 'warning' | 'error' | 'fatal';
+
+export interface ValidErrorLog {
+  errorType: string;
+  message: string;
+  stack?: string;
+  severity: Severity;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ValidPerformanceLog {
+  operation: string;
+  duration: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ErrorLogEntry {
+  error: string;
+  stack?: string;
+  metadata?: Record<string, unknown>;
+  timestamp: Date;
+}
+
+export interface PerformanceLogEntry {
+  operation: string;
+  duration: number;
+  metadata?: Record<string, unknown>;
+  timestamp: Date;
+}
 
 export type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
@@ -38,12 +57,38 @@ interface PerformanceMetrics {
   successRate?: number;
 }
 
-type ErrorLogGroupByType = {
-  error: string;
-  _count: {
-    _all: number;
-  };
-};
+// Helper function to validate error log data
+function validateErrorLog(data: Partial<ValidErrorLog>): ValidErrorLog {
+  if (!data.errorType || !data.message || !data.severity) {
+    throw new Error('Invalid error log data');
+  }
+  return data as ValidErrorLog;
+}
+
+// Helper function to validate performance log data
+function validatePerformanceLog(data: Partial<ValidPerformanceLog>): ValidPerformanceLog {
+  if (!data.operation || typeof data.duration !== 'number') {
+    throw new Error('Invalid performance log data');
+  }
+  return data as ValidPerformanceLog;
+}
+
+// Helper function to get start date for timeframe
+function getStartDateForTimeframe(timeframe: TimeFrame): Date {
+  const now = new Date();
+  switch (timeframe) {
+    case TimeFrame.LAST_24H:
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    case TimeFrame.LAST_7D:
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case TimeFrame.LAST_30D:
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case TimeFrame.ALL_TIME:
+      return new Date(0);
+    default:
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  }
+}
 
 export class MonitoringService {
   private static instance: MonitoringService;
@@ -54,13 +99,13 @@ export class MonitoringService {
     calculation: 50    // ms
   };
 
-  private constructor() {
-    this.prisma = new PrismaClient();
+  private constructor(prismaClient: PrismaClient) {
+    this.prisma = prismaClient;
   }
 
-  public static getInstance(): MonitoringService {
+  public static getInstance(prismaClient: PrismaClient): MonitoringService {
     if (!MonitoringService.instance) {
-      MonitoringService.instance = new MonitoringService();
+      MonitoringService.instance = new MonitoringService(prismaClient);
     }
     return MonitoringService.instance;
   }
@@ -84,18 +129,25 @@ export class MonitoringService {
 
     // Log to database
     try {
-      const baseData = {
+      const baseData: ErrorLogEntry = {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        metadata: metadata as Prisma.InputJsonValue,
+        metadata,
         timestamp: new Date()
       };
 
       if (userId) {
-        await this.prisma.errorLog.create({
+        const userStats = await this.prisma.userStats.findUnique({ where: { userId } });
+        const existingStats = userStats?.stats as Record<string, any> || {};
+        const currentLogs = existingStats.errorLogs || [];
+
+        await this.prisma.userStats.update({
+          where: { userId },
           data: {
-            ...baseData,
-            user: { connect: { id: userId } }
+            stats: {
+              ...existingStats,
+              errorLogs: [...currentLogs, baseData]
+            }
           }
         });
       } else {
@@ -107,7 +159,7 @@ export class MonitoringService {
     }
 
     // Log to Sentry
-    Sentry.withScope((scope: Sentry.Scope) => {
+    Sentry.withScope((scope) => {
       scope.setLevel(severity as Sentry.SeverityLevel);
       if (userId) scope.setUser({ id: userId });
       if (metadata) scope.setExtras(metadata);
@@ -135,18 +187,25 @@ export class MonitoringService {
   ): Promise<void> {
     // Log to database
     try {
-      const baseData = {
+      const baseData: PerformanceLogEntry = {
         operation: performanceData.operation,
         duration: performanceData.duration,
-        metadata: performanceData.metadata as Prisma.InputJsonValue,
+        metadata: performanceData.metadata,
         timestamp: new Date()
       };
 
       if (userId) {
-        await this.prisma.performanceLog.create({
+        const userStats = await this.prisma.userStats.findUnique({ where: { userId } });
+        const existingStats = userStats?.stats as Record<string, any> || {};
+        const currentLogs = existingStats.performanceLogs || [];
+
+        await this.prisma.userStats.update({
+          where: { userId },
           data: {
-            ...baseData,
-            user: { connect: { id: userId } }
+            stats: {
+              ...existingStats,
+              performanceLogs: [...currentLogs, baseData]
+            }
           }
         });
       } else {
@@ -160,7 +219,7 @@ export class MonitoringService {
     // Log to Sentry if performance is poor
     const threshold = this.performanceThresholds[performanceData.operation] ?? 1000;
     if (performanceData.duration > threshold) {
-      Sentry.withScope((scope: Sentry.Scope) => {
+      Sentry.withScope((scope) => {
         scope.setLevel('warning');
         if (userId) scope.setUser({ id: userId });
         scope.setExtra('duration', performanceData.duration);
@@ -192,31 +251,29 @@ export class MonitoringService {
   ): Promise<PerformanceMetrics> {
     const startDate = getStartDateForTimeframe(timeframe);
 
-    const aggregateResult = await this.prisma.performanceLog.aggregate({
-      where: {
-        timestamp: {
-          gte: startDate
-        }
-      },
-      _count: {
-        _all: true
-      },
-      _avg: {
-        duration: true
-      },
-      _max: {
-        duration: true
+    // Get all user stats
+    const userStats = await this.prisma.userStats.findMany({
+      select: {
+        stats: true
       }
     });
 
-    const totalCount = aggregateResult._count?._all ?? 0;
-    const averageDuration = aggregateResult._avg?.duration ?? 0;
-    const maxDuration = aggregateResult._max?.duration ?? 0;
+    // Extract and filter performance logs
+    const performanceLogs = userStats.flatMap(stats => {
+      const logs = ((stats.stats as any)?.performanceLogs || []) as PerformanceLogEntry[];
+      return logs.filter(log => new Date(log.timestamp) >= startDate);
+    });
+
+    const totalCount = performanceLogs.length;
+    const durations = performanceLogs.map(log => log.duration);
+    const averageDuration = totalCount > 0 ? durations.reduce((a, b) => a + b, 0) / totalCount : 0;
+    const maxDuration = totalCount > 0 ? Math.max(...durations) : 0;
+    const minDuration = totalCount > 0 ? Math.min(...durations) : 0;
 
     return {
       averageDuration,
       maxDuration,
-      minDuration: 0,
+      minDuration,
       totalCount
     };
   }
@@ -229,26 +286,31 @@ export class MonitoringService {
   ): Promise<ErrorMetrics> {
     const startDate = getStartDateForTimeframe(timeframe);
 
-    const result = await this.prisma.errorLog.groupBy({
-      by: ['error'],
-      where: {
-        timestamp: {
-          gte: startDate
-        }
-      },
-      _count: {
-        _all: true
+    // Get all user stats
+    const userStats = await this.prisma.userStats.findMany({
+      select: {
+        stats: true
       }
     });
 
-    const totalErrors = result.reduce((sum, group) => {
-      return sum + (group._count?._all ?? 0);
-    }, 0);
+    // Extract and filter error logs
+    const errorLogs = userStats.flatMap(stats => {
+      const logs = ((stats.stats as any)?.errorLogs || []) as ErrorLogEntry[];
+      return logs.filter(log => new Date(log.timestamp) >= startDate);
+    });
 
-    const errorBreakdown = result.map(group => ({
-      error: group.error,
-      count: group._count?._all ?? 0,
-      percentage: ((group._count?._all ?? 0) / totalErrors) * 100
+    // Group errors
+    const errorGroups = errorLogs.reduce((acc, log) => {
+      acc[log.error] = (acc[log.error] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const totalErrors = errorLogs.length;
+
+    const errorBreakdown = Object.entries(errorGroups).map(([error, count]) => ({
+      error,
+      count: count as number,
+      percentage: (count / totalErrors) * 100
     }));
 
     return {
@@ -295,4 +357,4 @@ class PerformanceTracker {
 }
 
 // Export singleton instance
-export const monitoringService = MonitoringService.getInstance();
+export const monitoringService = MonitoringService.getInstance(new PrismaClient());

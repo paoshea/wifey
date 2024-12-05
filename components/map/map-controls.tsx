@@ -1,20 +1,20 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
+import { Button } from 'components/ui/button';
+import { Toggle } from 'components/ui/toggle';
 import { useTranslations } from 'next-intl';
-import { Icon } from '@/components/ui/icon';
+import { Icon, type IconName } from 'components/ui/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from 'components/ui/tooltip';
 
 interface MapLayer {
   id: string;
   name: string;
   visible: boolean;
-  icon: string;
+  icon: IconName;  // Updated to use IconName type
 }
 
 interface MapControlsProps {

@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Users, Heart, Trophy, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Button } from 'components/ui/button';
+import { Card } from 'components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from 'components/ui/avatar';
+import { Badge } from 'components/ui/badge';
 
 interface JoinTribeProps {
   onNext: () => void;
@@ -146,11 +146,10 @@ export function JoinTribe({ onNext }: JoinTribeProps) {
             >
               <div className="flex -space-x-4">
                 {[...Array(5)].map((_, i) => (
-                  <Avatar
-                    key={i}
-                    className="w-12 h-12 border-2 border-white"
-                    src={`https://i.pravatar.cc/150?img=${i + 1}`}
-                  />
+                  <Avatar key={i} className="w-12 h-12 border-2 border-white">
+                    <AvatarImage src={`https://i.pravatar.cc/150?img=${i + 1}`} alt={`Member ${i + 1}`} />
+                    <AvatarFallback>M{i + 1}</AvatarFallback>
+                  </Avatar>
                 ))}
               </div>
               <div className="flex flex-wrap justify-center gap-2">

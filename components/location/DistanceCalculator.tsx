@@ -5,29 +5,32 @@ import { Card } from 'components/ui/card';
 import { calculateDistance, formatDistance } from 'lib/utils/distance';
 import { ArrowRightLeft } from 'lucide-react';
 
-interface Point {
+interface LocationPoint {
   lat: number;
   lng: number;
 }
 
 interface DistanceCalculatorProps {
-  point1: Point;
-  point2: Point;
+  currentLocation: LocationPoint;
+  selectedPoint: LocationPoint;
 }
 
-export function DistanceCalculator({ point1, point2 }: DistanceCalculatorProps) {
-  const [distance] = useState(() => calculateDistance(point1, point2));
+export function DistanceCalculator({ currentLocation, selectedPoint }: DistanceCalculatorProps) {
+  const [distance] = useState(() => calculateDistance(
+    { lat: currentLocation.lat, lng: currentLocation.lng },
+    { lat: selectedPoint.lat, lng: selectedPoint.lng }
+  ));
 
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <div className="text-sm">
           <div>
-            {point1.lat.toFixed(6)}, {point1.lng.toFixed(6)}
+            {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
           </div>
           <ArrowRightLeft className="h-4 w-4 mx-2 text-muted-foreground" />
           <div>
-            {point2.lat.toFixed(6)}, {point2.lng.toFixed(6)}
+            {selectedPoint.lat.toFixed(6)}, {selectedPoint.lng.toFixed(6)}
           </div>
         </div>
         <div className="font-medium">
