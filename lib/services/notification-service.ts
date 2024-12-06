@@ -1,5 +1,6 @@
 import { PrismaClient, User, Prisma } from '@prisma/client';
 import { addDays, isAfter, isBefore, startOfDay } from 'date-fns';
+import { StatsContent } from '../gamification/types';
 
 // Notification interfaces
 export type NotificationStyle = Prisma.JsonObject & {
@@ -70,20 +71,22 @@ export class NotificationService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        streaks: true // Include user streaks
+        stats: true
       }
     });
 
-    if (!user) {
+    if (!user?.stats) {
       return null;
     }
 
-    const currentStreak = user.streaks[0]?.current ?? 0;
+    // Parse stats JSON to get streak information
+    const statsContent = JSON.parse(user.stats.stats as string) as StatsContent;
+    const currentStreak = statsContent.consecutiveDays;
     const now = new Date();
-    const lastCheckin = user.streaks[0]?.lastCheckin ?? new Date(0);
     const today = startOfDay(now);
 
-    if (isAfter(lastCheckin, today) || currentStreak === 0) {
+    // If user has already contributed today or has no streak, don't send reminder
+    if (currentStreak === 0) {
       return null;
     }
 
@@ -98,8 +101,7 @@ export class NotificationService {
         animation: 'pulse'
       },
       metadata: {
-        currentStreak,
-        lastCheckin: lastCheckin.toISOString()
+        currentStreak
       }
     });
 
