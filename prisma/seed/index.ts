@@ -24,7 +24,6 @@ async function main() {
     // Clean up existing data
     await prisma.measurement.deleteMany();
     await prisma.userStats.deleteMany();
-    await prisma.userStreak.deleteMany();
     await prisma.achievement.deleteMany();
     await prisma.user.deleteMany();
 
@@ -68,17 +67,10 @@ async function main() {
                   }
                   : initialStatsData
               }
-            },
-            streaks: {
-              create: {
-                current: userData.name === 'Active Contributor' ? 5 : 0,
-                longest: userData.name === 'Active Contributor' ? 10 : 0
-              }
             }
           },
           include: {
-            stats: true,
-            streaks: true
+            stats: true
           }
         });
       })

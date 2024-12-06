@@ -4,9 +4,7 @@ import type {
   User,
   UserStats,
   Achievement,
-  UserStreak,
-  Measurement,
-  LeaderboardEntry
+  Measurement
 } from '@prisma/client';
 
 // Define UserRole to match schema
@@ -19,48 +17,37 @@ export type {
   User,
   UserStats,
   Achievement,
-  UserStreak,
-  Measurement,
-  LeaderboardEntry
+  Measurement
 };
 
 // Input Types
 export type UserCreateInput = Prisma.UserCreateInput;
 export type UserStatsCreateInput = Prisma.UserStatsCreateInput;
 export type AchievementCreateInput = Prisma.AchievementCreateInput;
-export type UserStreakCreateInput = Prisma.UserStreakCreateInput;
 export type MeasurementCreateInput = Prisma.MeasurementCreateInput;
-export type LeaderboardEntryCreateInput = Prisma.LeaderboardEntryCreateInput;
 
 // Prisma Select Types
 export type UserSelect = Prisma.UserSelect;
 export type UserStatsSelect = Prisma.UserStatsSelect;
 export type AchievementSelect = Prisma.AchievementSelect;
-export type UserStreakSelect = Prisma.UserStreakSelect;
 export type MeasurementSelect = Prisma.MeasurementSelect;
-export type LeaderboardEntrySelect = Prisma.LeaderboardEntrySelect;
 
 // Prisma Include Types
 export type UserInclude = Prisma.UserInclude;
 export type UserStatsInclude = Prisma.UserStatsInclude;
 export type AchievementInclude = Prisma.AchievementInclude;
-export type UserStreakInclude = Prisma.UserStreakInclude;
 
 // Prisma Where Types
 export type UserWhereInput = Prisma.UserWhereInput;
 export type UserStatsWhereInput = Prisma.UserStatsWhereInput;
 export type AchievementWhereInput = Prisma.AchievementWhereInput;
-export type UserStreakWhereInput = Prisma.UserStreakWhereInput;
 export type MeasurementWhereInput = Prisma.MeasurementWhereInput;
-export type LeaderboardEntryWhereInput = Prisma.LeaderboardEntryWhereInput;
 
 // Prisma OrderBy Types
 export type UserOrderByWithRelationInput = Prisma.UserOrderByWithRelationInput;
 export type UserStatsOrderByWithRelationInput = Prisma.UserStatsOrderByWithRelationInput;
 export type AchievementOrderByWithRelationInput = Prisma.AchievementOrderByWithRelationInput;
-export type UserStreakOrderByWithRelationInput = Prisma.UserStreakOrderByWithRelationInput;
 export type MeasurementOrderByWithRelationInput = Prisma.MeasurementOrderByWithRelationInput;
-export type LeaderboardEntryOrderByWithRelationInput = Prisma.LeaderboardEntryOrderByWithRelationInput;
 
 // Filter Types
 export enum OperatorType {
@@ -110,9 +97,7 @@ export function isJsonValue(value: unknown): value is JsonFilter {
 export type UserWithRelations = User & {
   stats: UserStats | null;
   achievements: Achievement[];
-  streaks: UserStreak[];
   measurements: Measurement[];
-  leaderboard: LeaderboardEntry[];
 };
 
 export type UserStatsWithRelations = UserStats & {
@@ -123,15 +108,7 @@ export type AchievementWithRelations = Achievement & {
   user: User;
 };
 
-export type UserStreakWithRelations = UserStreak & {
-  user: User;
-};
-
 export type MeasurementWithRelations = Measurement & {
-  user: User;
-};
-
-export type LeaderboardEntryWithRelations = LeaderboardEntry & {
   user: User;
 };
 

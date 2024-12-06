@@ -36,17 +36,10 @@ describe('Measurement Processing Performance Tests', () => {
               consecutiveDays: 0
             }
           }
-        },
-        streaks: {
-          create: {
-            current: 0,
-            longest: 0
-          }
         }
       },
       include: {
-        stats: true,
-        streaks: true
+        stats: true
       }
     });
     testUserId = user.id;
@@ -56,7 +49,6 @@ describe('Measurement Processing Performance Tests', () => {
   const cleanup = async () => {
     await prisma.measurement.deleteMany({ where: { userId: testUserId } });
     await prisma.userStats.deleteMany({ where: { userId: testUserId } });
-    await prisma.userStreak.deleteMany({ where: { userId: testUserId } });
     await prisma.user.delete({ where: { id: testUserId } });
   };
 

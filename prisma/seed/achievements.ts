@@ -121,7 +121,9 @@ export async function seedAchievements(prisma: PrismaClient, userId: string) {
         userId: userId,
         requirements: JSON.stringify(template.requirements, null, 2),
         progress: 0,
-        isCompleted: false
+        target: template.requirements[0].value,
+        tier: 'COMMON',
+        completed: false
       }
     });
 
