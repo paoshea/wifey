@@ -3,45 +3,25 @@
     "compilerOptions": {
         "jsx": "react-jsx",
         "esModuleInterop": true,
-        "module": "commonjs",
+        "allowJs": true,
+        "isolatedModules": true,
         "types": [
             "jest",
-            "node",
-            "@testing-library/jest-dom"
+            "node"
         ],
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "./*"
-            ],
-            "@components/*": [
-                "./components/*"
-            ],
-            "@lib/*": [
-                "./lib/*"
-            ],
-            "@ui/*": [
-                "./components/ui/*"
-            ],
-            "@hooks/*": [
-                "./hooks/*"
-            ],
-            "@tests/*": [
-                "./tests/*"
-            ]
-        }
+        "strict": true,
+        "noEmit": true,
+        "module": "commonjs",
+        "target": "es2020",
+        "moduleResolution": "node"
     },
     "include": [
         "**/*.ts",
         "**/*.tsx",
-        "jest.setup.tsx",
-        "test/setup-env.ts",
-        "__mocks__/**/*"
+        "tests/**/*.ts",
+        "tests/**/*.tsx"
     ],
     "exclude": [
-        "node_modules",
-        ".next",
-        "out",
-        "tests/e2e"
+        "node_modules"
     ]
 }
