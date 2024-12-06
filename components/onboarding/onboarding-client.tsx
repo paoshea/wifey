@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Icons } from '@/components/ui/icons';
+import { Button } from 'components/ui/button';
+import { Input } from 'components/ui/input';
+import { Label } from 'components/ui/label';
+import { Icons } from 'components/ui/icons';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import {
@@ -17,14 +17,22 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from 'components/ui/card';
 
 const OnboardingMap = dynamic(
-  () => import('@/components/map/OnboardingMap'),
+  () => import('components/map/OnboardingMap'),
   { ssr: false }
 );
 
-const steps = ['welcome', 'coverage-intro', 'coverage-demo', 'features', 'registration'] as const;
+const steps = [
+  'welcome',
+  'coverage-intro',
+  'coverage-demo',
+  'features',
+  'gamification',
+  'registration'
+] as const;
+
 type Step = typeof steps[number];
 
 interface OnboardingClientProps {
@@ -32,7 +40,7 @@ interface OnboardingClientProps {
 }
 
 export default function OnboardingClient({ locale }: OnboardingClientProps) {
-  const t = useTranslations('onboarding');
+  const t = useTranslations('Onboarding');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -93,7 +101,6 @@ export default function OnboardingClient({ locale }: OnboardingClientProps) {
 
     try {
       setIsSubmitting(true);
-      console.log('Submitting registration with:', userDetails);
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -111,10 +118,15 @@ export default function OnboardingClient({ locale }: OnboardingClientProps) {
 
       if (response.ok) {
         toast.success(t('registration.success'));
-        router.push(`/${locale}/map`);
+        // Sign in the user automatically after successful registration
+        await signIn('credentials', {
+          email: userDetails.email,
+          password: userDetails.password,
+          redirect: false,
+        });
+        router.push(`/${locale}/dashboard`);
       } else {
         if (data.details) {
-          // Handle Zod validation errors
           const errors = data.details.map((error: any) => error.message).join(', ');
           toast.error(errors);
         } else {
@@ -131,7 +143,7 @@ export default function OnboardingClient({ locale }: OnboardingClientProps) {
 
   const handleOAuthSignIn = async (provider: string) => {
     try {
-      await signIn(provider, { callbackUrl: '/dashboard' });
+      await signIn(provider, { callbackUrl: `/${locale}/dashboard` });
     } catch (error) {
       toast.error(t('registration.errors.oauthFailed'));
     }
@@ -141,169 +153,275 @@ export default function OnboardingClient({ locale }: OnboardingClientProps) {
     switch (currentStep) {
       case 'welcome':
         return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-8"
-              >
-                <div className="text-center">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('welcome.title')}</h2>
-                  <p className="text-xl text-gray-600">{t('welcome.description')}</p>
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center space-y-6"
+          >
+            <Icons.signal className="w-16 h-16 mx-auto text-primary" />
+            <h2 className="text-3xl font-bold">{t('welcome.title')}</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {t('welcome.description')}
+            </p>
+            <Button onClick={handleNext} size="lg">
+              {t('common.getStarted')}
+            </Button>
+          </motion.div>
+        );
 
-                <div className="flex justify-center">
-                  <Button
-                    onClick={handleNext}
-                    size="lg"
-                    className="px-8"
-                  >
-                    {t('common.getStarted')}
-                  </Button>
-                </div>
-              </motion.div>
+      case 'coverage-intro':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center space-y-6"
+          >
+            <Icons.wifi className="w-16 h-16 mx-auto text-primary" />
+            <h2 className="text-3xl font-bold">{t('coverageIntro.title')}</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              {t('coverageIntro.description')}
+            </p>
+            <Button onClick={requestLocationPermission} size="lg">
+              {t('coverageIntro.enableLocation')}
+            </Button>
+          </motion.div>
+        );
+
+      case 'coverage-demo':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold">{t('coverageDemo.title')}</h2>
+              <p className="text-muted-foreground">
+                {t('coverageDemo.description')}
+              </p>
             </div>
-          </div>
+            <div className="h-[400px] rounded-lg overflow-hidden border">
+              <OnboardingMap />
+            </div>
+            <div className="flex justify-between">
+              <Button onClick={handleBack} variant="outline">
+                {t('common.back')}
+              </Button>
+              <Button onClick={handleNext}>
+                {t('common.continue')}
+              </Button>
+            </div>
+          </motion.div>
+        );
+
+      case 'features':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center">
+              <h2 className="text-3xl font-bold">{t('features.title')}</h2>
+              <p className="text-muted-foreground">
+                {t('features.description')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {['coverage', 'wifi', 'community', 'rewards'].map((feature) => (
+                <Card key={feature}>
+                  <CardHeader>
+                    <CardTitle>{t(`features.${feature}.title`)}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      {t(`features.${feature}.description`)}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="flex justify-between">
+              <Button onClick={handleBack} variant="outline">
+                {t('common.back')}
+              </Button>
+              <Button onClick={handleNext}>
+                {t('common.continue')}
+              </Button>
+            </div>
+          </motion.div>
+        );
+
+      case 'gamification':
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center">
+              <Icons.trophy className="w-16 h-16 mx-auto text-primary" />
+              <h2 className="text-3xl font-bold mt-4">{t('gamification.title')}</h2>
+              <p className="text-muted-foreground">
+                {t('gamification.description')}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['points', 'achievements', 'leaderboard'].map((feature) => (
+                <Card key={feature}>
+                  <CardHeader>
+                    <CardTitle>{t(`gamification.${feature}.title`)}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      {t(`gamification.${feature}.description`)}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="flex justify-between">
+              <Button onClick={handleBack} variant="outline">
+                {t('common.back')}
+              </Button>
+              <Button onClick={handleNext}>
+                {t('common.continue')}
+              </Button>
+            </div>
+          </motion.div>
         );
 
       case 'registration':
         return (
-          <div className="container flex h-screen w-screen flex-col items-center justify-center">
-            <Card className="w-full max-w-lg">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl text-center">
-                  {t('registration.title')}
-                </CardTitle>
-                <CardDescription className="text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Card className="w-full max-w-lg mx-auto">
+              <CardHeader>
+                <CardTitle>{t('registration.title')}</CardTitle>
+                <CardDescription>
                   {t('registration.description')}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleOAuthSignIn('google')}
-                    disabled={isSubmitting}
-                  >
-                    <Icons.google className="mr-2 h-4 w-4" />
-                    Google
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleOAuthSignIn('github')}
-                    disabled={isSubmitting}
-                  >
-                    <Icons.github className="mr-2 h-4 w-4" />
-                    GitHub
-                  </Button>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      {t('registration.orContinueWith')}
-                    </span>
-                  </div>
-                </div>
-                <form onSubmit={handleRegistration} className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="username">{t('registration.usernameLabel')}</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      placeholder={t('registration.usernamePlaceholder')}
-                      value={userDetails.username}
-                      onChange={(e) => setUserDetails({ ...userDetails, username: e.target.value })}
-                      disabled={isSubmitting}
-                      required
-                      minLength={2}
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">{t('registration.emailLabel')}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      autoCapitalize="none"
-                      autoComplete="email"
-                      autoCorrect="off"
-                      placeholder="name@example.com"
-                      value={userDetails.email}
-                      onChange={(e) => setUserDetails({ ...userDetails, email: e.target.value })}
-                      disabled={isSubmitting}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">{t('registration.passwordLabel')}</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="••••••••"
-                      value={userDetails.password}
-                      onChange={(e) => setUserDetails({ ...userDetails, password: e.target.value })}
-                      disabled={isSubmitting}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="confirmPassword">{t('registration.confirmPasswordLabel')}</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="••••••••"
-                      value={userDetails.confirmPassword}
-                      onChange={(e) => setUserDetails({ ...userDetails, confirmPassword: e.target.value })}
-                      disabled={isSubmitting}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-
-                  <div className="flex justify-between items-center pt-4">
+              <CardContent>
+                <div className="grid gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                     <Button
-                      type="button"
-                      onClick={handleBack}
                       variant="outline"
+                      onClick={() => handleOAuthSignIn('google')}
                       disabled={isSubmitting}
                     >
-                      {t('common.back')}
+                      <Icons.google className="mr-2 h-4 w-4" />
+                      Google
                     </Button>
-
                     <Button
-                      type="submit"
+                      variant="outline"
+                      onClick={() => handleOAuthSignIn('github')}
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? t('common.loading') : t('registration.submit')}
+                      <Icons.github className="mr-2 h-4 w-4" />
+                      GitHub
                     </Button>
                   </div>
-                </form>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        {t('registration.orContinueWith')}
+                      </span>
+                    </div>
+                  </div>
+                  <form onSubmit={handleRegistration} className="space-y-4">
+                    <div>
+                      <Label htmlFor="username">{t('registration.usernameLabel')}</Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        value={userDetails.username}
+                        onChange={(e) => setUserDetails({ ...userDetails, username: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">{t('registration.emailLabel')}</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={userDetails.email}
+                        onChange={(e) => setUserDetails({ ...userDetails, email: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">{t('registration.passwordLabel')}</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={userDetails.password}
+                        onChange={(e) => setUserDetails({ ...userDetails, password: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">
+                        {t('registration.confirmPasswordLabel')}
+                      </Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={userDetails.confirmPassword}
+                        onChange={(e) => setUserDetails({ ...userDetails, confirmPassword: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="flex justify-between pt-4">
+                      <Button
+                        type="button"
+                        onClick={handleBack}
+                        variant="outline"
+                        disabled={isSubmitting}
+                      >
+                        {t('common.back')}
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                            {t('common.loading')}
+                          </>
+                        ) : (
+                          t('registration.submit')
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         );
-
-      default:
-        return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AnimatePresence mode="wait">
-        {renderStep()}
-      </AnimatePresence>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        <AnimatePresence mode="wait">
+          {renderStep()}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

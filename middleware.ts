@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { locales, defaultLocale } from './lib/i18n/config';
+import { getToken } from 'next-auth/jwt';
 
-export function middleware(request: NextRequest) {
-  // Check if there is any supported locale in the pathname
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/auth/signin',
+  '/auth/signup',
+  '/auth/error',
+  '/onboarding',
+  '/',
+  '/wifi-finder',
+  '/coverage-finder',
+  '/map',
+  '/leaderboard'
+];
+
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Skip middleware for static files and API routes
@@ -16,26 +29,44 @@ export function middleware(request: NextRequest) {
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   );
 
-  // Redirect if there is no locale
-  if (pathnameIsMissingLocale) {
-    const locale = defaultLocale;
+  // Get locale from pathname or use default
+  const pathnameLocale = pathnameIsMissingLocale ? defaultLocale : pathname.split('/')[1];
 
-    // e.g. incoming request is /products
-    // The new URL is now /en/products
+  // Handle locale redirect if missing
+  if (pathnameIsMissingLocale) {
     return NextResponse.redirect(
       new URL(
-        `/${locale}${pathname === '/' ? '' : pathname}`,
+        `/${defaultLocale}${pathname === '/' ? '' : pathname}`,
         request.url
       )
     );
   }
+
+  // Remove locale from pathname for route checking
+  const pathnameWithoutLocale = pathname.replace(`/${pathnameLocale}`, '');
+
+  // Check if route is public
+  const isPublicRoute = publicRoutes.some(route =>
+    pathnameWithoutLocale === route || pathnameWithoutLocale === '/'
+  );
+
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
+  // Check authentication for protected routes
+  const token = await getToken({ req: request });
+
+  // Redirect to sign in if not authenticated
+  if (!token) {
+    const signInUrl = new URL(`/${pathnameLocale}/auth/signin`, request.url);
+    signInUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  // Match all pathnames except for
-  // 1. /api (API routes)
-  // 2. /_next (Next.js internals)
-  // 3. /static (inside /public)
-  // 4. all root files inside /public (e.g. /favicon.ico)
-  matcher: ['/((?!api|_next|static|.*\\..*|_vercel|[\\w-]+\\.\\w+).*)']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)']
 };

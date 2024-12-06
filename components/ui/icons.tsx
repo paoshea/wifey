@@ -9,6 +9,7 @@ import {
   Wifi,
   Signal,
   User,
+  Users,
   UserPlus,
   LogIn,
   Settings,
@@ -30,6 +31,7 @@ import {
   CheckCircle,
   XCircle,
   Home,
+  Bell,
   type LucideProps
 } from 'lucide-react';
 
@@ -44,6 +46,7 @@ export const Icons = {
   wifi: Wifi,
   signal: Signal,
   user: User,
+  users: Users,
   userPlus: UserPlus,
   login: LogIn,
   settings: Settings,
@@ -64,6 +67,7 @@ export const Icons = {
   github: Github,
   offline: WifiOff,
   home: Home,
+  bell: Bell,
   google: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
