@@ -215,21 +215,32 @@ describe('LocalePage', () => {
     describe('Responsive Behavior', () => {
         it('applies responsive classes correctly', () => {
             render(<LocalePage />);
-            const responsiveElements = screen.getAllByRole('link')
-                .filter(link => link.className.includes('sm:') || link.className.includes('lg:'));
 
-            expect(responsiveElements.length).toBeGreaterThan(0);
-            responsiveElements.forEach(element => {
-                const hasResponsiveClass = element.className.match(/sm:|md:|lg:|xl:/);
-                expect(hasResponsiveClass).toBeTruthy();
-            });
+            // Check navigation
+            const desktopNav = screen.getByTestId('desktop-nav');
+            expect(desktopNav.className).toContain('sm:flex');
+
+            // Check hero buttons
+            const heroButtons = screen.getByTestId('hero-buttons');
+            expect(heroButtons.className).toContain('flex-col sm:flex-row');
+
+            // Check feature grid
+            const featuresGrid = screen.getByTestId('features-grid');
+            expect(featuresGrid.className).toContain('grid-cols-1 sm:grid-cols-2 lg:grid-cols-3');
+
+            // Check gamification grid
+            const gamificationGrid = screen.getByTestId('gamification-grid');
+            expect(gamificationGrid.className).toContain('grid-cols-1 sm:grid-cols-2 lg:grid-cols-3');
+
+            // Check logo image
+            const logo = screen.getByRole('img', { name: 'Logo' });
+            expect(logo.className).toContain('w-8 h-8 sm:w-10 sm:h-10');
         });
 
         it('hides mobile navigation by default', () => {
             render(<LocalePage />);
-            const nav = screen.getByRole('navigation')
-                .querySelector('.hidden.sm\\:flex');
-            expect(nav).toBeInTheDocument();
+            const nav = screen.getByTestId('desktop-nav');
+            expect(nav.className).toContain('hidden sm:flex');
         });
     });
 
