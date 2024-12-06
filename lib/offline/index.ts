@@ -5,6 +5,7 @@ export class OfflineManager {
     public static readonly MAX_STORAGE_POINTS = 1000;
     private db: OfflineDB;
     private isOnline = true;
+    private config: OfflineConfig | null = null;
 
     private constructor() {
         this.db = OfflineDB.getInstance();
@@ -18,7 +19,8 @@ export class OfflineManager {
     }
 
     async initialize(config: OfflineConfig): Promise<void> {
-        this.db.initialize();
+        this.config = config;
+        await this.db.initialize();
     }
 
     async setOnlineStatus(status: boolean): Promise<void> {
@@ -57,15 +59,28 @@ export class OfflineManager {
         if (!this.isOnline) return;
 
         const items = await this.db.getPendingSyncItems();
+        const maxRetries = this.config?.sync.maxRetries ?? 3;
+        const retryDelay = this.config?.sync.retryDelay ?? 1000;
+
         for (const item of items) {
+            if (item.retryCount >= maxRetries) {
+                await this.db.removePendingSyncItem(item.id);
+                continue;
+            }
+
             try {
-                await fetch('/api/sync', {
+                const response = await fetch('/api/sync', {
                     method: 'POST',
                     body: JSON.stringify(item.data),
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Sync failed with status: ${response.status}`);
+                }
+
                 await this.db.removePendingSyncItem(item.id);
             } catch (error) {
                 // Increment retry count and keep in queue
@@ -73,6 +88,9 @@ export class OfflineManager {
                     ...item,
                     retryCount: item.retryCount + 1
                 });
+
+                // Wait before next retry
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
         }
     }
@@ -85,14 +103,14 @@ export class OfflineManager {
     async findClusteredPoints(region: Region): Promise<PointCluster[]> {
         const points = await this.findCoveragePointsInRegion(region);
         const clusters: Map<string, PointCluster> = new Map();
+        const gridSize = 0.001; // Approximately 100m at equator
 
         points.forEach(point => {
-            const key = `${Math.round(point.latitude * 1000)},${Math.round(point.longitude * 1000)}`;
+            const key = `${Math.floor(point.latitude / gridSize)},${Math.floor(point.longitude / gridSize)}`;
             const existing = clusters.get(key);
 
             if (existing) {
                 existing.pointCount++;
-                // Update center
                 existing.latitude = (existing.latitude * (existing.pointCount - 1) + point.latitude) / existing.pointCount;
                 existing.longitude = (existing.longitude * (existing.pointCount - 1) + point.longitude) / existing.pointCount;
             } else {

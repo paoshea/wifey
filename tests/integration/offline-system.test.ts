@@ -1,17 +1,196 @@
 import { OfflineManager } from '../../lib/offline';
 import { OfflineDB } from '../../lib/offline/storage/db';
 
+// Mock event interfaces
+interface IDBEvent {
+    target: {
+        result: any;
+        error?: Error | null;
+    };
+}
+
+interface IDBRequest {
+    result: any;
+    error: Error | null;
+    source: any;
+    transaction: any;
+    readyState: 'pending' | 'done';
+    onerror: ((this: IDBRequest, ev: IDBEvent) => any) | null;
+    onsuccess: ((this: IDBRequest, ev: IDBEvent) => any) | null;
+    onupgradeneeded: ((this: IDBRequest, ev: IDBEvent) => any) | null;
+}
+
+// Create mock database
+const createMockDB = () => {
+    const stores = new Map<string, Map<string, any>>();
+
+    const db = {
+        stores,
+        objectStoreNames: {
+            contains: (name: string) => stores.has(name)
+        },
+        createObjectStore(name: string, options: { keyPath: string }) {
+            const store = new Map();
+            stores.set(name, store);
+            return {
+                createIndex: () => ({})
+            };
+        },
+        transaction(storeNames: string[], mode: IDBTransactionMode) {
+            const transaction = {
+                objectStore: (name: string) => {
+                    const store = stores.get(name);
+                    if (!store) throw new Error(`Store ${name} not found`);
+                    return {
+                        put: (value: any) => {
+                            store.set(value.id, value);
+                            const request = createRequest(undefined);
+                            setTimeout(() => {
+                                if (request.onsuccess) {
+                                    request.onsuccess({
+                                        target: { result: undefined }
+                                    } as IDBEvent);
+                                }
+                                transaction.oncomplete?.();
+                            }, 0);
+                            return request;
+                        },
+                        get: (key: string) => {
+                            const value = store.get(key);
+                            const request = createRequest(value);
+                            setTimeout(() => {
+                                if (request.onsuccess) {
+                                    request.onsuccess({
+                                        target: { result: value }
+                                    } as IDBEvent);
+                                }
+                            }, 0);
+                            return request;
+                        },
+                        getAll: () => {
+                            const values = Array.from(store.values());
+                            const request = createRequest(values);
+                            setTimeout(() => {
+                                if (request.onsuccess) {
+                                    request.onsuccess({
+                                        target: { result: values }
+                                    } as IDBEvent);
+                                }
+                            }, 0);
+                            return request;
+                        },
+                        delete: (key: string) => {
+                            store.delete(key);
+                            const request = createRequest(undefined);
+                            setTimeout(() => {
+                                if (request.onsuccess) {
+                                    request.onsuccess({
+                                        target: { result: undefined }
+                                    } as IDBEvent);
+                                }
+                                transaction.oncomplete?.();
+                            }, 0);
+                            return request;
+                        },
+                        clear: () => {
+                            store.clear();
+                            const request = createRequest(undefined);
+                            setTimeout(() => {
+                                if (request.onsuccess) {
+                                    request.onsuccess({
+                                        target: { result: undefined }
+                                    } as IDBEvent);
+                                }
+                                transaction.oncomplete?.();
+                            }, 0);
+                            return request;
+                        }
+                    };
+                },
+                oncomplete: null as (() => void) | null
+            };
+            return transaction;
+        },
+        close() {
+            stores.clear();
+        }
+    };
+    return db;
+};
+
+// Create a proper IDBRequest-like object
+const createRequest = <T>(result: T): IDBRequest => ({
+    result,
+    error: null,
+    source: null,
+    transaction: null,
+    readyState: 'pending',
+    onerror: null,
+    onsuccess: null,
+    onupgradeneeded: null
+});
+
+// Mock IndexedDB
+const mockIndexedDB = {
+    open: (name: string, version: number): IDBRequest => {
+        const db = createMockDB();
+        const request = createRequest(db);
+
+        setTimeout(() => {
+            if (request.onupgradeneeded) {
+                request.onupgradeneeded({
+                    target: { result: db }
+                } as IDBEvent);
+            }
+            if (request.onsuccess) {
+                request.onsuccess({
+                    target: { result: db }
+                } as IDBEvent);
+            }
+        }, 0);
+
+        return request;
+    },
+    deleteDatabase: (name: string): IDBRequest => {
+        const request = createRequest(undefined);
+        setTimeout(() => {
+            if (request.onsuccess) {
+                request.onsuccess({
+                    target: { result: undefined }
+                } as IDBEvent);
+            }
+        }, 0);
+        return request;
+    }
+};
+
+// Setup mock IndexedDB
+Object.defineProperty(global, 'indexedDB', {
+    value: mockIndexedDB,
+    writable: true
+});
+
 describe('Offline System Integration', () => {
     let manager: OfflineManager;
     let db: OfflineDB;
+    let originalFetch: typeof global.fetch;
 
-    beforeEach(() => {
-        // Initialize DB and manager synchronously
+    beforeAll(() => {
+        originalFetch = global.fetch;
+        jest.setTimeout(10000); // Shorter timeout for faster failures
+    });
+
+    beforeEach(async () => {
+        // Reset instances
+        OfflineDB.resetInstance();
         db = OfflineDB.getInstance();
-        db.initialize();
 
+        // Initialize DB first
+        await db.initialize();
+
+        // Initialize manager
         manager = OfflineManager.getInstance();
-        manager.initialize({
+        await manager.initialize({
             location: {
                 trackingInterval: 1000,
                 minDistance: 10,
@@ -22,7 +201,7 @@ describe('Offline System Integration', () => {
             sync: {
                 autoSyncInterval: 5000,
                 maxRetries: 3,
-                retryDelay: 1000
+                retryDelay: 100,
             },
             map: {
                 maxZoom: 18,
@@ -31,6 +210,30 @@ describe('Offline System Integration', () => {
                 preloadRadius: 1
             }
         });
+
+        // Reset fetch mock
+        global.fetch = jest.fn().mockImplementation(() =>
+            Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({})
+            })
+        );
+
+        // Clear any existing data
+        await db.clearAllData();
+    });
+
+    afterEach(async () => {
+        if (db) {
+            await db.clearAllData();
+            await db.deleteDatabase();
+        }
+        jest.clearAllMocks();
+    });
+
+    afterAll(() => {
+        global.fetch = originalFetch;
     });
 
     describe('Data Persistence', () => {
@@ -144,14 +347,25 @@ describe('Offline System Integration', () => {
             await manager.storeCoveragePoint(point);
             await manager.setOnlineStatus(true);
 
-            // Mock fetch to simulate network error
-            global.fetch = jest.fn().mockRejectedValueOnce(new Error('Network error'));
+            // Mock fetch to simulate network error then success
+            global.fetch = jest.fn()
+                .mockRejectedValueOnce(new Error('Network error'))
+                .mockImplementationOnce(() => Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve({})
+                }));
 
             await manager.syncPendingItems();
 
             const pendingItems = await db.getPendingSyncItems();
             expect(pendingItems.length).toBe(1);
             expect(pendingItems[0].retryCount).toBe(1);
+
+            // Second sync attempt should succeed
+            await manager.syncPendingItems();
+            const remainingItems = await db.getPendingSyncItems();
+            expect(remainingItems.length).toBe(0);
         });
     });
 

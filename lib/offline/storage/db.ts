@@ -28,6 +28,7 @@ interface MapTile {
 export class OfflineDB {
     private static instance: OfflineDB;
     private db: IDBDatabase | null = null;
+    private initPromise: Promise<void> | null = null;
 
     private constructor() { }
 
@@ -38,44 +39,81 @@ export class OfflineDB {
         return OfflineDB.instance;
     }
 
-    initialize(): void {
-        if (this.db) return;
-
-        const request = indexedDB.open('offline_system', 1);
-
-        request.onerror = () => {
-            throw new Error('Failed to open database');
-        };
-
-        request.onupgradeneeded = (event) => {
-            const db = (event.target as IDBOpenDBRequest).result;
-
-            if (!db.objectStoreNames.contains('coverage_points')) {
-                const coverageStore = db.createObjectStore('coverage_points', { keyPath: 'id' });
-                coverageStore.createIndex('timestamp', 'timestamp');
-                coverageStore.createIndex('type', 'type');
-            }
-
-            if (!db.objectStoreNames.contains('pending_sync')) {
-                db.createObjectStore('pending_sync', { keyPath: 'id' });
-            }
-
-            if (!db.objectStoreNames.contains('map_tiles')) {
-                const tileStore = db.createObjectStore('map_tiles', { keyPath: 'id' });
-                tileStore.createIndex('timestamp', 'timestamp');
-            }
-        };
-
-        request.onsuccess = (event) => {
-            this.db = (event.target as IDBOpenDBRequest).result;
-        };
-
-        // For test environment, wait synchronously
-        if (process.env.NODE_ENV === 'test') {
-            while (!this.db) {
-                // Busy wait
-            }
+    // For testing purposes
+    public static resetInstance(): void {
+        if (OfflineDB.instance?.db) {
+            OfflineDB.instance.db.close();
         }
+        OfflineDB.instance = new OfflineDB();
+    }
+
+    async initialize(): Promise<void> {
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        this.initPromise = new Promise((resolve, reject) => {
+            if (this.db) {
+                resolve();
+                return;
+            }
+
+            const request = indexedDB.open('offline_system', 1);
+
+            request.onerror = () => {
+                this.initPromise = null;
+                reject(new Error('Failed to open database'));
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                this.createObjectStores(db);
+            };
+
+            request.onsuccess = (event) => {
+                this.db = (event.target as IDBOpenDBRequest).result;
+                resolve();
+            };
+        });
+
+        return this.initPromise;
+    }
+
+    private createObjectStores(db: IDBDatabase): void {
+        if (!db.objectStoreNames.contains('coverage_points')) {
+            const coverageStore = db.createObjectStore('coverage_points', { keyPath: 'id' });
+            coverageStore.createIndex('timestamp', 'timestamp');
+            coverageStore.createIndex('type', 'type');
+        }
+
+        if (!db.objectStoreNames.contains('pending_sync')) {
+            db.createObjectStore('pending_sync', { keyPath: 'id' });
+        }
+
+        if (!db.objectStoreNames.contains('map_tiles')) {
+            const tileStore = db.createObjectStore('map_tiles', { keyPath: 'id' });
+            tileStore.createIndex('timestamp', 'timestamp');
+        }
+    }
+
+    async deleteDatabase(): Promise<void> {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+        this.initPromise = null;
+
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.deleteDatabase('offline_system');
+
+            request.onerror = () => {
+                reject(new Error('Failed to delete database'));
+            };
+
+            request.onsuccess = () => {
+                resolve();
+            };
+        });
     }
 
     async storeCoveragePoint(point: CoveragePoint): Promise<void> {
@@ -207,83 +245,6 @@ export class OfflineDB {
 
                 transaction.oncomplete = () => {
                     resolve();
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async storeMapTile(tile: MapTile): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['map_tiles'], 'readwrite');
-                const store = transaction.objectStore('map_tiles');
-
-                const request = store.put(tile);
-
-                request.onerror = () => {
-                    reject(new Error('Failed to store map tile'));
-                };
-
-                transaction.oncomplete = () => {
-                    resolve();
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async getMapTile(id: string): Promise<MapTile | null> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['map_tiles'], 'readonly');
-                const store = transaction.objectStore('map_tiles');
-
-                const request = store.get(id);
-
-                request.onerror = () => {
-                    reject(new Error('Failed to retrieve map tile'));
-                };
-
-                request.onsuccess = () => {
-                    resolve(request.result || null);
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async clearOldMapTiles(maxAge: number): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['map_tiles'], 'readwrite');
-                const store = transaction.objectStore('map_tiles');
-                const index = store.index('timestamp');
-                const cutoff = Date.now() - maxAge;
-
-                const request = index.openCursor(IDBKeyRange.upperBound(cutoff));
-
-                request.onerror = () => {
-                    reject(new Error('Failed to clear old map tiles'));
-                };
-
-                request.onsuccess = (event) => {
-                    const cursor = (event.target as IDBRequest).result;
-                    if (cursor) {
-                        cursor.delete();
-                        cursor.continue();
-                    } else {
-                        resolve();
-                    }
                 };
             } catch (error) {
                 reject(error);
