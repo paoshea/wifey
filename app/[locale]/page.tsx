@@ -1,152 +1,103 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
-import { motion } from 'framer-motion';
-import { MapPin, Signal, Wifi, Trophy, Star, Award, ZapIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FeatureShowcase } from '@/components/sections/FeatureShowcase';
+import { useParams } from 'next/navigation';
 
-export default function Home() {
-  const t = useTranslations();
-  const locale = useLocale();
+export default function LocalePage() {
+  const { locale } = useParams();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        {/* Hero Section */}
-        <motion.div 
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="inline-block">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 flex flex-wrap justify-center items-baseline gap-x-4 gap-y-2">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-500">
-                Find Coverage
-              </span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600">
-                Anywhere
-              </span>
-            </h1>
-          </div>
-          <p className="text-xl text-gray-600 mt-6 mb-8 max-w-2xl mx-auto">
-            {t('home.subtitle')}
-          </p>
-
-          {/* Featured Quick Report Button */}
-          <motion.div
-            className="mt-8"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <div className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 p-[2px] rounded-lg">
-              <Button
-                asChild
-                size="lg"
-                variant="secondary"
-                className="relative group bg-white hover:bg-blue-50 dark:bg-gray-950 text-lg font-semibold"
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-sm border-b border-border z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link href={`/${locale}`} className="text-xl font-bold text-foreground hover:text-primary transition-colors">
+                Wifey
+              </Link>
+            </div>
+            <div className="hidden sm:flex items-center space-x-4">
+              <Link href={`/${locale}/wifi-finder`} className="text-muted-foreground hover:text-foreground transition-colors">
+                WiFi Finder
+              </Link>
+              <Link href={`/${locale}/coverage-finder`} className="text-muted-foreground hover:text-foreground transition-colors">
+                Coverage
+              </Link>
+              <Link href={`/${locale}/map`} className="text-muted-foreground hover:text-foreground transition-colors">
+                Map
+              </Link>
+              <Link href={`/${locale}/leaderboard`} className="text-muted-foreground hover:text-foreground transition-colors">
+                Leaderboard
+              </Link>
+              <Link
+                href={`/${locale}/auth/signin`}
+                className="ml-4 px-4 py-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                <Link href={`/${locale}/report`}>
-                  <ZapIcon className="mr-2 h-5 w-5 text-blue-600 group-hover:text-blue-700" />
-                  <span>{t('header.quickReport')}</span>
-                  <div className="absolute -top-3 -right-3">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {t('common.new')}
-                    </span>
-                  </div>
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Features Title Section */}
-        <motion.div 
-          className="text-center mt-16 mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {t('home.features.title')}
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t('home.features.subtitle')}
-          </p>
-        </motion.div>
-
-        {/* Feature Cards */}
-        <FeatureShowcase />
-
-        {/* Action Buttons */}
-        <motion.div 
-          className="mt-12 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex flex-col sm:flex-row justify-center gap-4 items-center">
-            <Button 
-              asChild 
-              size="lg" 
-              className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-            >
-              <Link href={`/${locale}/onboarding`}>
-                {t('home.tellUsAboutYourself')}
+                Sign In
               </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              asChild 
-              className="w-full sm:w-auto min-w-[200px] border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-600"
-            >
-              <Link href={`/${locale}/explore`}>
-                {t('home.exploreMap')}
-              </Link>
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* Gamification Section */}
-        <motion.div 
-          className="mt-20 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {t('home.gamification.title')}
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-12">
-            {t('home.gamification.subtitle')}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="flex flex-col items-center p-6 rounded-xl bg-white/50 backdrop-blur-sm border-2 border-transparent hover:border-blue-500 transition-all duration-300">
-              <Trophy className="w-10 h-10 text-yellow-500 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('home.gamification.points.title')}</h3>
-              <p className="text-gray-600">{t('home.gamification.points.description')}</p>
-            </div>
-
-            <div className="flex flex-col items-center p-6 rounded-xl bg-white/50 backdrop-blur-sm border-2 border-transparent hover:border-blue-500 transition-all duration-300">
-              <Star className="w-10 h-10 text-purple-500 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('home.gamification.badges.title')}</h3>
-              <p className="text-gray-600">{t('home.gamification.badges.description')}</p>
-            </div>
-
-            <div className="flex flex-col items-center p-6 rounded-xl bg-white/50 backdrop-blur-sm border-2 border-transparent hover:border-blue-500 transition-all duration-300">
-              <Award className="w-10 h-10 text-blue-500 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('home.gamification.leaderboard.title')}</h3>
-              <p className="text-gray-600">{t('home.gamification.leaderboard.description')}</p>
             </div>
           </div>
-        </motion.div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <div className="pt-24 pb-16 px-4 sm:pt-32 sm:pb-24">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80 mb-6">
+            Map Your Network Experience
+          </h1>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
+            Join our community in mapping WiFi and cellular coverage. Help others find the best connectivity while earning points and rewards.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href={`/${locale}/wifi-finder`}
+              className="px-8 py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all transform hover:scale-105 shadow-lg hover:shadow-primary/20"
+            >
+              Find WiFi
+            </Link>
+            <Link
+              href={`/${locale}/coverage-finder`}
+              className="px-8 py-3 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-all transform hover:scale-105 shadow-lg hover:shadow-secondary/20"
+            >
+              Check Coverage
+            </Link>
+          </div>
+        </div>
       </div>
-    </main>
+
+      {/* Features Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <div className="group p-6 rounded-2xl bg-card hover:bg-card/80 transition-colors border border-border hover:border-primary/20 shadow-lg hover:shadow-xl">
+            <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-primary transition-colors">
+              Map Coverage
+            </h3>
+            <p className="text-muted-foreground">
+              Contribute to our crowdsourced map of WiFi and cellular coverage
+            </p>
+          </div>
+
+          <div className="group p-6 rounded-2xl bg-card hover:bg-card/80 transition-colors border border-border hover:border-primary/20 shadow-lg hover:shadow-xl">
+            <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-primary transition-colors">
+              Earn Points
+            </h3>
+            <p className="text-muted-foreground">
+              Get rewarded for helping map network coverage in your area
+            </p>
+          </div>
+
+          <div className="group p-6 rounded-2xl bg-card hover:bg-card/80 transition-colors border border-border hover:border-primary/20 shadow-lg hover:shadow-xl">
+            <h3 className="text-xl font-semibold mb-3 text-foreground group-hover:text-primary transition-colors">
+              Find Networks
+            </h3>
+            <p className="text-muted-foreground">
+              Discover the best WiFi and cellular coverage wherever you go
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

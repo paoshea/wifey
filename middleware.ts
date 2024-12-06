@@ -1,62 +1,41 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './lib/i18n/config';
 
-// Create internationalization middleware
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'as-needed'
-});
+export function middleware(request: NextRequest) {
+  // Check if there is any supported locale in the pathname
+  const pathname = request.nextUrl.pathname;
 
-// Regex patterns
-const API_PATTERN = /^\/api\//;
-const RSC_PATTERN = /^\/_next\/static\/chunks\/app/;
-const INTERNAL_PATTERN = /^(?:\/(_next|static|favicon\.ico|manifest\.json|robots\.txt|.*\.(?:jpg|png|gif|ico|svg|css|js|json)))(?:\/|$)/;
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Skip middleware for Next.js internal routes, static files, and RSC payloads
-  if (INTERNAL_PATTERN.test(pathname) || RSC_PATTERN.test(pathname)) {
+  // Skip middleware for static files and API routes
+  if (pathname.includes('.') || pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // Handle API routes
-  if (API_PATTERN.test(pathname)) {
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Max-Age': '86400'
-        }
-      });
-    }
+  // Check if the pathname starts with a locale
+  const pathnameIsMissingLocale = locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
 
-    // Add CORS headers for actual requests
-    const response = NextResponse.next();
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    return response;
+  // Redirect if there is no locale
+  if (pathnameIsMissingLocale) {
+    const locale = defaultLocale;
+
+    // e.g. incoming request is /products
+    // The new URL is now /en/products
+    return NextResponse.redirect(
+      new URL(
+        `/${locale}${pathname === '/' ? '' : pathname}`,
+        request.url
+      )
+    );
   }
-
-  // Handle internationalization for all other routes
-  return intlMiddleware(request);
 }
 
-// Configure middleware matching
 export const config = {
-  // Match all paths except static files and some Next.js internals
-  matcher: [
-    // Match all API routes
-    '/api/:path*',
-    // Match all other routes except Next.js internal paths and static files
-    '/((?!_next|static|favicon\.ico|manifest\.json|robots\.txt|.*\\..*).*)'
-  ]
+  // Match all pathnames except for
+  // 1. /api (API routes)
+  // 2. /_next (Next.js internals)
+  // 3. /static (inside /public)
+  // 4. all root files inside /public (e.g. /favicon.ico)
+  matcher: ['/((?!api|_next|static|.*\\..*|_vercel|[\\w-]+\\.\\w+).*)']
 };
