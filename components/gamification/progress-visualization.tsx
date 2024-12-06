@@ -1,76 +1,38 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useGamification } from '@/hooks/useGamification';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
+import { ErrorBoundary } from '@/components/error/error-boundary';
+import { StatCard } from './stat-card';
+import { LevelProgress } from './level-progress';
+import { ActivityChart, type ActivityDataPoint } from './activity-chart';
 
-interface StatCardProps {
-  label: string;
-  value: number;
-  icon: string;
-  trend?: number;
+export interface ProgressData {
+  level: number;
+  levelProgress: number;
+  nextLevelThreshold: number; // Added this field to match the interface
+  stats: {
+    totalMeasurements: number;
+    ruralMeasurements: number;
+    uniqueLocations: number;
+    contributionScore: number;
+    measurementsTrend: number;
+    ruralTrend: number;
+    locationsTrend: number;
+    scoreTrend: number;
+  };
+  activityData?: ActivityDataPoint[];
+  milestones: Array<{
+    id: string;
+    title: string;
+    description: string;
+    completed: boolean;
+    progress: number;
+    target: number;
+    icon?: string;
+  }>;
 }
 
-const StatCard = ({ label, value, icon, trend }: StatCardProps) => (
-  <div className="bg-white p-4 rounded-lg shadow-sm">
-    <div className="flex items-center justify-between">
-      <span className="text-2xl">{icon}</span>
-      {trend !== undefined && (
-        <div className={`text-sm font-medium ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {trend > 0 && '+'}
-          {trend}%
-        </div>
-      )}
-    </div>
-    <div className="mt-2">
-      <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-      <div className="text-sm text-gray-500">{label}</div>
-    </div>
-  </div>
-);
-
-const LevelProgress = ({ level, progress, nextThreshold }: { 
-  level: number; 
-  progress: number;
-  nextThreshold: number;
-}) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="text-lg font-bold">Level {level}</h3>
-        <p className="text-sm text-gray-500">
-          {Math.round(progress * 100)}% to Level {level + 1}
-        </p>
-      </div>
-      <div className="text-3xl">
-        {level >= 15 ? '🏆' : '⭐️'}
-      </div>
-    </div>
-    
-    <div className="relative h-4 bg-gray-200 rounded-full overflow-hidden">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${progress * 100}%` }}
-        transition={{ duration: 1, ease: 'easeOut' }}
-        className="absolute h-full bg-blue-600 rounded-full"
-      />
-    </div>
-
-    <div className="mt-2 text-sm text-gray-500 text-right">
-      {nextThreshold - Math.floor(progress * nextThreshold)} points to next level
-    </div>
-  </div>
-);
-
-const mockActivityData = [
+const mockActivityData: ActivityDataPoint[] = [
   { date: '2024-01-01', measurements: 12, ruralMeasurements: 8, uniqueLocations: 5 },
   { date: '2024-01-02', measurements: 8, ruralMeasurements: 6, uniqueLocations: 3 },
   { date: '2024-01-03', measurements: 15, ruralMeasurements: 12, uniqueLocations: 7 },
@@ -80,69 +42,21 @@ const mockActivityData = [
   { date: '2024-01-07', measurements: 25, ruralMeasurements: 20, uniqueLocations: 10 },
 ];
 
-const ActivityChart = ({ data }: { data: typeof mockActivityData }) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm">
-    <h3 className="text-lg font-bold mb-4">Activity Overview</h3>
-    <div className="h-64">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis 
-            dataKey="date" 
-            tickFormatter={(date) => new Date(date).toLocaleDateString(undefined, { weekday: 'short' })} 
-          />
-          <YAxis />
-          <Tooltip
-            content={({ active, payload, label }) => {
-              if (active && payload && payload.length) {
-                return (
-                  <div className="bg-white p-3 rounded shadow-lg border">
-                    <p className="font-medium">{new Date(label).toLocaleDateString()}</p>
-                    {payload.map((entry) => (
-                      <p key={entry.name} style={{ color: entry.color }}>
-                        {entry.name}: {entry.value}
-                      </p>
-                    ))}
-                  </div>
-                );
-              }
-              return null;
-            }}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="measurements" 
-            stroke="#3B82F6" 
-            name="Total Measurements"
-            strokeWidth={2}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="ruralMeasurements" 
-            stroke="#10B981" 
-            name="Rural Measurements"
-            strokeWidth={2}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="uniqueLocations" 
-            stroke="#8B5CF6" 
-            name="Unique Locations"
-            strokeWidth={2}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
-);
+interface ProgressContentProps {
+  progress?: ProgressData;
+}
 
-export function ProgressVisualization({ progress }: { progress: any }) {
+const ProgressContent = ({ progress }: ProgressContentProps) => {
   if (!progress) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin text-2xl">🔄</div>
       </div>
     );
+  }
+
+  if (!progress.level || !progress.stats) {
+    throw new Error('Invalid progress data: Missing required fields');
   }
 
   const stats = [
@@ -174,12 +88,12 @@ export function ProgressVisualization({ progress }: { progress: any }) {
 
   return (
     <div className="space-y-6">
-      <LevelProgress 
-        level={progress.level} 
-        progress={progress.levelProgress} 
+      <LevelProgress
+        level={progress.level}
+        progress={progress.levelProgress}
         nextThreshold={progress.nextLevelThreshold}
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
@@ -188,13 +102,26 @@ export function ProgressVisualization({ progress }: { progress: any }) {
 
       <ActivityChart data={progress.activityData || mockActivityData} />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm">
+      <div
+        className="bg-white p-6 rounded-lg shadow-sm"
+        role="region"
+        aria-label="Achievement Milestones"
+      >
         <h3 className="text-lg font-bold mb-4">Milestones</h3>
-        <div className="space-y-4">
-          {progress.milestones.map((milestone: any) => (
-            <div key={milestone.id} className="flex items-center space-x-4">
-              <div className={`text-2xl ${milestone.completed ? 'opacity-100' : 'opacity-50'}`}>
-                {milestone.icon}
+        <div className="space-y-4" role="list">
+          {progress.milestones.map((milestone) => (
+            <div
+              key={milestone.id}
+              className="flex items-center space-x-4"
+              role="listitem"
+              aria-label={`${milestone.title} - ${milestone.completed ? 'Completed' : `${milestone.progress} out of ${milestone.target}`}`}
+            >
+              <div
+                className={`text-2xl ${milestone.completed ? 'opacity-100' : 'opacity-50'}`}
+                role="img"
+                aria-label={`${milestone.title} icon`}
+              >
+                {milestone.icon || '🎯'}
               </div>
               <div className="flex-grow">
                 <div className="font-medium">{milestone.title}</div>
@@ -202,9 +129,19 @@ export function ProgressVisualization({ progress }: { progress: any }) {
               </div>
               <div>
                 {milestone.completed ? (
-                  <span className="text-green-600">✓</span>
+                  <span
+                    className="text-green-600"
+                    role="status"
+                    aria-label="Milestone completed"
+                  >
+                    ✓
+                  </span>
                 ) : (
-                  <span className="text-sm text-gray-500">
+                  <span
+                    className="text-sm text-gray-500"
+                    role="status"
+                    aria-label={`Progress: ${milestone.progress} out of ${milestone.target}`}
+                  >
                     {milestone.progress}/{milestone.target}
                   </span>
                 )}
@@ -214,5 +151,22 @@ export function ProgressVisualization({ progress }: { progress: any }) {
         </div>
       </div>
     </div>
+  );
+};
+
+export function ProgressVisualization({ progress }: { progress?: ProgressData }) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="flex justify-center items-center h-64 bg-red-50 text-red-800 rounded-lg">
+          <div className="text-center">
+            <p className="text-lg font-semibold">Unable to display progress</p>
+            <p className="text-sm">Please try again later</p>
+          </div>
+        </div>
+      }
+    >
+      <ProgressContent progress={progress} />
+    </ErrorBoundary>
   );
 }
