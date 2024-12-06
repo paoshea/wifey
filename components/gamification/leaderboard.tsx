@@ -13,7 +13,7 @@ import { Skeleton } from 'components/ui/skeleton';
 import { useToast } from 'components/ui/use-toast';
 import { cn } from 'lib/utils';
 import { TimeFrame, LeaderboardEntry } from 'lib/gamification/types';
-import { getCachedLeaderboard } from 'lib/services/gamification-service';
+import { getCachedLeaderboard } from 'lib/services/gamification-query';
 
 interface LeaderboardProps {
   refreshInterval?: number;

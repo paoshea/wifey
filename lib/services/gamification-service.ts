@@ -49,6 +49,34 @@ class GamificationCache {
   }
 }
 
+// Helper types and constants
+const defaultStats: StatsContent = {
+  points: 0,
+  totalMeasurements: 0,
+  ruralMeasurements: 0,
+  uniqueLocations: 0,
+  totalDistance: 0,
+  contributionScore: 0,
+  qualityScore: 0,
+  accuracyRate: 0,
+  verifiedSpots: 0,
+  helpfulActions: 0,
+  consecutiveDays: 0
+};
+
+export interface UserProgressData {
+  points: number;
+  level: number;
+  currentXP: number;
+  nextLevelXP: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  stats: StatsContent;
+  achievements?: Achievement[];
+}
+
 export class GamificationService {
   private apiCache: GamificationCache;
   private prisma: PrismaClient;
@@ -145,6 +173,20 @@ export class GamificationService {
     }
   }
 
+  async getUserPoints(userId: string): Promise<number | null> {
+    try {
+      const stats = await this.prisma.userStats.findUnique({
+        where: { userId },
+        select: { points: true }
+      });
+      return stats?.points ?? null;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Error getting user points:', err);
+      throw new GamificationError('Failed to fetch user points', 'USER_POINTS_ERROR');
+    }
+  }
+
   async getLeaderboard(
     timeframe: TimeFrame = TimeFrame.ALL_TIME,
     page = 1,
@@ -189,31 +231,3 @@ export class GamificationService {
 }
 
 export const gamificationService = new GamificationService();
-
-// Helper types and constants
-const defaultStats: StatsContent = {
-  points: 0,
-  totalMeasurements: 0,
-  ruralMeasurements: 0,
-  uniqueLocations: 0,
-  totalDistance: 0,
-  contributionScore: 0,
-  qualityScore: 0,
-  accuracyRate: 0,
-  verifiedSpots: 0,
-  helpfulActions: 0,
-  consecutiveDays: 0
-};
-
-interface UserProgressData {
-  points: number;
-  level: number;
-  currentXP: number;
-  nextLevelXP: number;
-  streak: {
-    current: number;
-    longest: number;
-  };
-  stats: StatsContent;
-  achievements?: Achievement[];
-}

@@ -3,21 +3,22 @@
 import { useState, Suspense } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AchievementShowcase } from '@/components/gamification/achievement-showcase';
-import { Leaderboard } from '@/components/gamification/leaderboard';
-import { ProgressVisualization } from '@/components/gamification/progress-visualization';
-import { cn } from '@/lib/utils';
-import { getCachedUserProgress, getCachedLeaderboard } from '@/lib/services/gamification-service';
+import { AchievementShowcase } from 'components/gamification/achievement-showcase';
+import { Leaderboard } from 'components/gamification/leaderboard';
+import { ProgressVisualization } from 'components/gamification/progress-visualization';
+import { cn } from 'lib/utils';
+import { getCachedUserProgress, getCachedLeaderboard } from 'lib/services/gamification-query';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { Trophy, Medal, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { TIER_COLORS } from '@/lib/gamification/constants';
-import { TimeFrame, type ValidatedAchievement, AchievementTier, RequirementType } from '@/lib/gamification/types';
-import { Achievement, UserStats } from '@prisma/client';
+import { Button } from 'components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 'components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
+import { Progress } from 'components/ui/progress';
+import { TIER_COLORS } from 'lib/gamification/constants';
+import { TimeFrame, AchievementTier } from 'lib/gamification/types';
+import { Achievement } from 'lib/services/db/achievement-adapter';
+import { UserStats } from '@prisma/client';
 
 // Prevent static generation
 export const dynamic = 'force-dynamic';
@@ -31,8 +32,8 @@ function LoadingSpinner() {
   );
 }
 
-// Helper function to map ValidatedAchievement to display format
-function mapAchievementForDisplay(achievement: ValidatedAchievement) {
+// Helper function to map Achievement to display format
+function mapAchievementForDisplay(achievement: Achievement) {
   return {
     ...achievement,
     completed: achievement.isCompleted,
@@ -41,7 +42,7 @@ function mapAchievementForDisplay(achievement: ValidatedAchievement) {
 
 // Helper function to calculate achievement progress
 function getAchievementProgress(
-  achievement: ValidatedAchievement
+  achievement: Achievement
 ): number {
   if (!achievement) return 0;
   return achievement.progress;
