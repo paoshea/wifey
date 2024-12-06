@@ -13,7 +13,8 @@ const initialStatsData = {
   accuracyRate: 0,
   verifiedSpots: 0,
   helpfulActions: 0,
-  consecutiveDays: 0
+  consecutiveDays: 0,
+  lastCheckin: new Date()
 };
 
 // Valid role values from our schema enum
@@ -23,7 +24,6 @@ async function main() {
   // Clean up existing data
   await prisma.measurement.deleteMany();
   await prisma.userStats.deleteMany();
-  await prisma.userStreak.deleteMany();
   await prisma.achievement.deleteMany();
   await prisma.user.deleteMany();
 
@@ -51,33 +51,29 @@ async function main() {
 
   const createdUsers = await Promise.all(
     users.map(async (userData) => {
+      const statsData = userData.name === 'Active Contributor'
+        ? {
+          ...initialStatsData,
+          totalMeasurements: 50,
+          uniqueLocations: 30,
+          contributionScore: 75,
+          qualityScore: 85,
+          consecutiveDays: 5 // Current streak
+        }
+        : initialStatsData;
+
       return prisma.user.create({
         data: {
           ...userData,
           stats: {
             create: {
               points: userData.name === 'Active Contributor' ? 1000 : 0,
-              stats: userData.name === 'Active Contributor'
-                ? {
-                  ...initialStatsData,
-                  totalMeasurements: 50,
-                  uniqueLocations: 30,
-                  contributionScore: 75,
-                  qualityScore: 85
-                }
-                : initialStatsData
-            }
-          },
-          streaks: {
-            create: {
-              current: userData.name === 'Active Contributor' ? 5 : 0,
-              longest: userData.name === 'Active Contributor' ? 10 : 0
+              stats: JSON.stringify(statsData)
             }
           }
         },
         include: {
-          stats: true,
-          streaks: true
+          stats: true
         }
       });
     })
