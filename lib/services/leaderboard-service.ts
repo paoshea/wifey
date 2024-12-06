@@ -1,8 +1,8 @@
 // lib/services/leaderboard-service.ts
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User, UserStats, Achievement as PrismaAchievement } from '@prisma/client';
 import NodeCache from 'node-cache';
-import prisma from 'lib/prisma';
+import { prisma } from 'lib/prisma';
 import {
   TimeFrame,
   type LeaderboardEntry,
@@ -17,16 +17,14 @@ interface LeaderboardOptions {
   pageSize?: number;
 }
 
-interface UserWithStats {
-  id: string;
-  name: string | null;
-  stats: {
-    points: number;
-    stats: StatsContent;
-  } | null;
-  streaks: Array<{
-    current: number;
-    longest: number;
+interface UserWithRelations extends User {
+  stats: (UserStats & {
+    stats: string;
+  }) | null;
+  achievements: Array<{
+    id: string;
+    title: string;
+    icon: string | null;
   }>;
 }
 
@@ -71,7 +69,6 @@ export class LeaderboardService {
         take: pageSize,
         include: {
           stats: true,
-          streaks: true,
           achievements: {
             where: {
               unlockedAt: { not: null }
@@ -92,37 +89,41 @@ export class LeaderboardService {
             points: 'desc'
           }
         }
-      }),
+      }) as Promise<UserWithRelations[]>,
       this.prisma.user.count()
     ]);
 
-    const entries: LeaderboardEntry[] = users.map((user, index) => ({
-      id: user.id,
-      timeframe,
-      points: user.stats?.points || 0,
-      rank: skip + index + 1,
-      username: user.name || 'Anonymous',
-      image: user.image || undefined,
-      level: Math.floor(Math.sqrt((user.stats?.points || 0) / 100)) + 1,
-      contributions: user.stats?.stats ? (user.stats.stats as any).totalMeasurements || 0 : 0,
-      badges: user.achievements.length,
-      streak: {
-        current: user.streaks[0]?.current || 0,
-        longest: user.streaks[0]?.longest || 0
-      },
-      recentAchievements: user.achievements.map(achievement => ({
-        id: achievement.id,
-        title: achievement.title,
-        icon: achievement.icon
-      })),
-      user: {
+    const entries: LeaderboardEntry[] = users.map((user, index) => {
+      const statsContent = user.stats?.stats ? JSON.parse(user.stats.stats as string) as StatsContent : null;
+
+      return {
         id: user.id,
-        name: user.name || 'Anonymous',
+        timeframe,
+        points: user.stats?.points || 0,
         rank: skip + index + 1,
-        measurements: user.stats?.stats ? (user.stats.stats as any).totalMeasurements || 0 : 0,
-        lastActive: user.stats?.updatedAt || new Date()
-      }
-    }));
+        username: user.name || 'Anonymous',
+        image: user.image || undefined,
+        level: Math.floor(Math.sqrt((user.stats?.points || 0) / 100)) + 1,
+        contributions: statsContent?.totalMeasurements || 0,
+        badges: user.achievements.length,
+        streak: {
+          current: statsContent?.consecutiveDays || 0,
+          longest: statsContent?.consecutiveDays || 0
+        },
+        recentAchievements: user.achievements.map(achievement => ({
+          id: achievement.id,
+          title: achievement.title,
+          icon: achievement.icon || ''
+        })),
+        user: {
+          id: user.id,
+          name: user.name || 'Anonymous',
+          rank: skip + index + 1,
+          measurements: statsContent?.totalMeasurements || 0,
+          lastActive: user.stats?.updatedAt || new Date()
+        }
+      };
+    });
 
     const response: LeaderboardResponse = {
       timeframe,
@@ -175,8 +176,12 @@ export class LeaderboardService {
     });
 
     return stats.reduce((total, stat) => {
-      const statsContent = stat.stats as any;
-      return total + (statsContent.totalMeasurements || 0);
+      try {
+        const statsContent = JSON.parse(stat.stats as string) as StatsContent;
+        return total + (statsContent.totalMeasurements || 0);
+      } catch {
+        return total;
+      }
     }, 0);
   }
 

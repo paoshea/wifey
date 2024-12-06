@@ -8,22 +8,21 @@ import {
   type UserProgress,
   type LeaderboardEntry,
   type TimeFrame,
-  type ValidatedAchievement,
   type MeasurementResult,
   type StatsContent,
   type ValidatedMeasurementInput,
   type ValidatedUserStats,
-  isValidAchievement,
   isValidUserProgress,
   isValidUserStats,
   StatsContentSchema,
   StatsMetric,
   AchievementTier
 } from 'lib/gamification/types';
-import { PrismaClient, Achievement, type UserStats } from '@prisma/client';
+import { PrismaClient, type UserStats } from '@prisma/client';
+import { type Achievement } from 'lib/services/db/achievement-adapter';
 
 interface UseGamificationReturn {
-  achievements: ValidatedAchievement[];
+  achievements: Achievement[];
   progress: Achievement[];
   userStats: ValidatedUserStats | null;
   loading: boolean;
@@ -55,7 +54,7 @@ const defaultStats: StatsContent = {
 export function useGamification(): UseGamificationReturn {
   const { data: session } = useSession();
   const { toast } = useToast();
-  const [achievements, setAchievements] = useState<ValidatedAchievement[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [progress, setProgress] = useState<Achievement[]>([]);
   const [userStats, setUserStats] = useState<ValidatedUserStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,23 +70,14 @@ export function useGamification(): UseGamificationReturn {
 
       // Get achievements
       const achievementsData = await gamificationService.getAchievements(userId);
-      const validatedAchievements = achievementsData.filter(isValidAchievement);
-      setAchievements(validatedAchievements);
+      setAchievements(achievementsData);
 
       // Get user progress with achievements and stats
       const userProgressData = await gamificationService.getUserProgress(userId);
       if (isValidUserProgress(userProgressData)) {
         // Map achievements to Achievement format
-        const userAchievements = validatedAchievements.map(achievement => ({
-          id: achievement.id,
-          userId: achievement.userId,
-          title: achievement.title,
-          description: achievement.description,
-          points: achievement.points,
-          icon: achievement.icon,
-          type: achievement.type,
-          tier: achievement.tier,
-          requirements: JSON.stringify(achievement.requirements),
+        const userAchievements = achievementsData.map(achievement => ({
+          ...achievement,
           progress: userProgressData.achievements?.find(
             pa => pa.id === achievement.id
           )?.progress ?? 0,
@@ -96,9 +86,7 @@ export function useGamification(): UseGamificationReturn {
           )?.isCompleted ?? false,
           unlockedAt: userProgressData.achievements?.find(
             pa => pa.id === achievement.id
-          )?.unlockedAt ?? null,
-          createdAt: achievement.createdAt,
-          updatedAt: achievement.updatedAt
+          )?.unlockedAt ?? null
         }));
         setProgress(userAchievements);
 
