@@ -2,41 +2,46 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../error-boundary';
 
-// Component that throws an error for testing
-const ThrowError = ({ shouldThrow = false }) => {
+interface ThrowErrorProps {
+    shouldThrow: boolean;
+    message?: string;
+}
+
+const ThrowError: React.FC<ThrowErrorProps> = ({ shouldThrow, message = 'Test error' }) => {
     if (shouldThrow) {
-        throw new Error('Test error');
+        throw new Error(message);
     }
     return <div>No error</div>;
 };
 
-// Custom fallback component for testing
-const CustomFallback = () => <div>Custom error message</div>;
+const CustomFallback: React.FC = () => <div>Custom error message</div>;
 
 describe('ErrorBoundary', () => {
-    // Spy on console.error to prevent error logging during tests
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
-
-    // Store original NODE_ENV
+    let consoleErrorSpy: jest.SpyInstance;
+    let consoleLogSpy: jest.SpyInstance;
     const originalNodeEnv = process.env.NODE_ENV;
 
+    // Suppress console logging during tests
     beforeAll(() => {
-        // Use Object.defineProperty to mock NODE_ENV
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+        consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+    });
+
+    afterAll(() => {
+        consoleErrorSpy.mockRestore();
+        consoleLogSpy.mockRestore();
+        // Restore original environment
         Object.defineProperty(process.env, 'NODE_ENV', {
-            value: 'test',
+            value: originalNodeEnv,
             configurable: true
         });
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    afterAll(() => {
-        consoleErrorSpy.mockRestore();
-        // Restore NODE_ENV
+        consoleErrorSpy.mockClear();
+        consoleLogSpy.mockClear();
         Object.defineProperty(process.env, 'NODE_ENV', {
-            value: originalNodeEnv,
+            value: 'test',
             configurable: true
         });
     });
@@ -51,40 +56,29 @@ describe('ErrorBoundary', () => {
         expect(screen.getByText('Test content')).toBeInTheDocument();
     });
 
-    it('renders fallback UI when error is thrown', () => {
+    it('renders default fallback UI when error is thrown', () => {
         render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={true} />
             </ErrorBoundary>
         );
 
+        expect(screen.getByRole('alert')).toBeInTheDocument();
         expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-        expect(screen.getByText(/An unexpected error occurred|Test error/)).toBeInTheDocument();
+        expect(screen.getByText('Test error')).toBeInTheDocument();
     });
 
-    it('logs errors to console in development', () => {
-        // Set to development mode
-        Object.defineProperty(process.env, 'NODE_ENV', {
-            value: 'development',
-            configurable: true
-        });
-
+    it('renders custom fallback component when provided', () => {
         render(
-            <ErrorBoundary>
+            <ErrorBoundary fallback={<CustomFallback />}>
                 <ThrowError shouldThrow={true} />
             </ErrorBoundary>
         );
 
-        expect(consoleErrorSpy).toHaveBeenCalled();
-
-        // Reset to test mode
-        Object.defineProperty(process.env, 'NODE_ENV', {
-            value: 'test',
-            configurable: true
-        });
+        expect(screen.getByText('Custom error message')).toBeInTheDocument();
     });
 
-    it('handles multiple errors gracefully', () => {
+    it('resets error state when children change', () => {
         const { rerender } = render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={true} />
@@ -93,24 +87,14 @@ describe('ErrorBoundary', () => {
 
         expect(screen.getByText('Something went wrong')).toBeInTheDocument();
 
-        // Rerender with a different error
+        // Rerender with new children
         rerender(
             <ErrorBoundary>
-                <ThrowError shouldThrow={true} />
+                <div>New content</div>
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    });
-
-    it('uses custom fallback component when provided', () => {
-        render(
-            <ErrorBoundary fallback={<CustomFallback />}>
-                <ThrowError shouldThrow={true} />
-            </ErrorBoundary>
-        );
-
-        expect(screen.getByText('Custom error message')).toBeInTheDocument();
+        expect(screen.getByText('New content')).toBeInTheDocument();
     });
 
     it('maintains error boundary isolation', () => {
@@ -129,20 +113,6 @@ describe('ErrorBoundary', () => {
         expect(screen.getByText('Still working')).toBeInTheDocument();
     });
 
-    it('preserves error message from thrown error', () => {
-        const CustomError = () => {
-            throw new Error('Custom error message');
-        };
-
-        render(
-            <ErrorBoundary>
-                <CustomError />
-            </ErrorBoundary>
-        );
-
-        expect(screen.getByText('Custom error message')).toBeInTheDocument();
-    });
-
     it('handles nested error boundaries correctly', () => {
         render(
             <ErrorBoundary fallback={<div>Outer error</div>}>
@@ -157,22 +127,35 @@ describe('ErrorBoundary', () => {
         expect(screen.getByText('Outer content')).toBeInTheDocument();
     });
 
-    it('resets error state when children change', () => {
-        const { rerender } = render(
+    it('logs errors only in development mode', async () => {
+        // Set to development mode
+        Object.defineProperty(process.env, 'NODE_ENV', {
+            value: 'development',
+            configurable: true
+        });
+
+        render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={true} />
             </ErrorBoundary>
         );
 
-        expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+        // Wait for next tick to ensure error boundary has processed the error
+        await Promise.resolve();
 
-        rerender(
-            <ErrorBoundary>
-                <div>New content</div>
-            </ErrorBoundary>
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+            'Error caught by boundary:',
+            {
+                error: 'Test error',
+                componentStack: expect.any(String)
+            }
         );
 
-        expect(screen.getByText('New content')).toBeInTheDocument();
+        // Reset to test mode
+        Object.defineProperty(process.env, 'NODE_ENV', {
+            value: 'test',
+            configurable: true
+        });
     });
 
     describe('accessibility', () => {

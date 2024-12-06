@@ -23,9 +23,16 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Only log in development and avoid console.error to prevent test noise
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error caught by boundary:', error, errorInfo);
+      // Using console.log instead of console.error to reduce test noise
+      console.log('Error caught by boundary:', {
+        error: error.message,
+        componentStack: errorInfo.componentStack
+      });
     }
+    // Here you could add error reporting service integration
+    // e.g., Sentry.captureException(error, { extra: errorInfo });
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {

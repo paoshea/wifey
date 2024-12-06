@@ -1,14 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 
-// Extend window interface
-declare global {
-  interface Window {
-    IntersectionObserver: jest.Mock;
-    ResizeObserver: jest.Mock;
-  }
-}
-
 // Mock window.matchMedia
 window.matchMedia = jest.fn().mockImplementation(query => ({
   matches: false,
@@ -97,22 +89,31 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock UI components
-jest.mock('@/components/ui', () => ({
-  __esModule: true,
-  ...jest.requireActual('@/components/ui/__mocks__'),
-}));
+jest.mock('components/ui', () => {
+  const mockComponents = require('components/ui/__mocks__/index.tsx');
+  return {
+    __esModule: true,
+    ...mockComponents
+  };
+}, { virtual: true });
 
 // Mock branding
-jest.mock('@/lib/branding', () => ({
-  __esModule: true,
-  ...jest.requireActual('@/lib/__mocks__/branding'),
-}));
+jest.mock('lib/branding', () => {
+  const mockBranding = require('lib/__mocks__/branding');
+  return {
+    __esModule: true,
+    ...mockBranding
+  };
+}, { virtual: true });
 
 // Mock useGamification hook
-jest.mock('@/hooks/useGamification', () => ({
-  __esModule: true,
-  ...jest.requireActual('@/hooks/__mocks__/useGamification'),
-}));
+jest.mock('hooks/useGamification', () => {
+  const mockHook = require('hooks/__mocks__/useGamification');
+  return {
+    __esModule: true,
+    ...mockHook
+  };
+}, { virtual: true });
 
 // Mock recharts for chart components
 jest.mock('recharts', () => ({
@@ -184,22 +185,4 @@ expect.extend({
       pass: hasAnimation,
     };
   },
-});
-
-// Suppress console errors during tests
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    if (
-      /Warning: ReactDOM.render is no longer supported in React 18/.test(args[0]) ||
-      /Warning: useLayoutEffect does nothing on the server/.test(args[0])
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalError;
 });
