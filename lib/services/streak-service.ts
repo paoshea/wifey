@@ -1,9 +1,17 @@
-import { PrismaClient, User, UserStreak, Achievement } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import { addDays, differenceInHours, isWithinInterval, startOfDay } from 'date-fns';
 import { STREAK_ACHIEVEMENTS, STREAK_BONUSES } from '../constants/streak-achievements';
+import { StatsContent } from '../gamification/types';
+import { Achievement, adaptPrismaToAchievement } from './db/achievement-adapter';
+
+interface StreakData {
+  current: number;
+  longest: number;
+  lastCheckin: Date;
+}
 
 interface StreakUpdateResult {
-  streak: UserStreak;
+  streak: StreakData;
   pointsEarned: number;
   achievements: Achievement[];
   multiplier: number;
@@ -13,26 +21,48 @@ export class StreakService {
   constructor(private readonly prisma: PrismaClient) { }
 
   /**
-   * Get or create a user's streak
+   * Get or create a user's streak data from UserStats
    */
-  async getOrCreateStreak(userId: string): Promise<UserStreak> {
-    const existingStreak = await this.prisma.userStreak.findFirst({
-      where: { userId },
-      orderBy: { lastCheckin: 'desc' }
+  private async getOrCreateStreakData(userId: string): Promise<StreakData> {
+    const userStats = await this.prisma.userStats.findUnique({
+      where: { userId }
     });
 
-    if (existingStreak) {
-      return existingStreak;
-    }
+    if (!userStats) {
+      // Create new UserStats with default streak data
+      await this.prisma.userStats.create({
+        data: {
+          userId,
+          points: 0,
+          stats: JSON.stringify({
+            consecutiveDays: 0,
+            totalMeasurements: 0,
+            ruralMeasurements: 0,
+            uniqueLocations: 0,
+            totalDistance: 0,
+            contributionScore: 0,
+            qualityScore: 0,
+            accuracyRate: 0,
+            verifiedSpots: 0,
+            helpfulActions: 0,
+            lastCheckin: new Date()
+          })
+        }
+      });
 
-    return this.prisma.userStreak.create({
-      data: {
-        userId,
+      return {
         current: 0,
         longest: 0,
         lastCheckin: new Date()
-      }
-    });
+      };
+    }
+
+    const stats = JSON.parse(userStats.stats as string) as StatsContent & { lastCheckin?: string };
+    return {
+      current: stats.consecutiveDays,
+      longest: stats.consecutiveDays, // Using consecutiveDays as both current and longest
+      lastCheckin: stats.lastCheckin ? new Date(stats.lastCheckin) : new Date()
+    };
   }
 
   /**
@@ -40,8 +70,8 @@ export class StreakService {
    */
   async updateStreak(userId: string): Promise<StreakUpdateResult> {
     const now = new Date();
-    const streak = await this.getOrCreateStreak(userId);
-    const lastCheckin = streak.lastCheckin;
+    const streakData = await this.getOrCreateStreakData(userId);
+    const lastCheckin = streakData.lastCheckin;
 
     // Get the start of today and yesterday
     const todayStart = startOfDay(now);
@@ -50,10 +80,10 @@ export class StreakService {
     // Check if last check-in was today
     if (isWithinInterval(lastCheckin, { start: todayStart, end: now })) {
       return {
-        streak,
+        streak: streakData,
         pointsEarned: 0,
         achievements: [],
-        multiplier: this.getCurrentMultiplier(streak.current)
+        multiplier: this.getCurrentMultiplier(streakData.current)
       }; // Already checked in today
     }
 
@@ -64,8 +94,8 @@ export class StreakService {
     });
 
     // Update streak
-    const newCurrent = wasYesterday ? streak.current + 1 : 1;
-    const newLongest = wasYesterday ? Math.max(streak.longest, newCurrent) : streak.longest;
+    const newCurrent = wasYesterday ? streakData.current + 1 : 1;
+    const newLongest = Math.max(streakData.longest, newCurrent);
 
     // Calculate points and multiplier
     const multiplier = this.getCurrentMultiplier(newCurrent);
@@ -74,32 +104,54 @@ export class StreakService {
     // Check for achievements
     const newAchievements = await this.checkAndGrantAchievements(userId, newCurrent);
 
-    // Update the streak
-    const updatedStreak = await this.prisma.userStreak.update({
-      where: { id: streak.id },
-      data: {
-        current: newCurrent,
-        longest: newLongest,
-        lastCheckin: now
-      }
-    });
-
-    // Update user's total points in UserStats
-    await this.prisma.userStats.upsert({
+    // Update the streak data in UserStats
+    const updatedStats = await this.prisma.userStats.upsert({
       where: { userId },
       create: {
         userId,
-        points: pointsEarned
+        points: pointsEarned,
+        stats: JSON.stringify({
+          consecutiveDays: newCurrent,
+          totalMeasurements: 0,
+          ruralMeasurements: 0,
+          uniqueLocations: 0,
+          totalDistance: 0,
+          contributionScore: 0,
+          qualityScore: 0,
+          accuracyRate: 0,
+          verifiedSpots: 0,
+          helpfulActions: 0,
+          lastCheckin: now
+        })
       },
       update: {
         points: {
           increment: pointsEarned
-        }
+        },
+        stats: JSON.stringify({
+          consecutiveDays: newCurrent,
+          totalMeasurements: 0,
+          ruralMeasurements: 0,
+          uniqueLocations: 0,
+          totalDistance: 0,
+          contributionScore: 0,
+          qualityScore: 0,
+          accuracyRate: 0,
+          verifiedSpots: 0,
+          helpfulActions: 0,
+          lastCheckin: now
+        })
       }
     });
 
+    const updatedStreakData: StreakData = {
+      current: newCurrent,
+      longest: newLongest,
+      lastCheckin: now
+    };
+
     return {
-      streak: updatedStreak,
+      streak: updatedStreakData,
       pointsEarned,
       achievements: newAchievements,
       multiplier
@@ -142,7 +194,7 @@ export class StreakService {
       });
 
       if (!existingAchievement) {
-        const newAchievement = await this.prisma.achievement.create({
+        const prismaAchievement = await this.prisma.achievement.create({
           data: {
             userId,
             title: achievement.title,
@@ -150,6 +202,7 @@ export class StreakService {
             points: achievement.points,
             type: 'streak',
             icon: achievement.icon,
+            tier: 'COMMON',
             requirements: JSON.stringify([{
               type: 'streak',
               metric: 'length',
@@ -158,7 +211,8 @@ export class StreakService {
               description: `Maintain a streak of ${achievement.threshold} days`
             }]),
             progress: streakLength,
-            isCompleted: true,
+            target: achievement.threshold,
+            completed: true,
             unlockedAt: new Date()
           }
         });
@@ -168,7 +222,19 @@ export class StreakService {
           where: { userId },
           create: {
             userId,
-            points: achievement.points
+            points: achievement.points,
+            stats: JSON.stringify({
+              consecutiveDays: streakLength,
+              totalMeasurements: 0,
+              ruralMeasurements: 0,
+              uniqueLocations: 0,
+              totalDistance: 0,
+              contributionScore: 0,
+              qualityScore: 0,
+              accuracyRate: 0,
+              verifiedSpots: 0,
+              helpfulActions: 0
+            })
           },
           update: {
             points: {
@@ -177,7 +243,7 @@ export class StreakService {
           }
         });
 
-        newAchievements.push(newAchievement);
+        newAchievements.push(adaptPrismaToAchievement(prismaAchievement));
       }
     }
 
@@ -187,16 +253,31 @@ export class StreakService {
   /**
    * Reset a user's streak
    */
-  async resetStreak(userId: string): Promise<UserStreak> {
-    const streak = await this.getOrCreateStreak(userId);
-
-    return this.prisma.userStreak.update({
-      where: { id: streak.id },
+  async resetStreak(userId: string): Promise<StreakData> {
+    await this.prisma.userStats.update({
+      where: { userId },
       data: {
-        current: 0,
-        lastCheckin: new Date()
+        stats: JSON.stringify({
+          consecutiveDays: 0,
+          totalMeasurements: 0,
+          ruralMeasurements: 0,
+          uniqueLocations: 0,
+          totalDistance: 0,
+          contributionScore: 0,
+          qualityScore: 0,
+          accuracyRate: 0,
+          verifiedSpots: 0,
+          helpfulActions: 0,
+          lastCheckin: new Date()
+        })
       }
     });
+
+    return {
+      current: 0,
+      longest: 0,
+      lastCheckin: new Date()
+    };
   }
 
   /**
@@ -208,19 +289,19 @@ export class StreakService {
     lastCheckin: Date;
     canCheckInToday: boolean;
   }> {
-    const streak = await this.getOrCreateStreak(userId);
+    const streakData = await this.getOrCreateStreakData(userId);
     const now = new Date();
     const todayStart = startOfDay(now);
 
-    const canCheckInToday = !isWithinInterval(streak.lastCheckin, {
+    const canCheckInToday = !isWithinInterval(streakData.lastCheckin, {
       start: todayStart,
       end: now
     });
 
     return {
-      current: streak.current,
-      longest: streak.longest,
-      lastCheckin: streak.lastCheckin,
+      current: streakData.current,
+      longest: streakData.longest,
+      lastCheckin: streakData.lastCheckin,
       canCheckInToday
     };
   }
