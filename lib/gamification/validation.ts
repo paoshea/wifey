@@ -68,7 +68,7 @@ export function validateRequirement(
   stats: StatsContent
 ): boolean {
   const statValue = stats[requirement.metric] || 0;
-  
+
   switch (requirement.operator) {
     case RequirementOperator.GREATER_THAN:
       return statValue > requirement.value;
@@ -116,11 +116,6 @@ export function validateMeasurement(data: unknown): ValidatedMeasurementInput {
 // Points calculation for measurement
 export function calculatePointsForMeasurement(measurement: Measurement): number {
   let points = 10; // Base points
-
-  // Add bonus points for rural measurements
-  if (measurement.isRural) {
-    points += 5;
-  }
 
   // Add bonus points for accuracy if available
   if (measurement.accuracy && measurement.accuracy < 10) {

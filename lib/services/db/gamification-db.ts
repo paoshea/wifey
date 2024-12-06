@@ -1,6 +1,6 @@
 // lib/services/db/gamification-db.ts
 
-import { PrismaClient, Prisma, User, Achievement, UserStreak, CoverageReport } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { monitoringService } from '../../monitoring/monitoring-service';
 import {
   validateUserProgress,
@@ -17,7 +17,8 @@ import {
   ValidatedAchievement,
   TimeFrame,
   StatsMetric,
-  AchievementRequirement as TypedAchievementRequirement
+  AchievementRequirement as TypedAchievementRequirement,
+  type Achievement
 } from '../../gamification/types';
 import { z } from 'zod';
 
@@ -61,8 +62,67 @@ interface LeaderboardEntry {
   };
 }
 
-interface ValidatedAchievementData extends Omit<Achievement, 'requirements'> {
-  requirements: TypedAchievementRequirement[];
+type PrismaAchievement = {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  points: number;
+  icon: string | null;
+  type: string;
+  tier: string;
+  requirements: Prisma.JsonValue;
+  progress: number;
+  target: number;
+  completed: boolean;
+  unlockedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function mapPrismaToAchievement(prismaAchievement: PrismaAchievement): Achievement {
+  const requirements = (prismaAchievement.requirements as any[]).map(req => ({
+    type: req.type,
+    metric: req.metric,
+    value: req.value,
+    operator: req.operator as RequirementOperator,
+    description: req.description
+  })) as TypedAchievementRequirement[];
+
+  return {
+    id: prismaAchievement.id,
+    userId: prismaAchievement.userId,
+    title: prismaAchievement.title,
+    description: prismaAchievement.description,
+    points: prismaAchievement.points,
+    icon: prismaAchievement.icon || '',
+    type: prismaAchievement.type,
+    tier: prismaAchievement.tier as AchievementTier,
+    requirements,
+    progress: prismaAchievement.progress,
+    target: prismaAchievement.target,
+    isCompleted: prismaAchievement.completed,
+    unlockedAt: prismaAchievement.unlockedAt ?? null,
+    createdAt: prismaAchievement.createdAt,
+    updatedAt: prismaAchievement.updatedAt
+  };
+}
+
+function mapAchievementToPrisma(achievement: Achievement): Omit<PrismaAchievement, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    userId: achievement.userId,
+    title: achievement.title,
+    description: achievement.description,
+    points: achievement.points,
+    icon: achievement.icon,
+    type: achievement.type,
+    tier: achievement.tier,
+    requirements: achievement.requirements as unknown as Prisma.JsonValue,
+    progress: achievement.progress,
+    target: achievement.target,
+    completed: achievement.isCompleted,
+    unlockedAt: achievement.unlockedAt ?? null
+  };
 }
 
 const defaultStats: StatsContent = {
@@ -134,9 +194,10 @@ export class GamificationDB {
       if (!result.success) {
         throw result.error;
       }
-      return await this.prisma.achievement.findMany({
+      const achievements = await this.prisma.achievement.findMany({
         where: { userId }
       });
+      return achievements.map(achievement => mapPrismaToAchievement(achievement as PrismaAchievement));
     } catch (error) {
       await monitoringService.logError(error);
       throw handleValidationError(error);
@@ -151,15 +212,17 @@ export class GamificationDB {
       if (!userResult.success) throw userResult.error;
       if (!achievementResult.success) throw achievementResult.error;
 
-      return await this.prisma.achievement.update({
+      const achievement = await this.prisma.achievement.update({
         where: {
           id: achievementId,
           userId
         },
         data: {
+          completed: true,
           unlockedAt: new Date()
         }
       });
+      return mapPrismaToAchievement(achievement as PrismaAchievement);
     } catch (error) {
       await monitoringService.logError(error);
       throw handleValidationError(error);
@@ -172,13 +235,13 @@ export class GamificationDB {
       const pendingAchievements = await this.prisma.achievement.findMany({
         where: {
           userId,
-          unlockedAt: null
+          completed: false
         }
       });
 
       for (const achievement of pendingAchievements) {
-        const validatedAchievement = this.validateAchievement(achievement);
-        if (validatedAchievement && this.meetsRequirements(stats, validatedAchievement)) {
+        const mappedAchievement = mapPrismaToAchievement(achievement as PrismaAchievement);
+        if (this.meetsRequirements(stats, mappedAchievement)) {
           const unlocked = await this.unlockAchievement(userId, achievement.id);
           unlockedAchievements.push(unlocked);
         }
@@ -191,54 +254,7 @@ export class GamificationDB {
     }
   }
 
-  private validateAchievement(achievement: Achievement): ValidatedAchievementData | null {
-    try {
-      const requirementsJson = achievement.requirements as Prisma.JsonArray;
-      if (!Array.isArray(requirementsJson)) {
-        return null;
-      }
-
-      const requirements: TypedAchievementRequirement[] = [];
-      for (const req of requirementsJson) {
-        if (typeof req === 'object' && req !== null && 'type' in req && 'metric' in req && 'value' in req && 'operator' in req) {
-          const reqJson = req as {
-            type: string;
-            metric: string;
-            value: number;
-            operator: string;
-            description?: string;
-          };
-
-          const type = RequirementType[reqJson.type as keyof typeof RequirementType];
-          const metric = StatsMetric[reqJson.metric as keyof typeof StatsMetric];
-          const operator = RequirementOperator[reqJson.operator as keyof typeof RequirementOperator];
-
-          if (type !== undefined && metric !== undefined && operator !== undefined) {
-            requirements.push({
-              type,
-              metric,
-              value: Number(reqJson.value),
-              operator,
-              description: reqJson.description
-            });
-          }
-        }
-      }
-
-      if (!requirements.length) {
-        return null;
-      }
-
-      return {
-        ...achievement,
-        requirements
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private meetsRequirements(stats: StatsContent, achievement: ValidatedAchievementData): boolean {
+  private meetsRequirements(stats: StatsContent, achievement: Achievement): boolean {
     return achievement.requirements.every(req => this.checkRequirement(stats, req));
   }
 
@@ -271,26 +287,24 @@ export class GamificationDB {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         include: {
-          streaks: true,
-          achievements: true,
           stats: true
         },
       });
 
       if (!user) return null;
 
-      const streak = user.streaks[0] || { current: 0, longest: 0 };
       const stats = parseStats(user.stats?.stats);
+      const streak = {
+        current: stats.consecutiveDays || 0,
+        longest: stats.consecutiveDays || 0
+      };
 
       return {
         points: stats.points,
         level: Math.floor(Math.sqrt(stats.points / 100)) + 1,
         currentXP: stats.points % 100,
         nextLevelXP: (Math.floor(Math.sqrt(stats.points / 100)) + 2) * 100,
-        streak: {
-          current: streak.current,
-          longest: streak.longest,
-        },
+        streak,
         stats,
       };
     } catch (error) {
@@ -348,9 +362,11 @@ export class GamificationDB {
               latitude: measurement.location.lat,
               longitude: measurement.location.lng,
               signalStrength: measurement.value,
-              provider: 'wifi',
-              connectionType: measurement.device?.type || 'unknown',
               networkType: 'wifi',
+              networkSubtype: 'wifi',
+              connectionType: measurement.device?.type || 'unknown',
+              deviceModel: measurement.device?.model,
+              provider: 'wifi',
               timestamp: new Date(),
             },
           });
@@ -360,12 +376,12 @@ export class GamificationDB {
               userId,
               latitude: measurement.location.lat,
               longitude: measurement.location.lng,
-              signal: BigInt(measurement.value),
+              signal: measurement.value,
               operator: measurement.operator,
               networkType: 'cellular',
               deviceModel: measurement.device?.model || 'unknown',
               connectionType: measurement.device?.type || 'unknown',
-              points: BigInt(pointsEarned),
+              points: pointsEarned,
             },
           });
         }
@@ -394,12 +410,12 @@ export class GamificationDB {
 
         // Check for new achievements
         const achievements = await tx.achievement.findMany({
-          where: { userId, unlockedAt: null },
+          where: { userId, completed: false },
         });
 
         return {
           points: pointsEarned,
-          achievements,
+          achievements: achievements.map(achievement => mapPrismaToAchievement(achievement as PrismaAchievement)),
         };
       });
     } catch (error) {
