@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from 'components/ui/dropdown-menu';
+import LanguageSwitcher from 'components/language-switcher';
 
 interface PageHeaderProps {
   locale: string;
@@ -65,9 +66,12 @@ export function PageHeader({
             </div>
           </div>
 
-          {session && (
-            <div className="flex items-center space-x-2">
-              {/* Settings Menu */}
+          <div className="flex items-center space-x-2">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
+            {/* Settings Menu for authenticated users */}
+            {session && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -113,8 +117,8 @@ export function PageHeader({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

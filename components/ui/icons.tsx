@@ -33,6 +33,7 @@ import {
   XCircle,
   Home,
   Bell,
+  Languages,
   type LucideProps
 } from 'lucide-react';
 
@@ -70,6 +71,7 @@ export const Icons = {
   offline: WifiOff,
   home: Home,
   bell: Bell,
+  languages: Languages,
   google: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
