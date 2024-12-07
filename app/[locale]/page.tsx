@@ -24,7 +24,9 @@ export default function LocalePage() {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-16 sm:pt-32 sm:pb-24 overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,theme(colors.primary.100/20),transparent)]" />
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-radial from-primary-100/20 via-transparent to-transparent" />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center mb-12">
             <Badge
