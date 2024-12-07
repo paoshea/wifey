@@ -1,4 +1,4 @@
-interface CoveragePoint {
+export interface CoveragePoint {
     id: string;
     latitude: number;
     longitude: number;
@@ -8,7 +8,7 @@ interface CoveragePoint {
     type: 'wifi' | 'cellular';
 }
 
-interface PendingSyncItem {
+export interface PendingSyncItem {
     id: string;
     type: 'coverage_point' | 'map_tile';
     data: any;
@@ -16,7 +16,7 @@ interface PendingSyncItem {
     retryCount: number;
 }
 
-interface MapTile {
+export interface MapTile {
     id: string;
     x: number;
     y: number;
@@ -25,26 +25,31 @@ interface MapTile {
     timestamp: number;
 }
 
+let dbInstance: OfflineDB | null = null;
+
 export class OfflineDB {
-    private static instance: OfflineDB;
     private db: IDBDatabase | null = null;
     private initPromise: Promise<void> | null = null;
 
-    private constructor() { }
-
-    public static getInstance(): OfflineDB {
-        if (!OfflineDB.instance) {
-            OfflineDB.instance = new OfflineDB();
+    constructor() {
+        if (dbInstance) {
+            return dbInstance;
         }
-        return OfflineDB.instance;
+        dbInstance = this;
     }
 
-    // For testing purposes
-    public static resetInstance(): void {
-        if (OfflineDB.instance?.db) {
-            OfflineDB.instance.db.close();
+    static getInstance(): OfflineDB {
+        if (!dbInstance) {
+            dbInstance = new OfflineDB();
         }
-        OfflineDB.instance = new OfflineDB();
+        return dbInstance;
+    }
+
+    static resetInstance(): void {
+        if (dbInstance?.db) {
+            dbInstance.db.close();
+        }
+        dbInstance = null;
     }
 
     async initialize(): Promise<void> {
@@ -52,7 +57,7 @@ export class OfflineDB {
             return this.initPromise;
         }
 
-        this.initPromise = new Promise((resolve, reject) => {
+        this.initPromise = new Promise<void>((resolve, reject) => {
             if (this.db) {
                 resolve();
                 return;
@@ -65,12 +70,12 @@ export class OfflineDB {
                 reject(new Error('Failed to open database'));
             };
 
-            request.onupgradeneeded = (event) => {
+            request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
                 const db = (event.target as IDBOpenDBRequest).result;
                 this.createObjectStores(db);
             };
 
-            request.onsuccess = (event) => {
+            request.onsuccess = (event: Event) => {
                 this.db = (event.target as IDBOpenDBRequest).result;
                 resolve();
             };
@@ -103,7 +108,7 @@ export class OfflineDB {
         }
         this.initPromise = null;
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const request = indexedDB.deleteDatabase('offline_system');
 
             request.onerror = () => {
@@ -119,7 +124,7 @@ export class OfflineDB {
     async storeCoveragePoint(point: CoveragePoint): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
                 const store = transaction.objectStore('coverage_points');
@@ -142,7 +147,7 @@ export class OfflineDB {
     async removeCoveragePoint(id: string): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
                 const store = transaction.objectStore('coverage_points');
@@ -165,7 +170,7 @@ export class OfflineDB {
     async getCoveragePoint(id: string): Promise<CoveragePoint | null> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<CoveragePoint | null>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['coverage_points'], 'readonly');
                 const store = transaction.objectStore('coverage_points');
@@ -188,7 +193,7 @@ export class OfflineDB {
     async getCoveragePoints(): Promise<CoveragePoint[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<CoveragePoint[]>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['coverage_points'], 'readonly');
                 const store = transaction.objectStore('coverage_points');
@@ -210,7 +215,7 @@ export class OfflineDB {
     async addPendingSync(item: PendingSyncItem): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['pending_sync'], 'readwrite');
                 const store = transaction.objectStore('pending_sync');
@@ -233,7 +238,7 @@ export class OfflineDB {
     async getPendingSyncItems(): Promise<PendingSyncItem[]> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<PendingSyncItem[]>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['pending_sync'], 'readonly');
                 const store = transaction.objectStore('pending_sync');
@@ -255,7 +260,7 @@ export class OfflineDB {
     async removePendingSyncItem(id: string): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             try {
                 const transaction = this.db!.transaction(['pending_sync'], 'readwrite');
                 const store = transaction.objectStore('pending_sync');
@@ -302,3 +307,6 @@ export class OfflineDB {
         await Promise.all(promises);
     }
 }
+
+// Export for CommonJS compatibility
+module.exports = { OfflineDB };
