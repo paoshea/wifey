@@ -11,11 +11,12 @@ class MockIDBDatabase {
     }
 
     transaction(storeNames: string[], mode: string) {
-        return new MockIDBTransaction(storeNames.map(name => {
+        const transaction = new MockIDBTransaction(storeNames.map(name => {
             const store = this.stores.get(name);
             if (!store) throw new Error(`Store ${name} not found`);
             return [name, store] as [string, Map<string, any>];
         }));
+        return transaction;
     }
 
     close() {
@@ -27,80 +28,197 @@ class MockIDBObjectStore {
     constructor(private store: Map<string, any>, private keyPath: string) { }
 
     createIndex(name: string, keyPath: string) {
-        // No-op for mock
         return {};
     }
 
     put(value: any) {
-        const key = value[this.keyPath];
-        this.store.set(key, value);
-        return {
-            onerror: null,
-            onsuccess: null
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any,
+            transaction: {
+                oncomplete: null as (() => void) | null
+            }
         };
+
+        Promise.resolve().then(() => {
+            try {
+                const key = value[this.keyPath];
+                this.store.set(key, { ...value });
+                if (request.onsuccess) {
+                    request.onsuccess({ target: { result: undefined } });
+                }
+                if (request.transaction.oncomplete) {
+                    request.transaction.oncomplete();
+                }
+            } catch (error) {
+                if (request.onerror) {
+                    request.onerror({ target: { error } });
+                }
+            }
+        });
+
+        return request;
     }
 
     get(key: string) {
-        const value = this.store.get(key);
-        return {
-            onerror: null,
-            onsuccess: null,
-            result: value
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any
         };
+
+        Promise.resolve().then(() => {
+            try {
+                const value = this.store.get(key);
+                request.result = value ? { ...value } : null;
+                if (request.onsuccess) {
+                    request.onsuccess({ target: { result: request.result } });
+                }
+            } catch (error) {
+                if (request.onerror) {
+                    request.onerror({ target: { error } });
+                }
+            }
+        });
+
+        return request;
     }
 
     getAll() {
-        return {
-            onerror: null,
-            onsuccess: null,
-            result: Array.from(this.store.values())
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any
         };
+
+        Promise.resolve().then(() => {
+            try {
+                const values = Array.from(this.store.values()).map(value => ({ ...value }));
+                request.result = values;
+                if (request.onsuccess) {
+                    request.onsuccess({ target: { result: values } });
+                }
+            } catch (error) {
+                if (request.onerror) {
+                    request.onerror({ target: { error } });
+                }
+            }
+        });
+
+        return request;
     }
 
     delete(key: string) {
-        this.store.delete(key);
-        return {
-            onerror: null,
-            onsuccess: null
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any,
+            transaction: {
+                oncomplete: null as (() => void) | null
+            }
         };
+
+        Promise.resolve().then(() => {
+            try {
+                this.store.delete(key);
+                if (request.onsuccess) {
+                    request.onsuccess({ target: { result: undefined } });
+                }
+                if (request.transaction.oncomplete) {
+                    request.transaction.oncomplete();
+                }
+            } catch (error) {
+                if (request.onerror) {
+                    request.onerror({ target: { error } });
+                }
+            }
+        });
+
+        return request;
     }
 
     clear() {
-        this.store.clear();
-        return {
-            onerror: null,
-            onsuccess: null
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any,
+            transaction: {
+                oncomplete: null as (() => void) | null
+            }
         };
+
+        Promise.resolve().then(() => {
+            try {
+                this.store.clear();
+                if (request.onsuccess) {
+                    request.onsuccess({ target: { result: undefined } });
+                }
+                if (request.transaction.oncomplete) {
+                    request.transaction.oncomplete();
+                }
+            } catch (error) {
+                if (request.onerror) {
+                    request.onerror({ target: { error } });
+                }
+            }
+        });
+
+        return request;
     }
 }
 
 class MockIDBTransaction {
+    public oncomplete: (() => void) | null = null;
+
     constructor(private stores: [string, Map<string, any>][]) { }
 
     objectStore(name: string) {
         const store = this.stores.find(([storeName]) => storeName === name);
         if (!store) throw new Error(`Store ${name} not found`);
-        return new MockIDBObjectStore(store[1], 'id');
+        const objectStore = new MockIDBObjectStore(store[1], 'id');
+        return objectStore;
     }
-
-    oncomplete: (() => void) | null = null;
 }
 
 export const mockIndexedDB = {
     open: (name: string, version: number) => {
-        const db = new MockIDBDatabase();
-        return {
-            onerror: null,
-            onupgradeneeded: null,
-            onsuccess: null,
-            result: db
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onupgradeneeded: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any
         };
+
+        Promise.resolve().then(() => {
+            const db = new MockIDBDatabase();
+            request.result = db;
+
+            if (request.onupgradeneeded) {
+                request.onupgradeneeded({ target: { result: db } });
+            }
+            if (request.onsuccess) {
+                request.onsuccess({ target: { result: db } });
+            }
+        });
+
+        return request;
     },
+
     deleteDatabase: (name: string) => {
-        return {
-            onerror: null,
-            onsuccess: null
+        const request = {
+            onerror: null as ((event: any) => void) | null,
+            onsuccess: null as ((event: any) => void) | null,
+            result: undefined as any
         };
+
+        Promise.resolve().then(() => {
+            if (request.onsuccess) {
+                request.onsuccess({ target: { result: undefined } });
+            }
+        });
+
+        return request;
     }
 };
 

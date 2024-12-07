@@ -1,175 +1,6 @@
 import { OfflineManager } from '../../lib/offline';
 import { OfflineDB } from '../../lib/offline/storage/db';
 
-// Mock event interfaces
-interface IDBEvent {
-    target: {
-        result: any;
-        error?: Error | null;
-    };
-}
-
-interface IDBRequest {
-    result: any;
-    error: Error | null;
-    source: any;
-    transaction: any;
-    readyState: 'pending' | 'done';
-    onerror: ((this: IDBRequest, ev: IDBEvent) => any) | null;
-    onsuccess: ((this: IDBRequest, ev: IDBEvent) => any) | null;
-    onupgradeneeded: ((this: IDBRequest, ev: IDBEvent) => any) | null;
-}
-
-// Create mock database
-const createMockDB = () => {
-    const stores = new Map<string, Map<string, any>>();
-
-    const db = {
-        stores,
-        objectStoreNames: {
-            contains: (name: string) => stores.has(name)
-        },
-        createObjectStore(name: string, options: { keyPath: string }) {
-            const store = new Map();
-            stores.set(name, store);
-            return {
-                createIndex: () => ({})
-            };
-        },
-        transaction(storeNames: string[], mode: IDBTransactionMode) {
-            const transaction = {
-                objectStore: (name: string) => {
-                    const store = stores.get(name);
-                    if (!store) throw new Error(`Store ${name} not found`);
-                    return {
-                        put: (value: any) => {
-                            store.set(value.id, value);
-                            const request = createRequest(undefined);
-                            setTimeout(() => {
-                                if (request.onsuccess) {
-                                    request.onsuccess({
-                                        target: { result: undefined }
-                                    } as IDBEvent);
-                                }
-                                transaction.oncomplete?.();
-                            }, 0);
-                            return request;
-                        },
-                        get: (key: string) => {
-                            const value = store.get(key);
-                            const request = createRequest(value);
-                            setTimeout(() => {
-                                if (request.onsuccess) {
-                                    request.onsuccess({
-                                        target: { result: value }
-                                    } as IDBEvent);
-                                }
-                            }, 0);
-                            return request;
-                        },
-                        getAll: () => {
-                            const values = Array.from(store.values());
-                            const request = createRequest(values);
-                            setTimeout(() => {
-                                if (request.onsuccess) {
-                                    request.onsuccess({
-                                        target: { result: values }
-                                    } as IDBEvent);
-                                }
-                            }, 0);
-                            return request;
-                        },
-                        delete: (key: string) => {
-                            store.delete(key);
-                            const request = createRequest(undefined);
-                            setTimeout(() => {
-                                if (request.onsuccess) {
-                                    request.onsuccess({
-                                        target: { result: undefined }
-                                    } as IDBEvent);
-                                }
-                                transaction.oncomplete?.();
-                            }, 0);
-                            return request;
-                        },
-                        clear: () => {
-                            store.clear();
-                            const request = createRequest(undefined);
-                            setTimeout(() => {
-                                if (request.onsuccess) {
-                                    request.onsuccess({
-                                        target: { result: undefined }
-                                    } as IDBEvent);
-                                }
-                                transaction.oncomplete?.();
-                            }, 0);
-                            return request;
-                        }
-                    };
-                },
-                oncomplete: null as (() => void) | null
-            };
-            return transaction;
-        },
-        close() {
-            stores.clear();
-        }
-    };
-    return db;
-};
-
-// Create a proper IDBRequest-like object
-const createRequest = <T>(result: T): IDBRequest => ({
-    result,
-    error: null,
-    source: null,
-    transaction: null,
-    readyState: 'pending',
-    onerror: null,
-    onsuccess: null,
-    onupgradeneeded: null
-});
-
-// Mock IndexedDB
-const mockIndexedDB = {
-    open: (name: string, version: number): IDBRequest => {
-        const db = createMockDB();
-        const request = createRequest(db);
-
-        setTimeout(() => {
-            if (request.onupgradeneeded) {
-                request.onupgradeneeded({
-                    target: { result: db }
-                } as IDBEvent);
-            }
-            if (request.onsuccess) {
-                request.onsuccess({
-                    target: { result: db }
-                } as IDBEvent);
-            }
-        }, 0);
-
-        return request;
-    },
-    deleteDatabase: (name: string): IDBRequest => {
-        const request = createRequest(undefined);
-        setTimeout(() => {
-            if (request.onsuccess) {
-                request.onsuccess({
-                    target: { result: undefined }
-                } as IDBEvent);
-            }
-        }, 0);
-        return request;
-    }
-};
-
-// Setup mock IndexedDB
-Object.defineProperty(global, 'indexedDB', {
-    value: mockIndexedDB,
-    writable: true
-});
-
 describe('Offline System Integration', () => {
     let manager: OfflineManager;
     let db: OfflineDB;
@@ -258,20 +89,27 @@ describe('Offline System Integration', () => {
         });
 
         it('should handle storage limits with persistence', async () => {
+            // Create points with decreasing timestamps
+            const baseTime = Date.now();
             const points = Array.from(
                 { length: OfflineManager.MAX_STORAGE_POINTS + 1 },
                 (_, i) => ({
                     id: `test-${i}`,
                     latitude: 37.7749,
                     longitude: -122.4194,
-                    timestamp: Date.now() - i * 1000,
+                    timestamp: baseTime - (OfflineManager.MAX_STORAGE_POINTS - i) * 1000, // Oldest first
                     signalStrength: -70,
                     reliability: 0.95,
                     type: 'wifi' as const
                 })
             );
 
-            await Promise.all(points.map(point => manager.storeCoveragePoint(point)));
+            // Store points sequentially to ensure proper order
+            for (const point of points) {
+                await manager.storeCoveragePoint(point);
+                // Add small delay to ensure timestamps are unique
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
 
             const memoryCount = await manager.getCoveragePointCount();
             expect(memoryCount).toBe(OfflineManager.MAX_STORAGE_POINTS);
@@ -279,6 +117,7 @@ describe('Offline System Integration', () => {
             const dbPoints = await db.getCoveragePoints();
             expect(dbPoints.length).toBe(OfflineManager.MAX_STORAGE_POINTS);
 
+            // Oldest point should be removed
             const oldestPoint = await db.getCoveragePoint(points[0].id);
             expect(oldestPoint).toBeNull();
         });
@@ -313,7 +152,11 @@ describe('Offline System Integration', () => {
 
     describe('Error Handling', () => {
         it('should handle storage errors gracefully', async () => {
-            jest.spyOn(db, 'storeCoveragePoint').mockRejectedValueOnce(new Error('Storage error'));
+            // Mock the storage operation to fail
+            const mockError = new Error('Storage error');
+            jest.spyOn(db, 'storeCoveragePoint').mockImplementation(() => {
+                return Promise.reject(mockError);
+            });
 
             const point = {
                 id: 'error-test',
@@ -383,8 +226,8 @@ describe('Offline System Integration', () => {
                 },
                 {
                     id: 'out-bounds',
-                    latitude: 38.7749,
-                    longitude: -123.4194,
+                    latitude: 38.7749, // 1 degree outside region
+                    longitude: -123.4194, // 1 degree outside region
                     timestamp: Date.now(),
                     signalStrength: -70,
                     reliability: 0.95,
@@ -392,12 +235,17 @@ describe('Offline System Integration', () => {
                 }
             ];
 
-            await Promise.all(points.map(point => manager.storeCoveragePoint(point)));
+            // Store points sequentially
+            for (const point of points) {
+                await manager.storeCoveragePoint(point);
+                // Add small delay to ensure timestamps are unique
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
 
             const region = {
                 latitude: 37.7749,
                 longitude: -122.4194,
-                latitudeDelta: 0.1,
+                latitudeDelta: 0.1, // 0.1 degree radius
                 longitudeDelta: 0.1
             };
 
@@ -419,7 +267,7 @@ describe('Offline System Integration', () => {
                 },
                 {
                     id: 'cluster-1b',
-                    latitude: 37.7750,
+                    latitude: 37.7750, // Very close to cluster-1a
                     longitude: -122.4195,
                     timestamp: Date.now(),
                     signalStrength: -72,
@@ -428,7 +276,7 @@ describe('Offline System Integration', () => {
                 },
                 {
                     id: 'cluster-2',
-                    latitude: 37.7849,
+                    latitude: 37.7849, // Further away
                     longitude: -122.4294,
                     timestamp: Date.now(),
                     signalStrength: -75,
@@ -437,7 +285,12 @@ describe('Offline System Integration', () => {
                 }
             ];
 
-            await Promise.all(points.map(point => manager.storeCoveragePoint(point)));
+            // Store points sequentially
+            for (const point of points) {
+                await manager.storeCoveragePoint(point);
+                // Add small delay to ensure timestamps are unique
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
 
             const region = {
                 latitude: 37.7749,

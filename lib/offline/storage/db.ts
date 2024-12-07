@@ -139,6 +139,29 @@ export class OfflineDB {
         });
     }
 
+    async removeCoveragePoint(id: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
+                const store = transaction.objectStore('coverage_points');
+
+                const request = store.delete(id);
+
+                request.onerror = () => {
+                    reject(new Error('Failed to remove coverage point'));
+                };
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
     async getCoveragePoint(id: string): Promise<CoveragePoint | null> {
         if (!this.db) throw new Error('Database not initialized');
 

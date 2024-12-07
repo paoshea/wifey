@@ -1,12 +1,8 @@
-// Configure longer timeout for all tests
-jest.setTimeout(60000);
+import { mockIndexedDB } from './mocks/indexedDB.mock';
 
-beforeAll(() => {
-  // Verify test environment setup
-  expect(global).toBeDefined();
-});
-
-afterAll(() => {
-  // Cleanup any remaining test state
-  jest.restoreAllMocks();
+// Setup mock IndexedDB
+Object.defineProperty(global, 'indexedDB', {
+  value: mockIndexedDB,
+  writable: true,
+  configurable: true
 });

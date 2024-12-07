@@ -28,8 +28,21 @@ export class OfflineManager {
     }
 
     async storeCoveragePoint(point: CoveragePoint): Promise<void> {
+        const points = await this.db.getCoveragePoints();
+
+        // Check storage limit before storing
+        if (points.length >= OfflineManager.MAX_STORAGE_POINTS) {
+            // Find and remove oldest point
+            const oldestPoint = points.reduce((oldest, current) =>
+                current.timestamp < oldest.timestamp ? current : oldest
+            );
+            await this.db.removeCoveragePoint(oldestPoint.id);
+        }
+
+        // Store the new point
         await this.db.storeCoveragePoint(point);
 
+        // Add to sync queue if offline
         if (!this.isOnline) {
             await this.db.addPendingSync({
                 id: `sync-${point.id}`,
@@ -63,11 +76,6 @@ export class OfflineManager {
         const retryDelay = this.config?.sync.retryDelay ?? 1000;
 
         for (const item of items) {
-            if (item.retryCount >= maxRetries) {
-                await this.db.removePendingSyncItem(item.id);
-                continue;
-            }
-
             try {
                 const response = await fetch('/api/sync', {
                     method: 'POST',
@@ -83,13 +91,17 @@ export class OfflineManager {
 
                 await this.db.removePendingSyncItem(item.id);
             } catch (error) {
-                // Increment retry count and keep in queue
-                await this.db.addPendingSync({
-                    ...item,
-                    retryCount: item.retryCount + 1
-                });
-
-                // Wait before next retry
+                if (item.retryCount >= maxRetries) {
+                    await this.db.removePendingSyncItem(item.id);
+                } else {
+                    // Update retry count before removing old item
+                    const updatedItem = {
+                        ...item,
+                        retryCount: item.retryCount + 1
+                    };
+                    await this.db.removePendingSyncItem(item.id);
+                    await this.db.addPendingSync(updatedItem);
+                }
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
         }
@@ -97,22 +109,31 @@ export class OfflineManager {
 
     async findCoveragePointsInRegion(region: Region): Promise<CoveragePoint[]> {
         const points = await this.db.getCoveragePoints();
-        return points.filter(point => this.isPointInRegion(point, region));
+        return points.filter(point => {
+            const latDiff = Math.abs(point.latitude - region.latitude);
+            const lonDiff = Math.abs(point.longitude - region.longitude);
+            const latRadius = region.latitudeDelta / 2;
+            const lonRadius = region.longitudeDelta / 2;
+            return latDiff <= latRadius && lonDiff <= lonRadius;
+        });
     }
 
     async findClusteredPoints(region: Region): Promise<PointCluster[]> {
         const points = await this.findCoveragePointsInRegion(region);
         const clusters: Map<string, PointCluster> = new Map();
-        const gridSize = 0.001; // Approximately 100m at equator
+        const gridSize = 0.01; // Approximately 1km at equator
 
-        points.forEach(point => {
-            const key = `${Math.floor(point.latitude / gridSize)},${Math.floor(point.longitude / gridSize)}`;
+        for (const point of points) {
+            const gridLat = Math.floor(point.latitude / gridSize);
+            const gridLon = Math.floor(point.longitude / gridSize);
+            const key = `${gridLat},${gridLon}`;
+
             const existing = clusters.get(key);
-
             if (existing) {
                 existing.pointCount++;
-                existing.latitude = (existing.latitude * (existing.pointCount - 1) + point.latitude) / existing.pointCount;
-                existing.longitude = (existing.longitude * (existing.pointCount - 1) + point.longitude) / existing.pointCount;
+                const weight = 1 / existing.pointCount;
+                existing.latitude = existing.latitude * (1 - weight) + point.latitude * weight;
+                existing.longitude = existing.longitude * (1 - weight) + point.longitude * weight;
             } else {
                 clusters.set(key, {
                     latitude: point.latitude,
@@ -120,19 +141,13 @@ export class OfflineManager {
                     pointCount: 1
                 });
             }
-        });
+        }
 
         return Array.from(clusters.values());
     }
 
     async clearAllData(): Promise<void> {
         await this.db.clearAllData();
-    }
-
-    private isPointInRegion(point: CoveragePoint, region: Region): boolean {
-        const latDiff = Math.abs(point.latitude - region.latitude);
-        const lonDiff = Math.abs(point.longitude - region.longitude);
-        return latDiff <= region.latitudeDelta / 2 && lonDiff <= region.longitudeDelta / 2;
     }
 }
 
