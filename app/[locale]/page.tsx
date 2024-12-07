@@ -1,220 +1,163 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Icons } from 'components/ui/icons';
 import { Badge } from 'components/ui/badge';
 import { useTranslations } from 'next-intl';
-import { Logo } from 'components/brand/logo';
-import { brandConfig } from 'lib/branding';
-import Image from 'next/image';
+import Link from 'next/link';
+import { MainNav } from 'components/layout/main-nav';
 
-// Common class combinations for better maintainability
-const navLinkClasses = "text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-gradient-to-r after:from-primary-400 after:to-primary-500 hover:after:w-full after:transition-all after:duration-300";
-const primaryButtonClasses = "px-8 py-3 rounded-full bg-gradient-to-r from-primary-400 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white transition-all transform hover:scale-105 shadow-lg hover:shadow-primary/20";
-const featureCardClasses = "group p-6 rounded-2xl bg-card hover:bg-card/80 transition-colors border border-border hover:border-primary/20 shadow-lg hover:shadow-xl";
-const gradientTextClasses = "bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-500";
-const containerClasses = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8";
+interface PageParams {
+  locale: string;
+  [key: string]: string;
+}
 
 export default function LocalePage() {
-  const { locale } = useParams();
+  const params = useParams() as PageParams;
+  const locale = params.locale;
   const t = useTranslations('home');
   const nav = useTranslations('navigation');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      {/* Navigation Bar */}
-      <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-sm border-b border-border z-50" aria-label="Main navigation">
-        <div className={containerClasses}>
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href={`/${locale}`} className="flex items-center space-x-2" aria-label="Home">
-                <Logo size="sm" />
-                <Image
-                  src="/logo.svg"
-                  alt="Logo"
-                  width={32}
-                  height={32}
-                  loading="lazy"
-                  className="w-8 h-8 sm:w-10 sm:h-10"
-                />
-              </Link>
-            </div>
-            <div className="hidden sm:flex items-center space-x-4" data-testid="desktop-nav">
-              <Link
-                href={`/${locale}/wifi-finder`}
-                className={navLinkClasses}
-                aria-label={nav('wifi')}
-              >
-                {nav('wifi')}
-              </Link>
-              <Link
-                href={`/${locale}/coverage-finder`}
-                className={navLinkClasses}
-                aria-label={nav('coverage')}
-              >
-                {nav('coverage')}
-              </Link>
-              <Link
-                href={`/${locale}/map`}
-                className={navLinkClasses}
-                aria-label={nav('home')}
-              >
-                {nav('home')}
-              </Link>
-              <Link
-                href={`/${locale}/leaderboard`}
-                className={navLinkClasses}
-                aria-label={nav('leaderboard')}
-              >
-                {nav('leaderboard')}
-              </Link>
-              <Link
-                href={`/${locale}/auth/signin`}
-                className={`ml-4 ${primaryButtonClasses}`}
-                aria-label={nav('signIn')}
-              >
-                {nav('signIn')}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      <MainNav locale={locale} nav={nav} />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 px-4 sm:pt-32 sm:pb-24" aria-labelledby="hero-title">
-        <div className={containerClasses}>
-          <div className="flex justify-center mb-6">
+      <section className="relative pt-24 pb-16 sm:pt-32 sm:pb-24 overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,theme(colors.primary.100/20),transparent)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center mb-12">
             <Badge
               variant="secondary"
-              className="text-sm px-4 py-1 bg-gradient-to-r from-primary-400/10 to-primary-500/10 text-primary-500"
+              className="mb-6 px-4 py-1.5 text-sm font-medium bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 shadow-sm"
             >
               {t('featuringNow.title')}
             </Badge>
+            {/* Quick Coverage Report Card */}
+            <div className="w-full max-w-md p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  {nav('report.title')}
+                </h3>
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900/50">
+                  <Icons.signal className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                </div>
+              </div>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-6">
+                {nav('report.description')}
+              </p>
+              <Link
+                href={`/${locale}/report`}
+                className="flex items-center justify-center w-full px-4 py-2.5 rounded-full bg-primary-600 dark:bg-primary-500 text-white font-medium shadow-lg hover:shadow-primary-500/25 dark:hover:shadow-primary-400/25 hover:bg-primary-700 dark:hover:bg-primary-600 transition-all group"
+              >
+                <Icons.plus className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
+                {nav('report.button')}
+              </Link>
+            </div>
           </div>
-          <h1 id="hero-title" className={`text-4xl font-bold tracking-tight sm:text-6xl ${gradientTextClasses} mb-6`}>
-            {t('title')}
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
-            {t('subtitle')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center" data-testid="hero-buttons">
-            <Link
-              href={`/${locale}/wifi-finder`}
-              className={primaryButtonClasses}
-              aria-label={t('findCoverageButton')}
-            >
-              {t('findCoverageButton')}
-            </Link>
-            <Link
-              href={`/${locale}/coverage-finder`}
-              className="px-8 py-3 rounded-full bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 transition-all transform hover:scale-105 shadow-lg hover:shadow-secondary/20"
-              aria-label={t('explore')}
-            >
-              {t('explore')}
-            </Link>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl text-zinc-900 dark:text-zinc-50 mb-6">
+              {t('title')}
+            </h1>
+            <p className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-300 max-w-2xl mx-auto mb-12">
+              {t('subtitle')}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href={`/${locale}/wifi-finder`}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-primary-600 dark:bg-primary-500 text-white font-medium shadow-lg hover:shadow-primary-500/25 dark:hover:shadow-primary-400/25 hover:bg-primary-700 dark:hover:bg-primary-600 transition-all"
+              >
+                <Icons.wifi className="mr-2 h-5 w-5" />
+                {t('findCoverageButton')}
+              </Link>
+              <Link
+                href={`/${locale}/coverage-finder`}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 font-medium shadow-lg transition-all"
+              >
+                <Icons.map className="mr-2 h-5 w-5" />
+                {t('explore')}
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className={containerClasses} aria-labelledby="features-title">
-        <div className="text-center mb-12">
-          <h2 id="features-title" className={`text-3xl font-bold mb-4 ${gradientTextClasses}`}>
-            {t('features.title')}
-          </h2>
-          <p className="text-muted-foreground">{t('features.subtitle')}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="features-grid">
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.signal className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('features.cellular.title')}</h3>
-            </div>
-            <p className="text-muted-foreground">
-              {t('features.cellular.description')}
-            </p>
+      <section className="py-16 sm:py-24 bg-white dark:bg-zinc-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+              {t('features.title')}
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-300">{t('features.subtitle')}</p>
           </div>
-
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.wifi className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('features.wifi.title')}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="group p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900/50">
+                  <Icons.signal className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  {t('features.cellular.title')}
+                </h3>
+              </div>
+              <p className="text-zinc-600 dark:text-zinc-300">
+                {t('features.cellular.description')}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              {t('features.wifi.description')}
-            </p>
-          </div>
 
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.map className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('features.navigation.title')}</h3>
+            <div className="group p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900/50">
+                  <Icons.wifi className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  {t('features.wifi.title')}
+                </h3>
+              </div>
+              <p className="text-zinc-600 dark:text-zinc-300">
+                {t('features.wifi.description')}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              {t('features.navigation.description')}
-            </p>
-          </div>
-        </div>
-      </section>
 
-      {/* Gamification Section */}
-      <section className={containerClasses} aria-labelledby="gamification-title">
-        <div className="text-center mb-12">
-          <h2 id="gamification-title" className={`text-3xl font-bold mb-4 ${gradientTextClasses}`}>
-            {t('gamification.title')}
-          </h2>
-          <p className="text-muted-foreground">{t('gamification.subtitle')}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="gamification-grid">
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.trophy className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('gamification.points.title')}</h3>
+            <div className="group p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900/50">
+                  <Icons.map className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  {t('features.navigation.title')}
+                </h3>
+              </div>
+              <p className="text-zinc-600 dark:text-zinc-300">
+                {t('features.navigation.description')}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              {t('gamification.points.description')}
-            </p>
-          </div>
-
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.star className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('gamification.badges.title')}</h3>
-            </div>
-            <p className="text-muted-foreground">
-              {t('gamification.badges.description')}
-            </p>
-          </div>
-
-          <div className={featureCardClasses}>
-            <div className="flex items-center gap-3 mb-4">
-              <Icons.flame className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="text-xl font-semibold text-foreground">{t('gamification.leaderboard.title')}</h3>
-            </div>
-            <p className="text-muted-foreground">
-              {t('gamification.leaderboard.description')}
-            </p>
           </div>
         </div>
       </section>
 
       {/* Call to Action */}
-      <section className={containerClasses} aria-labelledby="cta-title">
-        <div className="bg-gradient-to-r from-primary-400/10 to-primary-500/10 rounded-3xl p-8 sm:p-12 text-center">
-          <h2 id="cta-title" className={`text-3xl font-bold mb-4 ${gradientTextClasses}`}>
-            {t('testimonials.title')}
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {t('testimonials.subtitle')}
-          </p>
-          <Link
-            href={`/${locale}/auth/signin`}
-            className={`inline-block ${primaryButtonClasses}`}
-            aria-label={t('getStarted')}
-          >
-            {t('getStarted')}
-          </Link>
+      <section className="py-16 sm:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 to-primary-800/10 backdrop-blur-sm" />
+            <div className="relative p-8 sm:p-12 text-center">
+              <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+                {t('testimonials.title')}
+              </h2>
+              <p className="text-lg text-zinc-600 dark:text-zinc-300 mb-8 max-w-2xl mx-auto">
+                {t('testimonials.subtitle')}
+              </p>
+              <Link
+                href={`/${locale}/auth/signin`}
+                className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-primary-600 dark:bg-primary-500 text-white font-medium shadow-lg hover:shadow-primary-500/25 dark:hover:shadow-primary-400/25 hover:bg-primary-700 dark:hover:bg-primary-600 transition-all group"
+              >
+                <Icons.chevronRight className="mr-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                {t('getStarted')}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

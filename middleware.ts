@@ -9,11 +9,19 @@ const publicRoutes = [
   '/auth/signup',
   '/auth/error',
   '/onboarding',
-  '/',
   '/wifi-finder',
   '/coverage-finder',
   '/map',
-  '/leaderboard'
+  '/leaderboard',
+  '/' // Allow access to landing page
+];
+
+// Define protected routes that require authentication
+const protectedRoutes = [
+  '/dashboard',
+  '/profile',
+  '/settings',
+  '/report'
 ];
 
 export async function middleware(request: NextRequest) {
@@ -50,20 +58,27 @@ export async function middleware(request: NextRequest) {
     pathnameWithoutLocale === route || pathnameWithoutLocale === '/'
   );
 
+  // Check if route is protected
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathnameWithoutLocale.startsWith(route)
+  );
+
+  // Get authentication token
+  const token = await getToken({ req: request });
+
+  // Allow access to public routes
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // Check authentication for protected routes
-  const token = await getToken({ req: request });
-
-  // Redirect to sign in if not authenticated
-  if (!token) {
+  // Redirect to sign in if accessing protected route without authentication
+  if (isProtectedRoute && !token) {
     const signInUrl = new URL(`/${pathnameLocale}/auth/signin`, request.url);
     signInUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(signInUrl);
   }
 
+  // Allow access to all other routes
   return NextResponse.next();
 }
 

@@ -22,25 +22,62 @@ interface Achievement {
   total?: number;
 }
 
-async function fetchGamificationStats(userId: string): Promise<GamificationStats> {
-  const response = await fetch(`/api/gamification/stats?userId=${userId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch gamification stats');
+const defaultStats: GamificationStats = {
+  points: 0,
+  rank: 0,
+  totalContributions: 0,
+  level: 1,
+  currentStreak: 0,
+  longestStreak: 0,
+  nextMilestone: 0,
+  progressToNextMilestone: 0,
+};
+
+async function fetchWithAuth(url: string) {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for session
+  });
+
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
   }
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch data');
+  }
+
   return response.json();
+}
+
+async function fetchGamificationStats(userId: string): Promise<GamificationStats> {
+  try {
+    return await fetchWithAuth(`/api/gamification/stats?userId=${userId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return defaultStats;
+    }
+    throw error;
+  }
 }
 
 async function fetchAchievements(userId: string): Promise<Achievement[]> {
-  const response = await fetch(`/api/gamification/achievements?userId=${userId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch achievements');
+  try {
+    return await fetchWithAuth(`/api/gamification/achievements?userId=${userId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return [];
+    }
+    throw error;
   }
-  return response.json();
 }
 
 export function useGamification() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userId = session?.user?.id;
+  const isAuthenticated = status === 'authenticated';
 
   const {
     data: stats,
@@ -49,21 +86,19 @@ export function useGamification() {
   } = useQuery({
     queryKey: ['gamification', 'stats', userId],
     queryFn: () => {
-      if (!userId) {
-        return Promise.resolve({
-          points: 0,
-          rank: 0,
-          totalContributions: 0,
-          level: 1,
-          currentStreak: 0,
-          longestStreak: 0,
-          nextMilestone: 0,
-          progressToNextMilestone: 0,
-        });
+      if (!userId || !isAuthenticated) {
+        return Promise.resolve(defaultStats);
       }
       return fetchGamificationStats(userId);
     },
-    enabled: !!userId,
+    enabled: isAuthenticated && !!userId,
+    retry: (failureCount, error) => {
+      // Don't retry on 401 errors
+      if (error instanceof Error && error.message === 'Unauthorized') {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   const {
@@ -72,17 +107,30 @@ export function useGamification() {
     error: achievementsError,
   } = useQuery({
     queryKey: ['gamification', 'achievements', userId],
-    queryFn: () => fetchAchievements(userId!),
-    enabled: !!userId,
+    queryFn: () => {
+      if (!userId || !isAuthenticated) {
+        return Promise.resolve([]);
+      }
+      return fetchAchievements(userId);
+    },
+    enabled: isAuthenticated && !!userId,
+    retry: (failureCount, error) => {
+      // Don't retry on 401 errors
+      if (error instanceof Error && error.message === 'Unauthorized') {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   const isLoading = isLoadingStats || isLoadingAchievements;
   const error = statsError || achievementsError;
 
   return {
-    stats,
-    achievements,
+    stats: stats || defaultStats,
+    achievements: achievements || [],
     isLoading,
     error,
+    isAuthenticated,
   };
 }

@@ -14,7 +14,7 @@ import {
 } from 'components/ui/dropdown-menu';
 import { Button } from 'components/ui/button';
 import { Badge } from 'components/ui/badge';
-import { brandConfig } from '@/lib/branding';
+import { brandConfig } from 'lib/branding';
 
 export default function DashboardLayout({
     children,
