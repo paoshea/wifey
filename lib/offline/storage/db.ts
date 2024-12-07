@@ -30,6 +30,7 @@ let dbInstance: OfflineDB | null = null;
 export class OfflineDB {
     private db: IDBDatabase | null = null;
     private initPromise: Promise<void> | null = null;
+    private initialized: boolean = false;
 
     constructor() {
         if (dbInstance) {
@@ -52,6 +53,10 @@ export class OfflineDB {
         dbInstance = null;
     }
 
+    async isInitialized(): Promise<boolean> {
+        return this.initialized;
+    }
+
     async initialize(): Promise<void> {
         if (this.initPromise) {
             return this.initPromise;
@@ -59,6 +64,7 @@ export class OfflineDB {
 
         this.initPromise = new Promise<void>((resolve, reject) => {
             if (this.db) {
+                this.initialized = true;
                 resolve();
                 return;
             }
@@ -67,6 +73,7 @@ export class OfflineDB {
 
             request.onerror = () => {
                 this.initPromise = null;
+                this.initialized = false;
                 reject(new Error('Failed to open database'));
             };
 
@@ -77,6 +84,7 @@ export class OfflineDB {
 
             request.onsuccess = (event: Event) => {
                 this.db = (event.target as IDBOpenDBRequest).result;
+                this.initialized = true;
                 resolve();
             };
         });
@@ -101,95 +109,6 @@ export class OfflineDB {
         }
     }
 
-    async deleteDatabase(): Promise<void> {
-        if (this.db) {
-            this.db.close();
-            this.db = null;
-        }
-        this.initPromise = null;
-
-        return new Promise<void>((resolve, reject) => {
-            const request = indexedDB.deleteDatabase('offline_system');
-
-            request.onerror = () => {
-                reject(new Error('Failed to delete database'));
-            };
-
-            request.onsuccess = () => {
-                resolve();
-            };
-        });
-    }
-
-    async storeCoveragePoint(point: CoveragePoint): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise<void>((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
-                const store = transaction.objectStore('coverage_points');
-
-                const request = store.put(point);
-
-                request.onerror = () => {
-                    reject(new Error('Failed to store coverage point'));
-                };
-
-                transaction.oncomplete = () => {
-                    resolve();
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async removeCoveragePoint(id: string): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise<void>((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
-                const store = transaction.objectStore('coverage_points');
-
-                const request = store.delete(id);
-
-                request.onerror = () => {
-                    reject(new Error('Failed to remove coverage point'));
-                };
-
-                transaction.oncomplete = () => {
-                    resolve();
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async getCoveragePoint(id: string): Promise<CoveragePoint | null> {
-        if (!this.db) throw new Error('Database not initialized');
-
-        return new Promise<CoveragePoint | null>((resolve, reject) => {
-            try {
-                const transaction = this.db!.transaction(['coverage_points'], 'readonly');
-                const store = transaction.objectStore('coverage_points');
-
-                const request = store.get(id);
-
-                request.onerror = () => {
-                    reject(new Error('Failed to retrieve coverage point'));
-                };
-
-                request.onsuccess = () => {
-                    resolve(request.result || null);
-                };
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
     async getCoveragePoints(): Promise<CoveragePoint[]> {
         if (!this.db) throw new Error('Database not initialized');
 
@@ -212,6 +131,72 @@ export class OfflineDB {
         });
     }
 
+    async getCoveragePoint(id: string): Promise<CoveragePoint | null> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise<CoveragePoint | null>((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['coverage_points'], 'readonly');
+                const store = transaction.objectStore('coverage_points');
+                const request = store.get(id);
+
+                request.onerror = () => {
+                    reject(new Error('Failed to retrieve coverage point'));
+                };
+
+                request.onsuccess = () => {
+                    resolve(request.result || null);
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async storeCoveragePoint(point: CoveragePoint): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise<void>((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
+                const store = transaction.objectStore('coverage_points');
+                const request = store.put(point);
+
+                request.onerror = () => {
+                    reject(new Error('Failed to store coverage point'));
+                };
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async removeCoveragePoint(id: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise<void>((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['coverage_points'], 'readwrite');
+                const store = transaction.objectStore('coverage_points');
+                const request = store.delete(id);
+
+                request.onerror = () => {
+                    reject(new Error('Failed to remove coverage point'));
+                };
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
     async addPendingSync(item: PendingSyncItem): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
 
@@ -219,7 +204,6 @@ export class OfflineDB {
             try {
                 const transaction = this.db!.transaction(['pending_sync'], 'readwrite');
                 const store = transaction.objectStore('pending_sync');
-
                 const request = store.put(item);
 
                 request.onerror = () => {
@@ -264,7 +248,6 @@ export class OfflineDB {
             try {
                 const transaction = this.db!.transaction(['pending_sync'], 'readwrite');
                 const store = transaction.objectStore('pending_sync');
-
                 const request = store.delete(id);
 
                 request.onerror = () => {
@@ -277,6 +260,27 @@ export class OfflineDB {
             } catch (error) {
                 reject(error);
             }
+        });
+    }
+
+    async deleteDatabase(): Promise<void> {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+        this.initPromise = null;
+        this.initialized = false;
+
+        return new Promise<void>((resolve, reject) => {
+            const request = indexedDB.deleteDatabase('offline_system');
+
+            request.onerror = () => {
+                reject(new Error('Failed to delete database'));
+            };
+
+            request.onsuccess = () => {
+                resolve();
+            };
         });
     }
 
