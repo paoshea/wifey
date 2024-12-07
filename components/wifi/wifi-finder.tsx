@@ -52,7 +52,7 @@ export function WiFiFinder({ className = '' }: WiFiFinderProps) {
         try {
             const points = await manager.getNearbyPoints(1000); // 1km radius
             setNearbyPoints(points.filter(point =>
-                point.measurements.some(m => m.networkType === 'wifi')
+                point.measurements?.some(m => m.networkType === 'wifi') ?? false
             ));
         } catch (error) {
             if (error instanceof LocationError) {

@@ -6,6 +6,8 @@ export interface CoveragePoint {
     signalStrength: number;
     reliability: number;
     type: 'wifi' | 'cellular';
+    averageStrength: number;
+    lastUpdated: number;
 }
 
 export interface PendingSyncItem {
@@ -252,6 +254,63 @@ export class OfflineDB {
 
                 request.onerror = () => {
                     reject(new Error('Failed to remove pending sync item'));
+                };
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async storeMapTile(tile: MapTile): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise<void>((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['map_tiles'], 'readwrite');
+                const store = transaction.objectStore('map_tiles');
+                const request = store.put(tile);
+
+                request.onerror = () => {
+                    reject(new Error('Failed to store map tile'));
+                };
+
+                transaction.oncomplete = () => {
+                    resolve();
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async clearOldMapTiles(maxAge: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        return new Promise<void>((resolve, reject) => {
+            try {
+                const transaction = this.db!.transaction(['map_tiles'], 'readwrite');
+                const store = transaction.objectStore('map_tiles');
+                const index = store.index('timestamp');
+                const cutoffTime = Date.now() - maxAge;
+
+                const request = index.openCursor();
+
+                request.onerror = () => {
+                    reject(new Error('Failed to clear old map tiles'));
+                };
+
+                request.onsuccess = (event) => {
+                    const cursor = (event.target as IDBRequest).result;
+                    if (cursor) {
+                        if (cursor.value.timestamp < cutoffTime) {
+                            cursor.delete();
+                        }
+                        cursor.continue();
+                    }
                 };
 
                 transaction.oncomplete = () => {

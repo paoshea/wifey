@@ -9,17 +9,17 @@ import {
   CoveragePoint,
   LocationError,
   LocationErrorCode
-} from '@/lib/offline';
-import { useOfflineError } from '@/components/offline/error-handler';
+} from 'lib/offline';
+import { useOfflineError } from 'components/offline/error-handler';
 import {
   coverageFormSchema,
   type CoverageFormData
-} from '@/lib/schemas/coverage';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
+} from 'lib/schemas/coverage';
+import { Input } from 'components/ui/input';
+import { Button } from 'components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from 'components/ui/form';
+import { Textarea } from 'components/ui/textarea';
 
 interface CoverageFinderProps {
   className?: string;
